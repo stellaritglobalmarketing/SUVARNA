@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fdf9f1;
+  --foreground: #23412e;
+
+  --color-forest: #23412e;
+  --color-forest-light: #345c40;
+  --color-walnut: #d4a373;
+  --color-walnut-dark: #a97b4f;
+  --color-sand: #fdf9f1;
+  --color-sand-dark: #f3ead9;
+  --color-gold: #c9a227;
+  --color-gold-light: #e4c563;
+  --color-ink: #2b2117;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-brand-forest: var(--color-forest);
+  --color-brand-forest-light: var(--color-forest-light);
+  --color-brand-walnut: var(--color-walnut);
+  --color-brand-walnut-dark: var(--color-walnut-dark);
+  --color-brand-sand: var(--color-sand);
+  --color-brand-sand-dark: var(--color-sand-dark);
+  --color-brand-gold: var(--color-gold);
+  --color-brand-gold-light: var(--color-gold-light);
+  --color-brand-ink: var(--color-ink);
+
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-inter);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--background);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  overscroll-behavior-y: contain;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+/* Native-app tap feedback for interactive elements, plus quieter chrome:
+   no text selection or drag-ghosting on buttons/links, momentum scroll on
+   horizontal swipe strips. */
+a,
+button {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a,
+  button {
+    transition: transform 120ms ease;
+  }
+
+  a:active,
+  button:active {
+    transform: scale(0.97);
+  }
+}
+
+.snap-x {
+  -webkit-overflow-scrolling: touch;
+}
