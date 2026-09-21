@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Clock, Heart, ShoppingBag, Star } from "lucide-react";
+import { Clock, Heart, Star } from "lucide-react";
+import { MdAddShoppingCart } from "react-icons/md";
 import type { Product, WeightVariant } from "@/types/product";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { addToCart } from "@/lib/redux/slices/cartSlice";
@@ -45,38 +46,44 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-brand-sand-dark bg-white transition-shadow sm:hover:shadow-lg">
       {/* Compact app-style card — quick-commerce density for mobile browsing */}
-      <div className="relative sm:hidden">
-        <Link href={`/products/${product.slug}`} className="relative block aspect-square overflow-hidden">
-          <ProductImagePlaceholder src={product.images[0]} alt={product.name} gradient={product.gradient} className="h-full w-full" />
+      <div className="sm:hidden">
+        <div className="relative aspect-square overflow-hidden">
+          <Link href={`/products/${product.slug}`} className="absolute inset-0 block">
+            <ProductImagePlaceholder src={product.images[0]} alt={product.name} gradient={product.gradient} className="h-full w-full" />
+          </Link>
           {(product.isBestSeller || product.discountPercent > 0) && (
-            <span className="absolute left-2 top-2 rounded-md bg-brand-forest px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-sand">
+            <span className="pointer-events-none absolute left-2 top-2 rounded-md bg-brand-forest px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-sand">
               {product.discountPercent > 0 ? `${product.discountPercent}% OFF` : "Best Seller"}
             </span>
           )}
-          <span className="absolute bottom-2 left-2 rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink shadow-sm">
+          <span className="pointer-events-none absolute bottom-2 left-2 rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink shadow-sm">
             {selectedVariant.label}
           </span>
-        </Link>
 
-        <button
-          type="button"
-          onClick={toggleHeart}
-          aria-label={isWishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
-          aria-pressed={isWishlisted}
-          className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-brand-ink shadow-sm cursor-pointer"
-        >
-          <Heart size={13} className={cn(isWishlisted && "fill-red-500 text-red-500")} />
-        </button>
+          <button
+            type="button"
+            onClick={toggleHeart}
+            aria-label={isWishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+            aria-pressed={isWishlisted}
+            className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-brand-ink shadow-sm cursor-pointer"
+          >
+            <Heart size={13} className={cn(isWishlisted && "fill-red-500 text-red-500")} />
+          </button>
 
-        <button
-          type="button"
-          onClick={() => addVariantToCart(selectedVariant)}
-          disabled={selectedVariant.stock === 0}
-          aria-label={`Add ${product.name} ${selectedVariant.label} to cart`}
-          className="absolute bottom-2 right-2 z-10 rounded-lg border-2 border-brand-forest bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-brand-forest shadow-sm disabled:opacity-40 cursor-pointer"
-        >
-          {selectedVariant.stock === 0 ? "Sold Out" : "Add"}
-        </button>
+          <button
+            type="button"
+            onClick={() => addVariantToCart(selectedVariant)}
+            disabled={selectedVariant.stock === 0}
+            aria-label={
+              selectedVariant.stock === 0
+                ? `${product.name} ${selectedVariant.label} is sold out`
+                : `Add ${product.name} ${selectedVariant.label} to cart`
+            }
+            className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-brand-forest bg-white text-brand-forest shadow-sm disabled:opacity-40 cursor-pointer"
+          >
+            <MdAddShoppingCart size={15} />
+          </button>
+        </div>
 
         <div className="px-2.5 pb-2 pt-2">
           <p className="text-sm font-bold text-brand-ink">
@@ -143,7 +150,7 @@ export function ProductCard({ product }: { product: Product }) {
               aria-label={`Add ${product.name} ${selectedVariant.label} to cart`}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-forest text-brand-sand transition-colors hover:bg-brand-forest-light disabled:opacity-40 cursor-pointer"
             >
-              <ShoppingBag size={15} />
+              <MdAddShoppingCart size={17} />
             </button>
           </div>
         </div>

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 import { useProduct } from "@/hooks/useProduct";
 import { useReviews } from "@/hooks/useReviews";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { addToCart } from "@/lib/redux/slices/cartSlice";
 import { pushToast } from "@/lib/redux/slices/uiSlice";
+import { addRecentlyViewed } from "@/lib/redux/slices/recentlyViewedSlice";
 
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
@@ -23,6 +24,8 @@ import { NutrientTable } from "./NutrientTable";
 import { NutrientDonut } from "./NutrientDonut";
 import { PincodeChecker } from "./PincodeChecker";
 import { FrequentlyBoughtTogether } from "./FrequentlyBoughtTogether";
+import { StorageTips } from "./StorageTips";
+import { SimilarProducts } from "./SimilarProducts";
 import { ReviewSummary } from "./ReviewSummary";
 import { ReviewList } from "./ReviewList";
 
@@ -33,6 +36,10 @@ export function ProductDetailClient({ slug }: { slug: string }) {
 
   const [selectedVariantLabel, setSelectedVariantLabel] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (product) dispatch(addRecentlyViewed(product.id));
+  }, [product, dispatch]);
 
   if (isLoading) {
     return (
@@ -153,6 +160,10 @@ export function ProductDetailClient({ slug }: { slug: string }) {
         </div>
       </Container>
 
+      <Container className="pb-6">
+        <StorageTips category={product.category} />
+      </Container>
+
       <Container className="py-10">
         <h2 className="font-serif text-xl font-semibold text-brand-forest">Verified Buyer Reviews</h2>
         <div className="mt-4 space-y-6">
@@ -163,6 +174,10 @@ export function ProductDetailClient({ slug }: { slug: string }) {
             </>
           )}
         </div>
+      </Container>
+
+      <Container className="py-10">
+        <SimilarProducts category={product.category} excludeSlug={product.slug} />
       </Container>
 
       <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t border-brand-sand-dark bg-white px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] lg:hidden">

@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Home, PackageSearch, ShoppingBag, ShoppingCart } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { openCartDrawer, selectCartCount } from "@/lib/redux/slices/cartSlice";
+import { Heart, Home, PackageSearch, ShoppingBag, User } from "lucide-react";
+import { useAppSelector } from "@/lib/redux/hooks";
 import { selectWishlistCount } from "@/lib/redux/slices/wishlistSlice";
 import { cn } from "@/lib/utils/cn";
 
@@ -12,14 +11,13 @@ const NAV_LINKS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/products", label: "Shop", icon: ShoppingBag },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
-  { href: "/track-order", label: "Track", icon: PackageSearch },
+  { href: "/track-order", label: "Orders", icon: PackageSearch },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
-/** App-style bottom tab bar for small screens — hidden at `lg` where the header nav takes over. */
+/** App-style bottom tab bar for small screens — hidden at `lg` where the header nav takes over. Cart lives in the header. */
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const dispatch = useAppDispatch();
-  const cartCount = useAppSelector(selectCartCount);
   const wishlistCount = useAppSelector(selectWishlistCount);
 
   return (
@@ -55,21 +53,6 @@ export function MobileBottomNav() {
             </Link>
           );
         })}
-        <button
-          type="button"
-          onClick={() => dispatch(openCartDrawer())}
-          className="relative flex flex-col items-center justify-center gap-1 py-1.5 text-[10px] font-medium text-brand-ink/45 cursor-pointer"
-        >
-          <span className="flex h-8 w-11 items-center justify-center rounded-full">
-            <ShoppingCart size={18} />
-          </span>
-          Cart
-          {cartCount > 0 && (
-            <span className="absolute right-[18%] top-0 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-brand-gold px-1 text-[8px] font-bold text-brand-ink">
-              {cartCount}
-            </span>
-          )}
-        </button>
       </div>
     </nav>
   );

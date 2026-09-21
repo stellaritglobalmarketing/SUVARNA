@@ -27,8 +27,8 @@ export function CategoryChips() {
           </Link>
         </div>
 
-        {/* Desktop: full set, room enough for no truncation, still links through for consistency */}
-        <div className="hidden items-start justify-between gap-4 sm:flex">
+        {/* Desktop: full set, wraps gracefully instead of squeezing into one line */}
+        <div className="hidden flex-wrap items-start justify-center gap-x-6 gap-y-6 sm:flex">
           {CATEGORIES.map((item) => (
             <CategoryCircle key={item.category} item={item} />
           ))}

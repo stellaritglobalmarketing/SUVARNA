@@ -1,13 +1,14 @@
-export type ProductOrigin = "Kashmir" | "California" | "Afghanistan" | "Iran";
+export type ProductOrigin = "Kashmir" | "California" | "Afghanistan" | "Iran" | "India";
 
-export type ProductProcessing = "Raw" | "Smoked" | "Roasted & Salted";
+export type ProductProcessing = "Raw" | "Smoked" | "Roasted & Salted" | "Traditional";
 
 export type HealthBenefit =
   | "Heart Health"
   | "Keto Friendly"
   | "Diabetic Friendly"
   | "High Protein"
-  | "Weight Management";
+  | "Weight Management"
+  | "Immunity Boost";
 
 export type ProductCategory =
   | "Almonds"
@@ -16,7 +17,9 @@ export type ProductCategory =
   | "Walnuts"
   | "Figs"
   | "Makhana"
-  | "Seeds";
+  | "Seeds"
+  | "Saffron"
+  | "Ghee";
 
 export interface WeightVariant {
   /** e.g. "100g" | "250g" | "500g" | "1kg" */

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Dumbbell, Droplet, HeartPulse, Scale, Zap } from "lucide-react";
+import { Dumbbell, Droplet, HeartPulse, Scale, ShieldPlus, Zap } from "lucide-react";
 import type { HealthBenefit } from "@/types/product";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 const HEALTH_GOALS: { benefit: HealthBenefit; icon: typeof HeartPulse; description: string }[] = [
   { benefit: "Heart Health", icon: HeartPulse, description: "Omega-3 & MUFA-rich picks" },
+  { benefit: "Immunity Boost", icon: ShieldPlus, description: "Antioxidant-rich saffron & more" },
   { benefit: "Keto Friendly", icon: Zap, description: "Low-carb, high-fat snacking" },
   { benefit: "Diabetic Friendly", icon: Droplet, description: "Low glycemic impact" },
   { benefit: "High Protein", icon: Dumbbell, description: "Fuel for active lifestyles" },
@@ -21,7 +22,7 @@ export function ShopByHealthGoal() {
           title="Shop by Health Goal"
           subtitle="Jump straight to the range that fits how you eat."
         />
-        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {HEALTH_GOALS.map(({ benefit, icon: Icon, description }) => (
             <Link
               key={benefit}

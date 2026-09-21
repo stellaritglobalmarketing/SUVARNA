@@ -3,6 +3,7 @@ import cartReducer from "./slices/cartSlice";
 import filtersReducer from "./slices/filtersSlice";
 import uiReducer from "./slices/uiSlice";
 import wishlistReducer from "./slices/wishlistSlice";
+import recentlyViewedReducer from "./slices/recentlyViewedSlice";
 
 export function makeStore() {
   return configureStore({
@@ -11,6 +12,7 @@ export function makeStore() {
       filters: filtersReducer,
       ui: uiReducer,
       wishlist: wishlistReducer,
+      recentlyViewed: recentlyViewedReducer,
     },
   });
 }

@@ -17,6 +17,20 @@ export const CATEGORIES: CategoryDisplay[] = [
     gradient: ["#8a6a4f", "#d4a373"],
   },
   {
+    label: "Mongra Saffron",
+    subtitle: "Kashmir's Golden Spice",
+    category: "Saffron",
+    image: "https://images.unsplash.com/photo-1564057779901-11451bfca03b?auto=format&fit=crop&w=400&q=80",
+    gradient: ["#7a1f2b", "#c9a227"],
+  },
+  {
+    label: "Desi Ghee",
+    subtitle: "A2 Bilona Method",
+    category: "Ghee",
+    image: "https://images.unsplash.com/photo-1573812461383-e5f8b759d12e?auto=format&fit=crop&w=400&q=80",
+    gradient: ["#c9a227", "#e4c563"],
+  },
+  {
     label: "King Cashews",
     subtitle: "Large, Creamy & Fresh",
     category: "Cashews",

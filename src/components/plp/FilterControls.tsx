@@ -14,15 +14,16 @@ import {
 import type { HealthBenefit, ProductOrigin, ProductProcessing } from "@/types/product";
 import { formatInr } from "@/lib/utils/format";
 
-const WEIGHTS = ["100g", "250g", "500g", "1kg", "2kg", "5kg"];
-const ORIGINS: ProductOrigin[] = ["Kashmir", "California", "Afghanistan", "Iran"];
-const PROCESSING: ProductProcessing[] = ["Raw", "Smoked", "Roasted & Salted"];
+const WEIGHTS = ["0.5g", "1g", "2g", "5g", "100g", "200g", "250g", "500g", "1kg", "2kg", "5kg"];
+const ORIGINS: ProductOrigin[] = ["Kashmir", "California", "Afghanistan", "Iran", "India"];
+const PROCESSING: ProductProcessing[] = ["Raw", "Smoked", "Roasted & Salted", "Traditional"];
 const HEALTH_BENEFITS: HealthBenefit[] = [
   "Heart Health",
   "Keto Friendly",
   "Diabetic Friendly",
   "High Protein",
   "Weight Management",
+  "Immunity Boost",
 ];
 const MAX_PRICE = 3000;
 
