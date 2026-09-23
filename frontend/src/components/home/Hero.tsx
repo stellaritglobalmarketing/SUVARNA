@@ -45,11 +45,11 @@ export function Hero() {
           </span>
           <div className="animate-fade-up h-1 w-14 rounded-full bg-gradient-to-r from-brand-gold to-brand-gold-light [animation-delay:60ms]" />
           <h1 className="animate-fade-up max-w-xl font-serif text-4xl font-bold leading-tight [text-shadow:0_2px_24px_rgba(0,0,0,0.35)] sm:text-5xl lg:text-[3.25rem] [animation-delay:120ms]">
-            Artisanal Dry Fruits, Sourced Straight From The Orchard
+            Saffron, Almonds, Ghee and Honey, Sourced Directly From Farmers
           </h1>
           <p className="animate-fade-up max-w-lg text-brand-sand/80 [animation-delay:240ms]">
-            Suvarna7 brings you Mamra almonds, Mongra saffron, pure ghee and more — graded, tested and
-            nitrogen-sealed for freshness, delivered across India.
+            Suvarna7 sources Mamra almonds, Mongra saffron, ghee, honey and walnuts directly from farmers, and
+            delivers them nitrogen-sealed for freshness across India.
           </p>
           <div className="animate-fade-up flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap [animation-delay:360ms]">
             <Button href="/#products" variant="secondary" size="lg" className="w-full sm:w-auto">

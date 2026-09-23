@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Award, Gem, Leaf, Sparkles, Wheat } from "lucide-react";
+import { Award, Gem, Leaf, Wheat } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
@@ -15,22 +15,22 @@ const VALUES = [
   {
     icon: Leaf,
     title: "100% Natural",
-    description: "No additives, no adulteration, no shortcuts — every jar and pouch is exactly what nature made.",
+    description: "Every jar and pouch is exactly what nature made. No additives, no adulteration.",
   },
   {
     icon: Gem,
     title: "Direct Farmer Trade",
-    description: "We buy straight from orchard families and gaushalas, so quality — and fairness — never gets diluted.",
+    description: "We buy straight from orchard families and gaushalas instead of going through traders.",
   },
   {
     icon: Wheat,
     title: "Traditional Methods",
-    description: "Bilona-churned ghee, hand-picked Mongra saffron, cold-extracted honey — made the way it always should be.",
+    description: "Ghee is bilona-churned, saffron is hand-picked, honey is cold-extracted. We haven't shortcut the process.",
   },
   {
     icon: Award,
     title: "No Preservatives",
-    description: "Nothing to mask a shortcut, because there aren't any. Just pure, honest food.",
+    description: "Products stay fresh because of how they're sealed and stored, not because of what's added to them.",
   },
 ];
 
@@ -68,21 +68,14 @@ export default function OurStoryPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-brand-forest via-brand-forest/70 to-brand-forest/30" />
         </div>
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(circle at 85% 10%, #eab54a 0%, transparent 45%)" }}
-        />
         <Container className="relative py-20 sm:py-28">
           <span className="inline-block rounded-full bg-brand-gold px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-brand-ink">
             Our Story
           </span>
-          <h1 className="mt-5 max-w-2xl font-serif text-4xl font-bold leading-tight sm:text-5xl">
-            Pure Indian Goodness, From Source to Home
-          </h1>
+          <h1 className="mt-5 max-w-2xl font-serif text-4xl font-bold leading-tight sm:text-5xl">About Suvarna7</h1>
           <p className="mt-5 max-w-xl text-brand-sand/80">
-            Suvarna7 began with a simple frustration — that &ldquo;premium&rdquo; dry fruits on shelves rarely
-            matched what families actually grow in Kashmir, Afghanistan and across India. So we cut out the
-            middlemen and went straight to the source.
+            Suvarna7 sources saffron, almonds, honey, ghee and walnuts directly from farmers in Kashmir,
+            Afghanistan and across India, rather than buying through traders and distributors.
           </p>
         </Container>
       </section>
@@ -112,22 +105,21 @@ export default function OurStoryPage() {
           </div>
           <div className="order-1 lg:order-2">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-gold">How It Started</p>
-            <h2 className="mt-3 font-serif text-3xl font-bold text-brand-forest sm:text-4xl">
-              A Family Habit, Turned Into a Promise
-            </h2>
+            <h2 className="mt-3 font-serif text-3xl font-bold text-brand-forest sm:text-4xl">Why We Buy Direct</h2>
             <p className="mt-5 text-brand-ink/75 leading-relaxed">
-              Long before Suvarna7 was a brand, it was a habit — soaking Mamra almonds overnight, finishing a
-              meal with a spoon of A2 ghee, watching a few threads of real Mongra saffron bloom in warm milk.
-              We noticed how hard it had become to find any of that without wading through vague labels and
-              inflated &ldquo;premium&rdquo; pricing.
+              Most dry fruits sold as &ldquo;premium&rdquo; in shops pass through several traders before they
+              reach a shelf. Each step adds margin and makes it harder to know where the product actually came
+              from, or how it was graded.
             </p>
             <p className="mt-4 text-brand-ink/75 leading-relaxed">
-              So we built direct relationships with orchard families in Kashmir, saffron growers in Pampore,
-              almond farmers across the Gurbandi valley, and small gaushalas still churning ghee the bilona
-              way. What started as sourcing for our own kitchen is now Suvarna7 — the same standard, just at a
-              scale we can share.
+              We work directly with orchard families in Kashmir, saffron growers in Pampore, almond farmers in
+              the Gurbandi valley, and small gaushalas that still churn ghee using the bilona method. That
+              means fewer people between the farm and your home, and a clearer answer to where each product
+              comes from.
             </p>
-            <p className="mt-6 font-serif text-xl italic text-brand-forest">&ldquo;Good Food. Brighter Tomorrows.&rdquo;</p>
+            <p className="mt-6 text-sm font-semibold uppercase tracking-[0.15em] text-brand-forest">
+              Good Food. Brighter Tomorrows.
+            </p>
           </div>
         </Container>
       </section>
@@ -135,7 +127,7 @@ export default function OurStoryPage() {
       {/* Values */}
       <section className="bg-brand-sand-dark/40 py-16 sm:py-20">
         <Container>
-          <SectionHeading eyebrow="What We Stand For" title="No Shortcuts, No Middlemen" align="center" />
+          <SectionHeading eyebrow="Standards" title="What We Stand For" align="center" />
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {VALUES.map(({ icon: Icon, title, description }) => (
               <div key={title} className="rounded-2xl border border-brand-sand-dark bg-white p-6 text-center">
@@ -153,17 +145,17 @@ export default function OurStoryPage() {
       {/* Origins */}
       <section className="py-16 sm:py-20">
         <Container>
-          <SectionHeading eyebrow="Sourced, Not Assembled" title="Where It Comes From" align="center" />
+          <SectionHeading eyebrow="Origins" title="Where It Comes From" align="center" />
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {ORIGINS.map((origin) => (
-              <div key={origin.place} className="group overflow-hidden rounded-2xl border border-brand-sand-dark bg-white">
+              <div key={origin.place} className="overflow-hidden rounded-2xl border border-brand-sand-dark bg-white">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <Image
                     src={origin.image}
                     alt={origin.place}
                     fill
                     sizes="(min-width: 640px) 33vw, 100vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <p className="absolute bottom-3 left-4 font-serif text-xl font-bold text-white">{origin.place}</p>
@@ -175,24 +167,12 @@ export default function OurStoryPage() {
         </Container>
       </section>
 
-      {/* Mission statement */}
-      <section className="bg-brand-forest py-16 text-brand-sand sm:py-24">
-        <Container className="text-center">
-          <Sparkles className="mx-auto text-brand-gold-light" size={28} />
-          <p className="mx-auto mt-6 max-w-3xl font-serif text-2xl italic leading-relaxed sm:text-3xl">
-            &ldquo;We don&apos;t sell dry fruits, honey and ghee. We deliver exactly what a farmer, a beekeeper
-            or a gaushala family would put on their own table — nothing added, nothing hidden.&rdquo;
-          </p>
-          <p className="mt-6 text-sm uppercase tracking-[0.2em] text-brand-gold-light">Team Suvarna7</p>
-        </Container>
-      </section>
-
       {/* CTA */}
       <section className="py-16 sm:py-20">
         <Container className="flex flex-col items-center gap-5 text-center">
-          <h2 className="font-serif text-3xl font-bold text-brand-forest sm:text-4xl">Taste the Difference, Yourself</h2>
+          <h2 className="font-serif text-3xl font-bold text-brand-forest sm:text-4xl">See the Full Range</h2>
           <p className="max-w-lg text-brand-ink/70">
-            Every product on Suvarna7 is graded, tested and sealed the same way we&apos;d want for our own family.
+            Every product is graded and sealed before it ships, with the source behind it.
           </p>
           <Button href="/#products" size="lg">
             Shop Our Products
