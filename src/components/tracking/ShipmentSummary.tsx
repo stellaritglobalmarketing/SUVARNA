@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, RotateCcw, Truck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, RotateCcw, Truck, XCircle } from "lucide-react";
 import type { OrderTracking } from "@/types/order";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils/format";
@@ -8,6 +8,7 @@ const DIAGNOSTIC_META = {
   delayed: { label: "Delayed", tone: "walnut" as const, icon: AlertTriangle },
   "delivery-attempt-failed": { label: "Delivery Attempt Failed", tone: "danger" as const, icon: AlertTriangle },
   rto: { label: "Return to Origin", tone: "danger" as const, icon: RotateCcw },
+  cancelled: { label: "Cancelled", tone: "danger" as const, icon: XCircle },
 };
 
 export function ShipmentSummary({ order }: { order: OrderTracking }) {
@@ -20,7 +21,7 @@ export function ShipmentSummary({ order }: { order: OrderTracking }) {
         <div className="flex items-center gap-2">
           <Truck size={20} className="text-brand-forest" />
           <div>
-            <p className="text-xs uppercase tracking-wide text-brand-ink/50">AWB Number</p>
+            <p className="text-xs uppercase tracking-wide text-brand-ink/50">Order Number</p>
             <p className="font-mono text-sm font-semibold text-brand-ink">{order.awb}</p>
           </div>
         </div>
@@ -31,9 +32,9 @@ export function ShipmentSummary({ order }: { order: OrderTracking }) {
 
       <div className="mt-4 grid grid-cols-2 gap-4 border-t border-brand-sand-dark pt-4 text-sm sm:grid-cols-4">
         <SummaryField label="Order ID" value={order.orderId} />
-        <SummaryField label="Courier Partner" value={order.courierPartner} />
+        <SummaryField label="Courier Partner" value={order.courierPartner ?? "Not assigned yet"} />
         <SummaryField label="Placed On" value={formatDate(order.placedOn)} />
-        <SummaryField label="Expected Delivery" value={formatDate(order.expectedDelivery)} />
+        <SummaryField label="Expected Delivery" value={order.expectedDelivery ? formatDate(order.expectedDelivery) : "To be confirmed"} />
       </div>
 
       <div className="mt-4 border-t border-brand-sand-dark pt-4 text-sm">

@@ -10,7 +10,7 @@ const TESTIMONIALS = [
     location: "Pune, Maharashtra",
     rating: 5,
     quote:
-      "The Mamra almonds taste nothing like what I used to buy from the supermarket — soft, sweet, and clearly fresh. Harvesta is now my only source for dry fruits.",
+      "The Mamra almonds taste nothing like what I used to buy from the supermarket — soft, sweet, and clearly fresh. Suvarna7 is now my only source for dry fruits.",
   },
   {
     name: "Arjun Mehta",

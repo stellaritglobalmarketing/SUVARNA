@@ -1,13 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { CATEGORIES } from "@/lib/data/categories";
+import { useHome } from "@/hooks/useHome";
+import { toCategoryDisplay } from "@/lib/utils/categoryDisplay";
 import { CategoryCircle } from "./CategoryCircle";
 
 const MOBILE_VISIBLE_COUNT = 4;
 
 export function CategoryChips() {
-  const mobileCategories = CATEGORIES.slice(0, MOBILE_VISIBLE_COUNT);
+  const { data } = useHome();
+  const categories = (data?.categories ?? []).map(toCategoryDisplay);
+
+  if (categories.length === 0) return null;
+
+  const mobileCategories = categories.slice(0, MOBILE_VISIBLE_COUNT);
 
   return (
     <section className="py-5 sm:py-10">
@@ -29,7 +37,7 @@ export function CategoryChips() {
 
         {/* Desktop: full set, wraps gracefully instead of squeezing into one line */}
         <div className="hidden flex-wrap items-start justify-center gap-x-6 gap-y-6 sm:flex">
-          {CATEGORIES.map((item) => (
+          {categories.map((item) => (
             <CategoryCircle key={item.category} item={item} />
           ))}
           <Link

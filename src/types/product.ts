@@ -10,16 +10,15 @@ export type HealthBenefit =
   | "Weight Management"
   | "Immunity Boost";
 
-export type ProductCategory =
-  | "Almonds"
-  | "Cashews"
-  | "Dates"
-  | "Walnuts"
-  | "Figs"
-  | "Makhana"
-  | "Seeds"
-  | "Saffron"
-  | "Ghee";
+/**
+ * The real backend's categories are dynamic, admin-managed rows (see
+ * backend/README.md's Category/Sub-category admin APIs) rather than a fixed
+ * set, so this is a plain string — the category's slug — instead of a
+ * closed union. Existing lookups keyed by the old union values (e.g.
+ * StorageTips) simply fall back to their generic copy for slugs they don't
+ * recognise.
+ */
+export type ProductCategory = string;
 
 export interface WeightVariant {
   /** e.g. "100g" | "250g" | "500g" | "1kg" */

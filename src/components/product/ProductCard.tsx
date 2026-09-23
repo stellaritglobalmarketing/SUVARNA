@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils/cn";
 export function ProductCard({ product }: { product: Product }) {
   const dispatch = useAppDispatch();
   const wishlistIds = useAppSelector(selectWishlistIds);
-  const isWishlisted = wishlistIds.includes(product.id);
+  const isWishlisted = wishlistIds.includes(product.slug);
   const inStockVariants = product.variants;
   const [selectedVariant, setSelectedVariant] = useState(
     inStockVariants.find((variant) => variant.stock > 0) ?? inStockVariants[0],
@@ -41,7 +41,7 @@ export function ProductCard({ product }: { product: Product }) {
     dispatch(pushToast(`${product.name} (${variant.label}) added to cart`, "success"));
   };
 
-  const toggleHeart = () => dispatch(toggleWishlist(product.id));
+  const toggleHeart = () => dispatch(toggleWishlist(product.slug));
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-brand-sand-dark bg-white transition-shadow sm:hover:shadow-lg">

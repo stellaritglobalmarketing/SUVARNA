@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "./slices/authSlice";
 import cartReducer from "./slices/cartSlice";
 import filtersReducer from "./slices/filtersSlice";
 import uiReducer from "./slices/uiSlice";
@@ -8,6 +9,7 @@ import recentlyViewedReducer from "./slices/recentlyViewedSlice";
 export function makeStore() {
   return configureStore({
     reducer: {
+      auth: authReducer,
       cart: cartReducer,
       filters: filtersReducer,
       ui: uiReducer,

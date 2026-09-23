@@ -1,18 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fdf9f1;
-  --foreground: #23412e;
+  /* Suvarna7 brand palette — espresso brown + gold, off the "Suvarna7" wordmark. */
+  --background: #f8f1e3;
+  --foreground: #3d2b1c;
 
-  --color-forest: #23412e;
-  --color-forest-light: #345c40;
-  --color-walnut: #d4a373;
-  --color-walnut-dark: #a97b4f;
-  --color-sand: #fdf9f1;
-  --color-sand-dark: #f3ead9;
-  --color-gold: #c9a227;
-  --color-gold-light: #e4c563;
-  --color-ink: #2b2117;
+  --color-forest: #3d2b1c;
+  --color-forest-light: #6b4a2e;
+  --color-walnut: #b8874a;
+  --color-walnut-dark: #8a5c2e;
+  --color-sand: #f8f1e3;
+  --color-sand-dark: #ecdfc4;
+  --color-gold: #cd7f1f;
+  --color-gold-light: #eab54a;
+  --color-ink: #2b1d12;
 }
 
 @theme inline {
@@ -68,6 +69,48 @@ button {
   a:active,
   button:active {
     transform: scale(0.97);
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-hero-zoom {
+    animation: hero-zoom 20s ease-in-out infinite alternate;
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 6s ease-in-out infinite;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.6;
   }
 }
 

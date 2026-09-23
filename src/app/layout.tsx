@@ -21,13 +21,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Harvesta — Artisanal Dry Fruits & Healthy Pantry",
+  title: "Suvarna7 — Pure Indian Goodness",
   description:
-    "Grade-A Kashmiri & Californian dry fruits, dates, and pantry staples — farm-to-pouch, chemical-free, delivered across India.",
+    "Pure Indian honey, ghee, saffron and dry fruits — sourced responsibly, delivered fresh across India.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Harvesta",
+    title: "Suvarna7",
   },
   formatDetection: {
     telephone: false,
@@ -42,7 +42,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#23412e",
+  themeColor: "#3d2b1c",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

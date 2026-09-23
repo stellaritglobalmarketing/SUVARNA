@@ -29,7 +29,7 @@ export function TrustSection() {
   return (
     <section className="py-12">
       <Container>
-        <SectionHeading eyebrow="Why Harvesta" title="Farm-to-Pouch Trust Audit" align="center" />
+        <SectionHeading eyebrow="Why Suvarna7" title="Farm-to-Pouch Trust Audit" align="center" />
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {TRUST_POINTS.map(({ icon: Icon, title, description }) => (
             <div key={title} className="rounded-2xl border border-brand-sand-dark bg-white p-6 text-center">

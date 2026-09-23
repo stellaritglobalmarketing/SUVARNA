@@ -10,10 +10,10 @@ export async function GET() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#23412e",
+          background: "#3d2b1c",
         }}
       >
-        <span style={{ color: "#d4a373", fontSize: 310, fontWeight: 700, fontFamily: "serif" }}>H</span>
+        <span style={{ color: "#eab54a", fontSize: 310, fontWeight: 700, fontFamily: "serif" }}>S</span>
       </div>
     ),
     { width: 512, height: 512 },

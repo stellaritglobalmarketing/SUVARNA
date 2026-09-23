@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -7,6 +8,7 @@ import {
   ChevronDown,
   Heart,
   Leaf,
+  LogOut,
   Menu,
   MapPin,
   PackageSearch,
@@ -15,6 +17,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Truck,
+  User,
   X,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -22,6 +25,8 @@ import { openCartDrawer, selectCartCount } from "@/lib/redux/slices/cartSlice";
 import { selectWishlistCount } from "@/lib/redux/slices/wishlistSlice";
 import { setSearch } from "@/lib/redux/slices/filtersSlice";
 import { openDeliverySheet, selectDeliveryPincode } from "@/lib/redux/slices/uiSlice";
+import { selectAuthUser } from "@/lib/redux/slices/authSlice";
+import { useAuth } from "@/hooks/useAuth";
 import { Container } from "@/components/ui/Container";
 
 const NAV_LINKS = [
@@ -39,6 +44,8 @@ export function Header() {
   const cartCount = useAppSelector(selectCartCount);
   const wishlistCount = useAppSelector(selectWishlistCount);
   const deliveryPincode = useAppSelector(selectDeliveryPincode);
+  const authUser = useAppSelector(selectAuthUser);
+  const { logout } = useAuth();
   const [searchValue, setSearchValue] = useState("");
   const [isMenuOpen, setMenuOpen] = useState(false);
 
@@ -63,8 +70,10 @@ export function Header() {
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
             <Link href="/" className="flex flex-col leading-none">
-              <span className="font-serif text-lg font-bold text-brand-sand">Harvesta</span>
-              <span className="text-[8px] uppercase tracking-[0.2em] text-brand-gold-light">Artisanal Dry Fruits</span>
+              <span className="font-serif text-lg font-bold text-brand-sand">
+                Suvarna<span className="text-brand-gold-light">7</span>
+              </span>
+              <span className="text-[8px] uppercase tracking-[0.2em] text-brand-gold-light">Pure Indian Goodness</span>
             </Link>
           </div>
           <button
@@ -140,6 +149,26 @@ export function Header() {
                 </span>
               )}
             </Link>
+            {authUser ? (
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  setMenuOpen(false);
+                }}
+                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-brand-sand active:bg-white/10 cursor-pointer"
+              >
+                <LogOut size={15} /> Sign Out ({authUser.name.split(" ")[0]})
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-sand active:bg-white/10"
+              >
+                <User size={15} /> Login / Sign Up
+              </Link>
+            )}
           </Container>
         </div>
       )}
@@ -167,17 +196,24 @@ export function Header() {
               <Link href="/track-order" className="hover:text-brand-gold-light">
                 Track Order
               </Link>
+              <span className="text-brand-sand/30">|</span>
+              {authUser ? (
+                <button type="button" onClick={logout} className="flex items-center gap-1.5 hover:text-brand-gold-light cursor-pointer">
+                  <LogOut size={12} /> Sign Out ({authUser.name.split(" ")[0]})
+                </button>
+              ) : (
+                <Link href="/login" className="flex items-center gap-1.5 hover:text-brand-gold-light">
+                  <User size={12} /> Login / Sign Up
+                </Link>
+              )}
             </div>
           </Container>
         </div>
 
         <div className="border-b border-brand-sand-dark bg-brand-sand/95 backdrop-blur">
           <Container className="flex h-20 items-center justify-between gap-4">
-            <Link href="/" className="flex shrink-0 flex-col leading-none">
-              <span className="font-serif text-2xl font-bold text-brand-forest">Harvesta</span>
-              <span className="mt-0.5 text-[10px] uppercase tracking-[0.25em] text-brand-walnut-dark">
-                Artisanal Dry Fruits
-              </span>
+            <Link href="/" className="relative block h-12 w-40 shrink-0">
+              <Image src="/logo.jpg" alt="Suvarna7 — Pure Indian Goodness" fill sizes="160px" className="object-contain object-left" priority />
             </Link>
 
             <nav className="flex items-center gap-7">

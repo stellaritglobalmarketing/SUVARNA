@@ -5,3 +5,6 @@
  */
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 export const USE_MOCK_API = API_BASE_URL.length === 0;
+
+/** Shared API key the backend requires on every request (see backend/README.md). */
+export const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";

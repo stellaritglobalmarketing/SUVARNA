@@ -38,7 +38,7 @@ export function ProductDetailClient({ slug }: { slug: string }) {
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    if (product) dispatch(addRecentlyViewed(product.id));
+    if (product) dispatch(addRecentlyViewed(product.slug));
   }, [product, dispatch]);
 
   if (isLoading) {

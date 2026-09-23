@@ -6,8 +6,8 @@ const FOOTER_COLUMNS = [
     title: "Shop",
     links: [
       { href: "/products?category=Almonds", label: "Almonds" },
-      { href: "/products?category=Cashews", label: "Cashews" },
-      { href: "/products?category=Dates", label: "Dates" },
+      { href: "/products?category=Saffron", label: "Saffron" },
+      { href: "/products?category=Ghee", label: "Ghee" },
       { href: "/products?category=Walnuts", label: "Walnuts" },
     ],
   },
@@ -21,7 +21,7 @@ const FOOTER_COLUMNS = [
     ],
   },
   {
-    title: "Harvesta",
+    title: "Suvarna7",
     links: [
       { href: "/", label: "Our Story" },
       { href: "/", label: "Farm Partners" },
@@ -36,9 +36,11 @@ export function Footer() {
     <footer className="mt-16 border-t border-brand-sand-dark bg-brand-forest text-brand-sand">
       <Container className="grid grid-cols-2 gap-8 py-12 sm:grid-cols-4">
         <div className="col-span-2 sm:col-span-1">
-          <span className="font-serif text-2xl font-bold">Harvesta</span>
+          <span className="font-serif text-2xl font-bold">
+            Suvarna<span className="text-brand-gold-light">7</span>
+          </span>
           <p className="mt-3 text-sm text-brand-sand/70">
-            Grade-A Kashmiri &amp; Californian dry fruits, farm-to-pouch, delivered fresh across India.
+            Pure Indian honey, ghee, saffron and dry fruits — sourced responsibly, delivered fresh across India.
           </p>
         </div>
         {FOOTER_COLUMNS.map((column) => (
@@ -57,7 +59,7 @@ export function Footer() {
         ))}
       </Container>
       <div className="border-t border-brand-sand/10 py-4 text-center text-xs text-brand-sand/60">
-        © {new Date().getFullYear()} Harvesta Artisanal Dry Fruits & Healthy Pantry. All rights reserved.
+        © {new Date().getFullYear()} Suvarna7 — Pure Indian Goodness. All rights reserved.
       </div>
     </footer>
   );

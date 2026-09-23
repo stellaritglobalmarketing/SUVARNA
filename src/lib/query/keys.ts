@@ -8,6 +8,7 @@ export const queryKeys = {
     detail: (slug: string) => [...queryKeys.products.all, "detail", slug] as const,
     bestSellers: (limit: number) => [...queryKeys.products.all, "best-sellers", limit] as const,
     batch: (ids: string[]) => [...queryKeys.products.all, "batch", ids] as const,
+    home: ["products", "home"] as const,
   },
   reviews: {
     bySlug: (slug: string) => ["reviews", slug] as const,
