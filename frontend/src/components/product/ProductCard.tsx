@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Clock, Heart, Star } from "lucide-react";
+import { BadgeCheck, Clock, Heart, Star } from "lucide-react";
 import { MdAddShoppingCart } from "react-icons/md";
 import type { Product, WeightVariant } from "@/types/product";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -42,6 +42,8 @@ export function ProductCard({ product }: { product: Product }) {
   };
 
   const toggleHeart = () => dispatch(toggleWishlist(product.slug));
+
+  const purityLabel = product.certifications.find((cert) => cert.label.startsWith("100%"))?.label;
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-brand-sand-dark bg-white transition-shadow sm:hover:shadow-lg">
@@ -116,6 +118,12 @@ export function ProductCard({ product }: { product: Product }) {
           <Link href={`/products/${product.slug}`}>
             <p className="mt-0.5 truncate text-xs leading-snug text-brand-ink/80">{product.name}</p>
           </Link>
+          {purityLabel && (
+            <p className="mt-0.5 flex items-center gap-1 text-[9px] font-medium text-brand-forest">
+              <BadgeCheck size={11} className="shrink-0 text-brand-gold" />
+              <span className="truncate">{purityLabel}</span>
+            </p>
+          )}
           <div className="mt-1 flex items-center gap-2 text-[10px] text-brand-ink/50">
             <span className="flex items-center gap-0.5">
               <Star size={10} className="fill-brand-gold text-brand-gold" />
@@ -155,6 +163,13 @@ export function ProductCard({ product }: { product: Product }) {
             <h3 className="font-serif text-lg font-semibold text-brand-forest leading-tight">{product.name}</h3>
           </Link>
           <RatingStars rating={product.rating} reviewCount={product.reviewCount} />
+
+          {purityLabel && (
+            <p className="flex items-center gap-1 text-xs font-medium text-brand-forest">
+              <BadgeCheck size={14} className="shrink-0 text-brand-gold" />
+              <span className="truncate">{purityLabel}</span>
+            </p>
+          )}
 
           <div className="mt-1">
             <WeightVariantSelector variants={inStockVariants} selected={selectedVariant} onSelect={setSelectedVariant} size="sm" />
