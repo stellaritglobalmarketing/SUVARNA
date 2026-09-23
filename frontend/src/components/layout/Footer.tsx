@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 
 const FOOTER_COLUMNS = [
   {
     title: "Shop",
     links: [
-      { href: "/products?category=Almonds", label: "Almonds" },
-      { href: "/products?category=Saffron", label: "Saffron" },
-      { href: "/products?category=Ghee", label: "Ghee" },
-      { href: "/products?category=Walnuts", label: "Walnuts" },
+      { href: "/products/kashmiri-mongra-saffron", label: "Mongra Saffron" },
+      { href: "/products/raw-forest-honey", label: "Raw Forest Honey" },
+      { href: "/products/kashmir-mamra-almonds", label: "Mamra Almonds" },
+      { href: "/products/afghani-gurbandi-almonds", label: "Afghani Almonds" },
+      { href: "/products/pure-cow-ghee", label: "Cow Ghee" },
+      { href: "/products/pure-buffalo-ghee", label: "Buffalo Ghee" },
+      { href: "/products/kashmiri-walnut-kernels", label: "Walnuts" },
     ],
   },
   {
@@ -23,7 +27,7 @@ const FOOTER_COLUMNS = [
   {
     title: "Suvarna7",
     links: [
-      { href: "/", label: "Our Story" },
+      { href: "/our-story", label: "Our Story" },
       { href: "/", label: "Farm Partners" },
       { href: "/", label: "Quality Promise" },
       { href: "/", label: "Bulk & Corporate Gifting" },
@@ -36,9 +40,7 @@ export function Footer() {
     <footer className="mt-16 border-t border-brand-sand-dark bg-brand-forest text-brand-sand">
       <Container className="grid grid-cols-2 gap-8 py-12 sm:grid-cols-4">
         <div className="col-span-2 sm:col-span-1">
-          <span className="font-serif text-2xl font-bold">
-            Suvarna<span className="text-brand-gold-light">7</span>
-          </span>
+          <BrandLogo className="h-24 w-48" sizes="192px" />
           <p className="mt-3 text-sm text-brand-sand/70">
             Pure Indian honey, ghee, saffron and dry fruits — sourced responsibly, delivered fresh across India.
           </p>

@@ -18,25 +18,25 @@ const HAMPER_THEMES: HamperTheme[] = [
   {
     label: "Festive Nut Box",
     subtitle: "Almonds & walnuts",
-    image: "https://images.unsplash.com/photo-1708453860229-cc8a7fa3c56f?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hampers/festive-nut-box.webp",
     presetSlugs: ["afghani-gurbandi-almonds", "kashmir-mamra-almonds", "kashmiri-walnut-kernels"],
   },
   {
     label: "Kesar & Ghee Gift Set",
     subtitle: "Saffron & pure ghee",
-    image: "https://images.unsplash.com/photo-1564057779901-11451bfca03b?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hampers/kesar-ghee-gift-set.webp",
     presetSlugs: ["kashmiri-mongra-saffron", "pure-cow-ghee", "pure-buffalo-ghee"],
   },
   {
     label: "Wellness Basket",
     subtitle: "Honey, nuts & more",
-    image: "https://images.unsplash.com/photo-1524593656068-fbac72624bb0?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hampers/wellness-basket.webp",
     presetSlugs: ["raw-forest-honey", "kashmiri-walnut-kernels", "kashmir-mamra-almonds"],
   },
   {
     label: "The Everything Hamper",
     subtitle: "One of each product",
-    image: "https://images.unsplash.com/photo-1769255484646-16988ad5552d?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hampers/everything-hamper.webp",
     presetSlugs: [
       "kashmiri-mongra-saffron",
       "raw-forest-honey",

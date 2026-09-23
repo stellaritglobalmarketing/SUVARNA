@@ -56,9 +56,28 @@ export function ProductCard({ product }: { product: Product }) {
               {product.discountPercent > 0 ? `${product.discountPercent}% OFF` : "Best Seller"}
             </span>
           )}
-          <span className="pointer-events-none absolute bottom-2 left-2 rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink shadow-sm">
-            {selectedVariant.label}
-          </span>
+          {inStockVariants.length > 1 ? (
+            <select
+              value={selectedVariant.label}
+              onChange={(event) => {
+                const next = inStockVariants.find((variant) => variant.label === event.target.value);
+                if (next) setSelectedVariant(next);
+              }}
+              onClick={(event) => event.stopPropagation()}
+              aria-label={`Select pack size for ${product.name}`}
+              className="absolute bottom-2 left-2 z-10 rounded-md border-0 bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink shadow-sm cursor-pointer"
+            >
+              {inStockVariants.map((variant) => (
+                <option key={variant.label} value={variant.label} disabled={variant.stock === 0}>
+                  {variant.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="pointer-events-none absolute bottom-2 left-2 rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink shadow-sm">
+              {selectedVariant.label}
+            </span>
+          )}
 
           <button
             type="button"

@@ -2,9 +2,15 @@ import type { PaginatedResponse, Product, ProductListParams, WeightVariant } fro
 import { MOCK_PRODUCTS, getMockProductBySlug, getMockProductsByIds } from "@/lib/data/products.mock";
 import { CATEGORIES } from "@/lib/data/categories";
 import { formatDiscount } from "@/lib/utils/format";
-import { USE_MOCK_API } from "./config";
 import { mockDelay } from "./delay";
 import { apiGet, apiGetPaginated } from "./http";
+
+/**
+ * Product endpoints stay on static mock data for now, independent of the shared
+ * USE_MOCK_API switch — the real backend's /product routes aren't wired up correctly
+ * yet (401s), so flip this once they're verified working end-to-end.
+ */
+const USE_MOCK_API = true;
 
 // ---- Real backend response shapes (see backend/README.md — Product section) ----
 // The backend's Product model doesn't carry every field this UI displays (origin,

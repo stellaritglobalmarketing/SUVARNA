@@ -12,11 +12,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   try {
     const product = await fetchProductBySlug(slug);
     return {
-      title: `Harvesta — ${product.name} Product Details`,
+      title: `Suvarna7 — ${product.name} Product Details`,
       description: product.tagline,
     };
   } catch {
-    return { title: "Harvesta — Product Details" };
+    return { title: "Suvarna7 — Product Details" };
   }
 }
 

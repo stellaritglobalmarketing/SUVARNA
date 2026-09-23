@@ -30,7 +30,7 @@ export default function CartPage() {
       {items.length === 0 ? (
         <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-brand-sand-dark py-20 text-center">
           <p className="text-brand-ink/70">Your cart is empty.</p>
-          <Button href="/products">Browse Products</Button>
+          <Button href="/#products">Browse Products</Button>
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">

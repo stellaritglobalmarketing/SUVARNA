@@ -48,7 +48,7 @@ export function CartDrawer() {
           {items.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
               <p className="text-brand-ink/70">Your cart is empty.</p>
-              <Button href="/products" variant="outline" onClick={() => dispatch(closeCartDrawer())}>
+              <Button href="/#products" variant="outline" onClick={() => dispatch(closeCartDrawer())}>
                 Browse Products
               </Button>
             </div>

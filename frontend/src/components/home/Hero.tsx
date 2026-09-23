@@ -52,16 +52,16 @@ export function Hero() {
             nitrogen-sealed for freshness, delivered across India.
           </p>
           <div className="animate-fade-up flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap [animation-delay:360ms]">
-            <Button href="/products" variant="secondary" size="lg" className="w-full sm:w-auto">
+            <Button href="/#products" variant="secondary" size="lg" className="w-full sm:w-auto">
               Shop Now
             </Button>
             <Button
-              href="/products?category=Almonds"
+              href="/our-story"
               variant="outline"
               size="lg"
               className="w-full border-brand-sand text-brand-sand hover:bg-brand-sand hover:text-brand-forest sm:w-auto"
             >
-              Explore Almonds
+              Our Story
             </Button>
           </div>
 

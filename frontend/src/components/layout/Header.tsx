@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -28,12 +27,11 @@ import { openDeliverySheet, selectDeliveryPincode } from "@/lib/redux/slices/uiS
 import { selectAuthUser } from "@/lib/redux/slices/authSlice";
 import { useAuth } from "@/hooks/useAuth";
 import { Container } from "@/components/ui/Container";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/products", label: "Shop" },
-  { href: "/categories", label: "Categories" },
-  { href: "/", label: "Our Story" },
+  { href: "/our-story", label: "Our Story" },
   { href: "/", label: "Quality" },
   { href: "/track-order", label: "Track Order" },
 ];
@@ -52,15 +50,15 @@ export function Header() {
   const handleSearch = (event: FormEvent) => {
     event.preventDefault();
     dispatch(setSearch(searchValue));
-    router.push("/products");
+    router.push("/#products");
   };
 
   return (
     <header className="sticky top-0 z-40 bg-brand-forest" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       {/* Mobile app-shell header: menu + logo + cart, location row, always-visible search */}
       <div className="lg:hidden">
-        <Container className="flex h-14 items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+        <Container className="flex h-20 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
@@ -69,12 +67,7 @@ export function Header() {
             >
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <Link href="/" className="flex flex-col leading-none">
-              <span className="font-serif text-lg font-bold text-brand-sand">
-                Suvarna<span className="text-brand-gold-light">7</span>
-              </span>
-              <span className="text-[8px] uppercase tracking-[0.2em] text-brand-gold-light">Pure Indian Goodness</span>
-            </Link>
+            <BrandLogo className="w-36" sizes="144px" priority />
           </div>
           <button
             type="button"
@@ -212,9 +205,7 @@ export function Header() {
 
         <div className="border-b border-brand-sand-dark bg-brand-sand/95 backdrop-blur">
           <Container className="flex h-20 items-center justify-between gap-4">
-            <Link href="/" className="relative block h-12 w-40 shrink-0">
-              <Image src="/logo.jpg" alt="Suvarna7 — Pure Indian Goodness" fill sizes="160px" className="object-contain object-left" priority />
-            </Link>
+            <BrandLogo priority />
 
             <nav className="flex items-center gap-7">
               {NAV_LINKS.map((link) => (

@@ -6,7 +6,7 @@ import { ProductGrid } from "@/components/product/ProductGrid";
 /** Single unified catalog listing — the client's full (and only) product range, no categories/best-sellers split. */
 export function AllProducts() {
   return (
-    <section className="py-4 sm:py-12">
+    <section id="products" className="scroll-mt-20 py-4 sm:py-12">
       <Container>
         <SectionHeading eyebrow="Our Range" title="Our Products" subtitle="Everything we grow, harvest and churn — in one place." />
 

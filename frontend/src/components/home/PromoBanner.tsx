@@ -9,7 +9,7 @@ export function PromoBanner() {
     <section className="pt-4 md:hidden">
       <Container>
         <Link
-          href="/products"
+          href="/#products"
           className="relative flex h-36 items-center overflow-hidden rounded-2xl active:opacity-90"
         >
           <Image
