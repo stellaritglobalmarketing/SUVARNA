@@ -49,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable} h-full antialiased`}>
       <body
-        className="min-h-full flex flex-col bg-brand-sand text-brand-ink overscroll-y-contain pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0"
+        className="min-h-full flex flex-col bg-brand-sand text-brand-ink overscroll-y-contain pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] lg:pb-0"
       >
         <Providers>
           <Header />

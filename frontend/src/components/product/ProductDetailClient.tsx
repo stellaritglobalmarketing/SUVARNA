@@ -8,6 +8,7 @@ import { useAppDispatch } from "@/lib/redux/hooks";
 import { addToCart } from "@/lib/redux/slices/cartSlice";
 import { pushToast } from "@/lib/redux/slices/uiSlice";
 import { addRecentlyViewed } from "@/lib/redux/slices/recentlyViewedSlice";
+import { formatDiscount, formatInr } from "@/lib/utils/format";
 
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
@@ -89,7 +90,7 @@ export function ProductDetailClient({ slug }: { slug: string }) {
   };
 
   return (
-    <div className="pb-24 lg:pb-0">
+    <div className="pb-32 lg:pb-0">
       <Container className="py-6 sm:py-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
           <ProductGallery images={product.images} gradient={product.gradient} name={product.name} />
@@ -180,14 +181,32 @@ export function ProductDetailClient({ slug }: { slug: string }) {
         <SimilarProducts category={product.category} excludeSlug={product.slug} />
       </Container>
 
-      <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t border-brand-sand-dark bg-white px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] lg:hidden">
-        <div className="min-w-0 flex-1">
-          <PriceTag price={selectedVariant.price} mrp={selectedVariant.mrp} />
-          <p className="truncate text-xs text-brand-ink/50">{selectedVariant.label} pack</p>
+      <div className="fixed inset-x-3 bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom)+0.5rem)] z-30 mx-auto grid max-w-xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-brand-sand-dark bg-white p-3 shadow-[0_4px_24px_rgba(61,43,28,0.14)] lg:hidden">
+        <div className="min-w-0" aria-live="polite" aria-atomic="true">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 tabular-nums">
+            <span className="text-xl font-bold leading-tight text-brand-forest">{formatInr(selectedVariant.price)}</span>
+            {selectedVariant.mrp > selectedVariant.price && (
+              <span className="text-xs text-brand-ink/45 line-through">{formatInr(selectedVariant.mrp)}</span>
+            )}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-[11px] text-brand-ink/60">{selectedVariant.label} pack</span>
+            {selectedVariant.mrp > selectedVariant.price && (
+              <span className="whitespace-nowrap rounded-md bg-brand-sand px-1.5 py-0.5 text-[10px] font-semibold text-brand-walnut-dark">
+                {formatDiscount(selectedVariant.price, selectedVariant.mrp)}% off
+              </span>
+            )}
+          </div>
         </div>
-        <Button onClick={handleAddToCart} disabled={selectedVariant.stock === 0} size="lg" className="shrink-0">
-          <ShoppingBag size={18} /> {selectedVariant.stock === 0 ? "Sold Out" : "Add to Cart"}
-        </Button>
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={selectedVariant.stock === 0}
+          className="flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-brand-forest px-4 py-3 text-sm font-semibold text-brand-sand shadow-sm transition-colors active:bg-brand-forest-light disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+        >
+          <ShoppingBag size={18} className="shrink-0" aria-hidden="true" />
+          {selectedVariant.stock === 0 ? "Sold Out" : "Add to Cart"}
+        </button>
       </div>
     </div>
   );

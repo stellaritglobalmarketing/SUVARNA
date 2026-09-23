@@ -24,7 +24,7 @@ export function MobileBottomNav() {
       className="fixed inset-x-0 bottom-0 z-40 rounded-t-3xl bg-white shadow-[0_-6px_24px_rgba(35,65,46,0.14)] lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="grid grid-cols-4 px-1 pt-2">
+      <div className="grid h-[var(--mobile-nav-height)] grid-cols-4 px-1 pt-2">
         {NAV_LINKS.map((item) => {
           const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           const Icon = item.icon;
