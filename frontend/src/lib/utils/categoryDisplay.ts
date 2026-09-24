@@ -1,5 +1,5 @@
 import type { CategoryDisplay } from "@/lib/data/categories";
-import type { HomeCategory } from "@/lib/api/products";
+import type { HomeCategory } from "@/types/home";
 
 /** The real backend doesn't send a gradient/subtitle per category — cycle a small brand palette instead. */
 const GRADIENTS: [string, string][] = [

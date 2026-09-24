@@ -1,9 +1,11 @@
 import db from "../../../config/db.js";
 import dbHelper from "../../../config/dbHelper.js";
+import { getProductContent } from "./admin-product-content-controller.js";
 import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import {
     isPositiveInt,
+    pickStorefrontFields,
     slugify,
     toBool01,
     parseProductListingQuery,
@@ -76,6 +78,7 @@ const createProduct = async (req, res) => {
             description: req.body.description ? String(req.body.description).trim() : null,
             brand_name: req.body.brand_name ? String(req.body.brand_name).trim() : null,
             is_featured: req.body.is_featured !== undefined ? toBool01(req.body.is_featured) : 0,
+            ...pickStorefrontFields(req.body),
         });
 
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Product created successfully", { id: result.insertId, name, slug });
@@ -120,9 +123,18 @@ const getProducts = async (req, res) => {
         const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total ${baseFrom}`, params);
 
         const [rows] = await db.query(
-            `SELECT p.id, p.name, p.slug, p.short_description, p.brand_name, p.is_featured, p.is_active, p.created_at,
+            `SELECT p.id, p.name, p.slug, p.short_description, p.brand_name, p.is_featured, p.is_bestseller, p.is_active, p.created_at,
                     sc.id AS sub_category_id, sc.name AS sub_category_name,
-                    c.id AS category_id, c.name AS category_name
+                    c.id AS category_id, c.name AS category_name,
+                    (SELECT pi.image_url FROM product_images pi
+                     WHERE pi.product_id = p.id AND pi.is_delete = 0
+                     ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url,
+                    (SELECT MIN(pv.selling_price) FROM product_variants pv WHERE pv.product_id = p.id AND pv.is_delete = 0) AS min_price,
+                    (SELECT MAX(pv.selling_price) FROM product_variants pv WHERE pv.product_id = p.id AND pv.is_delete = 0) AS max_price,
+                    (SELECT COUNT(*) FROM product_variants pv WHERE pv.product_id = p.id AND pv.is_delete = 0) AS variant_count,
+                    (SELECT COALESCE(SUM(GREATEST(inv.stock_quantity - inv.reserved_quantity, 0)), 0)
+                     FROM product_variants pv JOIN inventory inv ON inv.variant_id = pv.id
+                     WHERE pv.product_id = p.id AND pv.is_delete = 0) AS available_stock
              ${baseFrom}
              ORDER BY ${sortSql}
              LIMIT ? OFFSET ?`,
@@ -136,8 +148,14 @@ const getProducts = async (req, res) => {
             short_description: r.short_description,
             brand_name: r.brand_name,
             is_featured: !!r.is_featured,
+            is_bestseller: !!r.is_bestseller,
             is_active: !!r.is_active,
             created_at: r.created_at,
+            image_url: r.image_url,
+            min_price: toNumber(r.min_price),
+            max_price: toNumber(r.max_price),
+            variant_count: Number(r.variant_count),
+            available_stock: Number(r.available_stock),
             category: { id: r.category_id, name: r.category_name },
             sub_category: { id: r.sub_category_id, name: r.sub_category_name },
         }));
@@ -163,6 +181,7 @@ const getProductById = async (req, res) => {
 
         const [productRows] = await db.query(
             `SELECT p.id, p.name, p.slug, p.short_description, p.description, p.brand_name, p.is_featured, p.is_active, p.created_at, p.updated_at,
+                    p.origin, p.processing, p.delivery_min_days, p.delivery_max_days, p.is_bestseller, p.sort_order,
                     sc.id AS sub_category_id, sc.name AS sub_category_name,
                     c.id AS category_id, c.name AS category_name
              FROM products p
@@ -196,6 +215,8 @@ const getProductById = async (req, res) => {
             [product.id]
         );
 
+        const content = await getProductContent(db, product.id);
+
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Product fetched successfully", {
             id: product.id,
             name: product.name,
@@ -204,7 +225,13 @@ const getProductById = async (req, res) => {
             description: product.description,
             brand_name: product.brand_name,
             is_featured: !!product.is_featured,
+            is_bestseller: !!product.is_bestseller,
             is_active: !!product.is_active,
+            origin: product.origin,
+            processing: product.processing,
+            delivery_min_days: product.delivery_min_days,
+            delivery_max_days: product.delivery_max_days,
+            sort_order: product.sort_order,
             created_at: product.created_at,
             updated_at: product.updated_at,
             category: { id: product.category_id, name: product.category_name },
@@ -224,6 +251,8 @@ const getProductById = async (req, res) => {
                 available_quantity: Math.max(toNumber(v.stock_quantity) - toNumber(v.reserved_quantity), 0),
             })),
             images: images.map((img) => ({ ...img, is_primary: !!img.is_primary, is_active: !!img.is_active })),
+            // nutrients, lipid_profile, certifications, health_benefits, storage_tips, related_products
+            ...content,
         });
     } catch (error) {
         console.error("Admin get product error: ", error);
@@ -270,6 +299,7 @@ const updateProduct = async (req, res) => {
                 description: req.body.description ? String(req.body.description).trim() : null,
                 brand_name: req.body.brand_name ? String(req.body.brand_name).trim() : null,
                 is_featured: req.body.is_featured !== undefined ? toBool01(req.body.is_featured) : 0,
+                ...pickStorefrontFields(req.body),
             },
             "id = ?",
             [id]

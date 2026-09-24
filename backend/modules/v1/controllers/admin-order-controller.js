@@ -106,7 +106,7 @@ const getOrderByNumber = async (req, res) => {
                     shipping_name, shipping_phone, shipping_address_line1, shipping_address_line2,
                     shipping_landmark, shipping_city, shipping_state, shipping_country, shipping_pincode,
                     subtotal, discount_amount, shipping_amount, tax_amount, total_amount,
-                    coupon_code, order_status, payment_status, fulfillment_status, notes, created_at, updated_at
+                    order_status, payment_status, fulfillment_status, notes, created_at, updated_at
              FROM orders
              WHERE order_number = ? AND is_delete = 0
              LIMIT 1`,
@@ -124,6 +124,14 @@ const getOrderByNumber = async (req, res) => {
             [order.id]
         );
         const imageMap = await batchImagesByProduct(itemRows.map((i) => i.product_id));
+
+        const [shipmentRows] = await db.query(
+            `SELECT id, provider, awb_number, courier_name, tracking_url, shipping_charge, shipment_status, shipped_at, delivered_at, created_at
+             FROM shipments
+             WHERE order_id = ? AND is_delete = 0
+             ORDER BY id DESC`,
+            [order.id]
+        );
 
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Order fetched successfully", {
             order_number: order.order_number,
@@ -144,13 +152,13 @@ const getOrderByNumber = async (req, res) => {
             shipping_amount: toNumber(order.shipping_amount),
             tax_amount: toNumber(order.tax_amount),
             total_amount: toNumber(order.total_amount),
-            coupon_code: order.coupon_code,
             order_status: order.order_status,
             payment_status: order.payment_status,
             fulfillment_status: order.fulfillment_status,
             notes: order.notes,
             created_at: order.created_at,
             updated_at: order.updated_at,
+            shipments: shipmentRows.map((sh) => ({ ...sh, shipping_charge: toNumber(sh.shipping_charge) })),
             items: itemRows.map((i) => ({
                 product_id: i.product_id,
                 product_variant_id: i.product_variant_id,

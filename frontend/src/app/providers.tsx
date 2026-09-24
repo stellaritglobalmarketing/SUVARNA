@@ -6,8 +6,10 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Provider as ReduxProvider } from "react-redux";
 import { createQueryClient } from "@/lib/query/queryClient";
 import { makeStore, type AppStore } from "@/lib/redux/store";
-import { setCredentials } from "@/lib/redux/slices/authSlice";
-import { getStoredUser, getToken } from "@/lib/auth/token";
+import { clearCredentials, setCredentials } from "@/lib/redux/slices/authSlice";
+import { pushToast } from "@/lib/redux/slices/uiSlice";
+import { SESSION_EXPIRED_EVENT, getStoredUser, getToken } from "@/lib/auth/token";
+import { SESSION_EXPIRED_MESSAGE } from "@/lib/api/http";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // useState (not module scope) so each request/browser tab gets its own
@@ -24,6 +26,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (token && user) {
       store.dispatch(setCredentials({ token, user }));
     }
+
+    // http.ts already cleared the stored token; bring Redux (and the UI) in line with it.
+    const onSessionExpired = () => {
+      if (!store.getState().auth.token) return;
+      store.dispatch(clearCredentials());
+      store.dispatch(pushToast(SESSION_EXPIRED_MESSAGE, "error"));
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
   }, [store]);
 
   return (

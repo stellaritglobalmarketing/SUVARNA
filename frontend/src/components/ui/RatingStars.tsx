@@ -12,6 +12,11 @@ export function RatingStars({
   size?: number;
   className?: string;
 }) {
+  // Ratings come from approved customer reviews; a product nobody has reviewed shows no stars at all.
+  if (reviewCount === 0) {
+    return <p className={cn("text-xs text-brand-ink/50", className)}>No reviews yet</p>;
+  }
+
   return (
     <div className={cn("flex items-center gap-1", className)}>
       <div className="flex" aria-hidden="true">

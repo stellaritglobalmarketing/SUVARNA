@@ -15,8 +15,13 @@ export const queryKeys = {
   },
   orders: {
     tracking: (awb: string) => ["orders", "tracking", awb] as const,
+    /** Scoped to the user so one account's orders are never shown to the next one in the same tab. */
+    mine: (userId: number | undefined) => ["orders", "mine", userId] as const,
+    allMine: ["orders", "mine"] as const,
   },
   pincode: {
     check: (pincode: string) => ["pincode", pincode] as const,
   },
+  addresses: ["addresses"] as const,
+  orderDetail: (orderNumber: string) => ["orders", "detail", orderNumber] as const,
 } as const;

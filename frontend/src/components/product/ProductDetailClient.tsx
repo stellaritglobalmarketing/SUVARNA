@@ -83,6 +83,8 @@ export function ProductDetailClient({ slug }: { slug: string }) {
         variantLabel: selectedVariant.label,
         unitPrice: selectedVariant.price,
         unitMrp: selectedVariant.mrp,
+
+        variantId: selectedVariant.id,
         quantity,
       }),
     );
@@ -141,7 +143,7 @@ export function ProductDetailClient({ slug }: { slug: string }) {
       </Container>
 
       <Container className="py-6">
-        <FrequentlyBoughtTogether mainProduct={product} />
+        <FrequentlyBoughtTogether mainProduct={product} companions={product.frequentlyBoughtWithProducts} />
       </Container>
 
       <Container className="grid grid-cols-1 gap-10 py-10 lg:grid-cols-2">
@@ -162,7 +164,7 @@ export function ProductDetailClient({ slug }: { slug: string }) {
       </Container>
 
       <Container className="pb-6">
-        <StorageTips category={product.category} />
+        <StorageTips tips={product.storageTips} />
       </Container>
 
       <Container className="py-10">
@@ -170,7 +172,9 @@ export function ProductDetailClient({ slug }: { slug: string }) {
         <div className="mt-4 space-y-6">
           {reviewsData && (
             <>
-              <ReviewSummary rating={product.rating} reviewCount={product.reviewCount} breakdown={reviewsData.breakdown} />
+              {product.reviewCount > 0 && (
+                <ReviewSummary rating={product.rating} reviewCount={product.reviewCount} breakdown={reviewsData.breakdown} />
+              )}
               <ReviewList reviews={reviewsData.reviews} />
             </>
           )}
@@ -178,7 +182,7 @@ export function ProductDetailClient({ slug }: { slug: string }) {
       </Container>
 
       <Container className="py-10">
-        <SimilarProducts category={product.category} excludeSlug={product.slug} />
+        <SimilarProducts products={product.similarProducts} />
       </Container>
 
       <div className="fixed inset-x-3 bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom)+0.5rem)] z-30 mx-auto grid max-w-xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-brand-sand-dark bg-white p-3 shadow-[0_4px_24px_rgba(61,43,28,0.14)] lg:hidden">

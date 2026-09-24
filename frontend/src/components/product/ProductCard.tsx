@@ -36,6 +36,8 @@ export function ProductCard({ product }: { product: Product }) {
         variantLabel: variant.label,
         unitPrice: variant.price,
         unitMrp: variant.mrp,
+
+        variantId: variant.id,
       }),
     );
     dispatch(pushToast(`${product.name} (${variant.label}) added to cart`, "success"));
@@ -125,10 +127,12 @@ export function ProductCard({ product }: { product: Product }) {
             </p>
           )}
           <div className="mt-1 flex items-center gap-2 text-[10px] text-brand-ink/50">
-            <span className="flex items-center gap-0.5">
-              <Star size={10} className="fill-brand-gold text-brand-gold" />
-              {product.rating} ({product.reviewCount})
-            </span>
+            {product.reviewCount > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Star size={10} className="fill-brand-gold text-brand-gold" />
+                {product.rating} ({product.reviewCount})
+              </span>
+            )}
             <span className="flex items-center gap-0.5 text-brand-walnut-dark">
               <Clock size={10} />
               {product.deliveryEstimateDays[0]}–{product.deliveryEstimateDays[1]}d

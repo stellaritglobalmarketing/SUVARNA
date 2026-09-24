@@ -21,6 +21,8 @@ export type HealthBenefit =
 export type ProductCategory = string;
 
 export interface WeightVariant {
+  /** Backend product_variants.id — set when the product came from the API; server-side cart/wishlist need it. */
+  id?: number;
   /** e.g. "100g" | "250g" | "500g" | "1kg" */
   label: string;
   grams: number;
@@ -69,6 +71,20 @@ export interface Product {
   lipidBreakdown: LipidBreakdownItem[];
   deliveryEstimateDays: [number, number];
   frequentlyBoughtWith: string[];
+}
+
+/** Category-level copy for the product page's "Storage & Usage Tips" box. */
+export interface StorageTipSet {
+  shelfLife: string | null;
+  storage: string | null;
+  usage: string | null;
+}
+
+/** Everything the product page renders, from the single GET /product/:slug call. */
+export interface ProductDetail extends Product {
+  storageTips: StorageTipSet | null;
+  frequentlyBoughtWithProducts: Product[];
+  similarProducts: Product[];
 }
 
 export interface ProductListParams {

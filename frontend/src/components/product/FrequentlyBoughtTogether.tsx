@@ -2,25 +2,20 @@
 
 import { useState } from "react";
 import type { Product } from "@/types/product";
-import { useProductsByIds } from "@/hooks/useProduct";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { addToCart } from "@/lib/redux/slices/cartSlice";
 import { pushToast } from "@/lib/redux/slices/uiSlice";
 import { ProductImagePlaceholder } from "@/components/ui/ProductImagePlaceholder";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { formatInr } from "@/lib/utils/format";
 
-export function FrequentlyBoughtTogether({ mainProduct }: { mainProduct: Product }) {
-  const { data: companions, isLoading } = useProductsByIds(mainProduct.frequentlyBoughtWith);
+export function FrequentlyBoughtTogether({ mainProduct, companions }: { mainProduct: Product; companions: Product[] }) {
   const dispatch = useAppDispatch();
 
-  const bundleProducts = [mainProduct, ...(companions ?? [])];
+  const bundleProducts = [mainProduct, ...companions];
   const [selected, setSelected] = useState<Set<string>>(new Set([mainProduct.id]));
 
-  if (isLoading) {
-    return <Skeleton className="h-40 w-full" />;
-  }
+  if (companions.length === 0) return null;
 
   const toggle = (id: string) => {
     if (id === mainProduct.id) return;
@@ -47,6 +42,8 @@ export function FrequentlyBoughtTogether({ mainProduct }: { mainProduct: Product
           variantLabel: variant.label,
           unitPrice: variant.price,
           unitMrp: variant.mrp,
+
+          variantId: variant.id,
         }),
       );
     });

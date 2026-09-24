@@ -1,17 +1,7 @@
-import crypto from "crypto";
 import db from "../../../config/db.js";
 import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import { validateAddToCart, validateUpdateQuantity, isPositiveInt } from "../validators/cart-validation.js";
-
-// cart.session_token is NOT NULL and the table's unique key is
-// (session_token, product_variant_id) — it's built for guest carts, which this
-// phase doesn't implement. For a logged-in user we derive a stable per-user
-// token so re-adding the same variant always resolves to the same row, and so
-// the unique key also acts as a race-condition guard on concurrent inserts.
-function sessionTokenForUser(user_id) {
-    return crypto.createHash("sha256").update(`user:${user_id}`).digest("hex");
-}
 
 async function attachImages(rows) {
     if (rows.length === 0) {
@@ -69,7 +59,7 @@ async function fetchCartItemsQuery(whereClause, params) {
          JOIN products p ON p.id = pv.product_id
          LEFT JOIN inventory inv ON inv.variant_id = pv.id AND inv.is_active = 1 AND inv.is_delete = 0
          WHERE ${whereClause}
-         ORDER BY cart.updated_at DESC`,
+         ORDER BY cart.created_at ASC, cart.id ASC`,
         params
     );
     return rows;
@@ -127,12 +117,12 @@ const addToCart = async (req, res) => {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, `Only ${availableStock} unit(s) available in stock`, null);
         }
 
-        const session_token = sessionTokenForUser(user_id);
+        // uq_cart_user_variant makes a re-add (or two racing adds) land on the same line.
         await db.query(
-            `INSERT INTO cart (user_id, session_token, product_variant_id, quantity)
-             VALUES (?, ?, ?, ?)
+            `INSERT INTO cart (user_id, product_variant_id, quantity)
+             VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity), updated_at = CURRENT_TIMESTAMP`,
-            [user_id, session_token, product_variant_id, requestedQty]
+            [user_id, product_variant_id, requestedQty]
         );
 
         const [cartRow] = await db.query(

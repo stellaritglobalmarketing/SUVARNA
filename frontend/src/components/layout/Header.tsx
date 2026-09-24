@@ -22,7 +22,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { openCartDrawer, selectCartCount } from "@/lib/redux/slices/cartSlice";
 import { selectWishlistCount } from "@/lib/redux/slices/wishlistSlice";
-import { setSearch } from "@/lib/redux/slices/filtersSlice";
+import { selectFilters, setSearch } from "@/lib/redux/slices/filtersSlice";
 import { openDeliverySheet, selectDeliveryPincode } from "@/lib/redux/slices/uiSlice";
 import { selectAuthUser } from "@/lib/redux/slices/authSlice";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,12 +44,19 @@ export function Header() {
   const deliveryPincode = useAppSelector(selectDeliveryPincode);
   const authUser = useAppSelector(selectAuthUser);
   const { logout } = useAuth();
-  const [searchValue, setSearchValue] = useState("");
+  const activeSearch = useAppSelector(selectFilters).search;
+  const [searchValue, setSearchValue] = useState(activeSearch);
+  const [syncedSearch, setSyncedSearch] = useState(activeSearch);
+  // Mirror searches changed elsewhere (e.g. "Clear search" on the home grid) into the input.
+  if (activeSearch !== syncedSearch) {
+    setSyncedSearch(activeSearch);
+    setSearchValue(activeSearch);
+  }
   const [isMenuOpen, setMenuOpen] = useState(false);
 
   const handleSearch = (event: FormEvent) => {
     event.preventDefault();
-    dispatch(setSearch(searchValue));
+    dispatch(setSearch(searchValue.trim()));
     router.push("/#products");
   };
 
@@ -142,6 +149,15 @@ export function Header() {
                 </span>
               )}
             </Link>
+            {authUser && (
+              <Link
+                href="/orders"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm font-medium text-brand-sand active:bg-white/10"
+              >
+                My Orders
+              </Link>
+            )}
             {authUser ? (
               <button
                 type="button"
@@ -190,6 +206,14 @@ export function Header() {
                 Track Order
               </Link>
               <span className="text-brand-sand/30">|</span>
+              {authUser && (
+                <>
+                  <Link href="/orders" className="hover:text-brand-gold-light">
+                    My Orders
+                  </Link>
+                  <span className="text-brand-sand/30">|</span>
+                </>
+              )}
               {authUser ? (
                 <button type="button" onClick={logout} className="flex items-center gap-1.5 hover:text-brand-gold-light cursor-pointer">
                   <LogOut size={12} /> Sign Out ({authUser.name.split(" ")[0]})
@@ -246,9 +270,10 @@ export function Header() {
                 )}
               </Link>
               <Link
-                href="/track-order"
+                href={authUser ? "/orders" : "/track-order"}
                 className="flex h-10 w-10 items-center justify-center rounded-full text-brand-forest hover:bg-brand-sand-dark"
-                aria-label="Track order"
+                aria-label={authUser ? "My orders" : "Track order"}
+                title={authUser ? "My Orders" : "Track Order"}
               >
                 <PackageSearch size={19} />
               </Link>

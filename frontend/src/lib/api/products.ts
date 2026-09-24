@@ -1,41 +1,38 @@
-import type { PaginatedResponse, Product, ProductListParams, WeightVariant } from "@/types/product";
+import type {
+  HealthBenefit,
+  PaginatedResponse,
+  Product,
+  ProductListParams,
+  ProductDetail,
+  ProductOrigin,
+  ProductProcessing,
+  WeightVariant,
+} from "@/types/product";
+import type { HomeBanner, HomeData } from "@/types/home";
 import { MOCK_PRODUCTS, getMockProductBySlug, getMockProductsByIds } from "@/lib/data/products.mock";
+import {
+  MOCK_FAQS,
+  MOCK_HAMPERS,
+  MOCK_HERO,
+  MOCK_HERO_HIGHLIGHTS,
+  MOCK_PROMO,
+  MOCK_TESTIMONIALS,
+  MOCK_TRUST_BADGES,
+  MOCK_TRUST_POINTS,
+} from "@/lib/data/home.mock";
+import { MOCK_STORAGE_TIPS } from "@/lib/data/storageTips.mock";
 import { CATEGORIES } from "@/lib/data/categories";
-import { formatDiscount } from "@/lib/utils/format";
+import { USE_MOCK_API } from "./config";
 import { mockDelay } from "./delay";
 import { apiGet, apiGetPaginated } from "./http";
 
-/**
- * Product endpoints stay on static mock data for now, independent of the shared
- * USE_MOCK_API switch — the real backend's /product routes aren't wired up correctly
- * yet (401s), so flip this once they're verified working end-to-end.
- */
-const USE_MOCK_API = true;
-
 // ---- Real backend response shapes (see backend/README.md — Product section) ----
-// The backend's Product model doesn't carry every field this UI displays (origin,
-// processing, health benefits, nutrients, lipid breakdown, certifications, ratings,
-// "frequently bought with"...). Those are filled in from a deterministically-picked
-// mock template per product so the existing screens keep their full richness instead
-// of showing empty sections; every field the backend *does* provide (name, slug,
-// description, category, images, real variants/pricing/stock) always wins.
+// Home, listing/search and detail all return the same full product card (mapCardToProduct).
 
 interface BackendCategoryRef {
   id: number;
   name: string;
   slug: string;
-}
-
-interface BackendProductListItem {
-  id: number;
-  name: string;
-  slug: string;
-  short_description?: string | null;
-  image_url?: string | null;
-  min_price: number;
-  max_price: number;
-  category?: BackendCategoryRef;
-  sub_category?: BackendCategoryRef;
 }
 
 interface BackendHomeProductCard {
@@ -48,40 +45,6 @@ interface BackendHomeProductCard {
   image_url?: string | null;
 }
 
-interface BackendVariant {
-  id: number;
-  variant_name: string;
-  weight_value?: number | null;
-  weight_unit?: string | null;
-  sku: string;
-  mrp: number;
-  selling_price: number;
-  is_default?: boolean | number;
-  stock_quantity: number;
-  in_stock: boolean;
-}
-
-interface BackendImage {
-  id: number;
-  image_url: string;
-  alt_text?: string | null;
-  sort_order?: number;
-  is_primary?: number | boolean;
-}
-
-interface BackendProductDetail {
-  id: number;
-  name: string;
-  slug: string;
-  short_description?: string | null;
-  description?: string | null;
-  brand_name?: string | null;
-  category?: BackendCategoryRef;
-  sub_category?: BackendCategoryRef;
-  variants: BackendVariant[];
-  images: BackendImage[];
-}
-
 interface BackendHomeCategory {
   id: number;
   name: string;
@@ -89,129 +52,87 @@ interface BackendHomeCategory {
   image_url?: string | null;
 }
 
-interface BackendHome {
-  categories: BackendHomeCategory[];
-  featured_products: BackendHomeProductCard[];
-  best_sellers: BackendHomeProductCard[];
-}
-
-export interface HomeCategory {
+interface BackendCardVariant {
   id: number;
-  name: string;
-  slug: string;
-  imageUrl: string | null;
+  variant_name: string;
+  weight_value?: number | null;
+  weight_unit?: string | null;
+  sku: string;
+  mrp: number;
+  selling_price: number;
+  is_default: boolean;
+  available_quantity: number;
+  in_stock: boolean;
 }
 
-export interface HomeData {
-  categories: HomeCategory[];
-  featuredProducts: Product[];
-  bestSellers: Product[];
+/** Full storefront card from GET /product/home — carries everything ProductCard renders. */
+interface BackendProductCard extends BackendHomeProductCard {
+  description?: string | null;
+  category: BackendCategoryRef;
+  origin?: string | null;
+  processing?: string | null;
+  health_benefits: string[];
+  certifications: { label: string; description: string }[];
+  rating: number;
+  review_count: number;
+  is_bestseller: boolean;
+  discount_percent: number;
+  delivery_estimate_days: [number, number];
+  images: string[];
+  variants: BackendCardVariant[];
 }
 
-/** Deterministic per-product template pick so the same product always borrows the same placeholder content. */
-function pickTemplate(seed: string): Product {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  return MOCK_PRODUCTS[hash % MOCK_PRODUCTS.length];
+/** GET /product/:slug — the full card plus product-page-only data. */
+interface BackendProductDetail extends BackendProductCard {
+  nutrients: { label: string; value_per_100g: string; daily_value_percent: number | null }[];
+  lipid_profile: { label: string; percent: number; color: string }[];
+  storage_tips: { shelf_life: string | null; storage: string | null; usage: string | null } | null;
+  frequently_bought_with: BackendProductCard[];
+  similar_products: BackendProductCard[];
+}
+
+interface BackendHomeLink {
+  label: string;
+  href: string;
+}
+
+interface BackendHomeBanner {
+  eyebrow: string | null;
+  title: string;
+  subtitle: string | null;
+  image_url: string;
+  image_alt: string | null;
+  cta: BackendHomeLink | null;
+  secondary_cta: BackendHomeLink | null;
+}
+
+interface BackendHomeHighlight {
+  icon: string;
+  title: string;
+  description: string | null;
+}
+
+interface BackendHome {
+  hero: BackendHomeBanner | null;
+  promo: BackendHomeBanner | null;
+  highlights: {
+    hero: BackendHomeHighlight[];
+    trust_badges: BackendHomeHighlight[];
+    trust_points: BackendHomeHighlight[];
+  };
+  categories: BackendHomeCategory[];
+  products: BackendProductCard[];
+  featured_products: BackendProductCard[];
+  best_sellers: BackendProductCard[];
+  hampers: { slug: string; name: string; subtitle: string | null; image_url: string | null; product_slugs: string[] }[];
+  testimonials: { name: string; location: string | null; rating: number; quote: string }[];
+  faqs: { question: string; answer: string }[];
 }
 
 function weightToGrams(value?: number | null, unit?: string | null): number {
   if (!value) return 0;
   if (unit === "kg" || unit === "l") return value * 1000;
   return value;
-}
-
-function mapVariant(variant: BackendVariant): WeightVariant {
-  return {
-    label: variant.variant_name,
-    grams: weightToGrams(variant.weight_value, variant.weight_unit),
-    price: variant.selling_price,
-    mrp: variant.mrp,
-    stock: variant.in_stock ? variant.stock_quantity : 0,
-    sku: variant.sku,
-  };
-}
-
-/** Listing/home cards only give a min/max price range, not the full variant breakdown (that's detail-only), so we
- * synthesize one buyable "variant" from the starting price — full accurate options load on the product page. */
-function mapSummaryToProduct(item: BackendProductListItem | BackendHomeProductCard, isBestSeller = false): Product {
-  const template = pickTemplate(item.slug);
-  const category = "category" in item ? item.category : undefined;
-  const price = item.min_price;
-
-  const variant: WeightVariant = {
-    label: item.min_price === item.max_price ? "Standard" : `From ${item.min_price}`,
-    grams: 0,
-    price,
-    mrp: price,
-    stock: 1,
-    sku: item.slug,
-  };
-
-  return {
-    id: String(item.id),
-    slug: item.slug,
-    name: item.name,
-    tagline: item.short_description || template.tagline,
-    description: item.short_description || template.description,
-    category: category?.slug ?? template.category,
-    origin: template.origin,
-    processing: template.processing,
-    healthBenefits: template.healthBenefits,
-    images: item.image_url ? [item.image_url] : template.images,
-    gradient: template.gradient,
-    rating: template.rating,
-    reviewCount: template.reviewCount,
-    isBestSeller,
-    discountPercent: template.discountPercent,
-    certifications: template.certifications,
-    variants: [variant],
-    nutrients: template.nutrients,
-    lipidBreakdown: template.lipidBreakdown,
-    deliveryEstimateDays: template.deliveryEstimateDays,
-    frequentlyBoughtWith: [],
-  };
-}
-
-function mapDetailToProduct(detail: BackendProductDetail): Product {
-  const template = pickTemplate(detail.slug);
-
-  const variants = detail.variants.length
-    ? detail.variants.map(mapVariant)
-    : [{ label: "Standard", grams: 0, price: 0, mrp: 0, stock: 0, sku: detail.slug }];
-
-  const defaultVariant = detail.variants.find((v) => Boolean(v.is_default)) ?? detail.variants[0];
-  const discountPercent = defaultVariant
-    ? formatDiscount(defaultVariant.selling_price, defaultVariant.mrp)
-    : template.discountPercent;
-
-  const images = detail.images.length
-    ? [...detail.images].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((img) => img.image_url)
-    : template.images;
-
-  return {
-    id: String(detail.id),
-    slug: detail.slug,
-    name: detail.name,
-    tagline: detail.short_description || template.tagline,
-    description: detail.description || detail.short_description || template.description,
-    category: detail.category?.slug ?? template.category,
-    origin: template.origin,
-    processing: template.processing,
-    healthBenefits: template.healthBenefits,
-    images,
-    gradient: template.gradient,
-    rating: template.rating,
-    reviewCount: template.reviewCount,
-    isBestSeller: template.isBestSeller,
-    discountPercent,
-    certifications: template.certifications,
-    variants,
-    nutrients: template.nutrients,
-    lipidBreakdown: template.lipidBreakdown,
-    deliveryEstimateDays: template.deliveryEstimateDays,
-    frequentlyBoughtWith: [],
-  };
 }
 
 function mapSort(sort?: ProductListParams["sort"]): string | undefined {
@@ -222,13 +143,14 @@ function mapSort(sort?: ProductListParams["sort"]): string | undefined {
       return "price_desc";
     case "newest":
       return "latest";
+    case "popularity":
     default:
-      // The backend has no "rating"/"popularity" sort concept — leave unset and let it use its own default.
-      return undefined;
+      // The storefront's own ordering (products.sort_order), same as the home grid.
+      return "featured";
   }
 }
 
-/** Origin/processing/health-benefit/weight facets have no backend equivalent — applied client-side on the fetched page. */
+/** Origin/processing/health-benefit/weight facets aren't query params on the backend — applied client-side on the fetched page. */
 function applyClientOnlyFilters(items: Product[], params: ProductListParams): Product[] {
   let result = items;
   if (params.origins?.length) result = result.filter((p) => params.origins!.includes(p.origin));
@@ -243,27 +165,24 @@ function applyClientOnlyFilters(items: Product[], params: ProductListParams): Pr
 }
 
 /**
- * Paginated product listing — the function TanStack Query's `useProducts`
- * hook calls. Same signature will work once USE_MOCK_API flips to false.
+ * Paginated product listing / search — the function TanStack Query's `useProducts` hook calls.
  */
 export async function fetchProducts(params: ProductListParams = {}): Promise<PaginatedResponse<Product>> {
   if (USE_MOCK_API) return fetchProductsMock(params);
 
   const { page = 1, pageSize = 8, category, search, priceMin, priceMax, sort } = params;
-  const { data, pagination } = await apiGetPaginated<BackendProductListItem[]>("/product", {
+  const { data, pagination } = await apiGetPaginated<BackendProductCard[]>("/product", {
     page: String(page),
     limit: String(pageSize),
-    category: category || undefined,
+    // Product.category holds the category name; the API filters by slug.
+    category: category ? category.toLowerCase() : undefined,
     search: search || undefined,
     min_price: priceMin != null ? String(priceMin) : undefined,
     max_price: priceMax != null ? String(priceMax) : undefined,
     sort: mapSort(sort),
   });
 
-  const items = applyClientOnlyFilters(
-    data.map((item) => mapSummaryToProduct(item)),
-    params,
-  );
+  const items = applyClientOnlyFilters(data.map(mapCardToProduct), params);
 
   return {
     items,
@@ -274,14 +193,20 @@ export async function fetchProducts(params: ProductListParams = {}): Promise<Pag
   };
 }
 
-export async function fetchProductBySlug(slug: string): Promise<Product> {
+/** Everything the product page shows, from the single GET /product/:slug call. */
+export async function fetchProductBySlug(slug: string): Promise<ProductDetail> {
   if (USE_MOCK_API) {
     await mockDelay();
     const product = getMockProductBySlug(slug);
     if (!product) throw new Error(`Product not found: ${slug}`);
-    return product;
+    return {
+      ...product,
+      storageTips: MOCK_STORAGE_TIPS[product.category] ?? null,
+      frequentlyBoughtWithProducts: getMockProductsByIds(product.frequentlyBoughtWith),
+      similarProducts: MOCK_PRODUCTS.filter((p) => p.category === product.category && p.slug !== product.slug).slice(0, 4),
+    };
   }
-  const detail = await apiGet<BackendProductDetail>(`/product/${slug}`);
+  const detail = await apiGet<BackendProductDetail>(`/product/${encodeURIComponent(slug)}`);
   return mapDetailToProduct(detail);
 }
 
@@ -292,36 +217,136 @@ export async function fetchBestSellers(limit = 4): Promise<Product[]> {
     return MOCK_PRODUCTS.filter((product) => product.isBestSeller).slice(0, limit);
   }
   const home = await apiGet<BackendHome>("/product/home");
-  return home.best_sellers.slice(0, limit).map((item) => mapSummaryToProduct(item, true));
+  return home.best_sellers.slice(0, limit).map(mapCardToProduct);
 }
 
-/** Wishlist/recently-viewed store product `slug`s (the only identifier the real API can look products up by). */
+/** Wishlist/recently-viewed store product `slug`s — fetched in one call, returned in the same order. */
 export async function fetchProductsByIds(slugs: string[]): Promise<Product[]> {
   if (slugs.length === 0) return [];
   if (USE_MOCK_API) {
     await mockDelay(200);
     return getMockProductsByIds(slugs);
   }
-  const settled = await Promise.allSettled(slugs.map((slug) => fetchProductBySlug(slug)));
-  return settled
-    .filter((result): result is PromiseFulfilledResult<Product> => result.status === "fulfilled")
-    .map((result) => result.value);
+  const { data } = await apiGetPaginated<BackendProductCard[]>("/product", {
+    slugs: slugs.join(","),
+    limit: String(slugs.length),
+  });
+  const bySlug = new Map(data.map((card) => [card.slug, mapCardToProduct(card)]));
+  return slugs.map((slug) => bySlug.get(slug)).filter((product): product is Product => Boolean(product));
 }
 
+const FALLBACK_GRADIENT: [string, string] = ["#8a6a4f", "#d4a373"];
+
+/** Home/detail cards carry every field the card design shows, so no mock template is needed here. PDP-only
+ * data (nutrients, lipid breakdown, "frequently bought with") is added by mapDetailToProduct. */
+function mapCardToProduct(card: BackendProductCard): Product {
+  const variants: WeightVariant[] = card.variants.length
+    ? card.variants.map((variant) => ({
+        id: variant.id,
+        label: variant.variant_name,
+        grams: weightToGrams(variant.weight_value, variant.weight_unit),
+        price: variant.selling_price,
+        mrp: variant.mrp,
+        stock: variant.in_stock ? variant.available_quantity : 0,
+        sku: variant.sku,
+      }))
+    : [{ label: "Standard", grams: 0, price: card.min_price, mrp: card.min_price, stock: 0, sku: card.slug }];
+
+  return {
+    id: String(card.id),
+    slug: card.slug,
+    name: card.name,
+    tagline: card.short_description || "",
+    description: card.description || card.short_description || "",
+    category: card.category.name,
+    origin: (card.origin ?? "India") as ProductOrigin,
+    processing: (card.processing ?? "Raw") as ProductProcessing,
+    healthBenefits: card.health_benefits as HealthBenefit[],
+    images: card.images.length ? card.images : card.image_url ? [card.image_url] : [],
+    // Placeholder colours behind a missing product photo — a storefront design choice, not product data.
+    gradient: FALLBACK_GRADIENT,
+    rating: card.rating,
+    reviewCount: card.review_count,
+    isBestSeller: card.is_bestseller,
+    discountPercent: card.discount_percent,
+    certifications: card.certifications,
+    variants,
+    nutrients: [],
+    lipidBreakdown: [],
+    deliveryEstimateDays: card.delivery_estimate_days,
+    frequentlyBoughtWith: [],
+  };
+}
+
+function mapDetailToProduct(detail: BackendProductDetail): ProductDetail {
+  const tips = detail.storage_tips;
+  return {
+    ...mapCardToProduct(detail),
+    nutrients: detail.nutrients.map((n) => ({
+      label: n.label,
+      valuePer100g: n.value_per_100g,
+      dailyValuePercent: n.daily_value_percent ?? undefined,
+    })),
+    lipidBreakdown: detail.lipid_profile,
+    frequentlyBoughtWith: detail.frequently_bought_with.map((companion) => companion.slug),
+    storageTips: tips ? { shelfLife: tips.shelf_life, storage: tips.storage, usage: tips.usage } : null,
+    frequentlyBoughtWithProducts: detail.frequently_bought_with.map(mapCardToProduct),
+    similarProducts: detail.similar_products.map(mapCardToProduct),
+  };
+}
+
+function mapBanner(banner: BackendHomeBanner | null): HomeBanner | null {
+  if (!banner) return null;
+  return {
+    eyebrow: banner.eyebrow,
+    title: banner.title,
+    subtitle: banner.subtitle,
+    imageUrl: banner.image_url,
+    imageAlt: banner.image_alt ?? banner.title,
+    cta: banner.cta,
+    secondaryCta: banner.secondary_cta,
+  };
+}
+
+/** Everything the home page renders, from the single GET /product/home call. */
 export async function fetchHome(): Promise<HomeData> {
   if (USE_MOCK_API) {
     await mockDelay(300);
     return {
+      hero: MOCK_HERO,
+      promo: MOCK_PROMO,
+      heroHighlights: MOCK_HERO_HIGHLIGHTS,
+      trustBadges: MOCK_TRUST_BADGES,
+      trustPoints: MOCK_TRUST_POINTS,
       categories: CATEGORIES.map((cat, index) => ({ id: index, name: cat.label, slug: cat.category, imageUrl: cat.image })),
+      products: MOCK_PRODUCTS,
       featuredProducts: MOCK_PRODUCTS.slice(0, 8),
       bestSellers: MOCK_PRODUCTS.filter((product) => product.isBestSeller).slice(0, 8),
+      hampers: MOCK_HAMPERS,
+      testimonials: MOCK_TESTIMONIALS,
+      faqs: MOCK_FAQS,
     };
   }
   const home = await apiGet<BackendHome>("/product/home");
   return {
+    hero: mapBanner(home.hero),
+    promo: mapBanner(home.promo),
+    heroHighlights: home.highlights.hero,
+    trustBadges: home.highlights.trust_badges,
+    trustPoints: home.highlights.trust_points,
     categories: home.categories.map((cat) => ({ id: cat.id, name: cat.name, slug: cat.slug, imageUrl: cat.image_url ?? null })),
-    featuredProducts: home.featured_products.map((item) => mapSummaryToProduct(item)),
-    bestSellers: home.best_sellers.map((item) => mapSummaryToProduct(item, true)),
+    products: home.products.map(mapCardToProduct),
+    featuredProducts: home.featured_products.map(mapCardToProduct),
+    bestSellers: home.best_sellers.map(mapCardToProduct),
+    hampers: home.hampers.map((hamper) => ({
+      slug: hamper.slug,
+      name: hamper.name,
+      subtitle: hamper.subtitle,
+      imageUrl: hamper.image_url,
+      productSlugs: hamper.product_slugs,
+    })),
+    testimonials: home.testimonials,
+    faqs: home.faqs,
   };
 }
 

@@ -32,9 +32,11 @@ export function ReviewList({ reviews }: { reviews: Review[] }) {
                 <Camera size={13} /> {review.photos.length} photo{review.photos.length > 1 ? "s" : ""}
               </span>
             )}
-            <span className="flex items-center gap-1">
-              <ThumbsUp size={13} /> {review.helpfulCount} found this helpful
-            </span>
+            {review.helpfulCount > 0 && (
+              <span className="flex items-center gap-1">
+                <ThumbsUp size={13} /> {review.helpfulCount} found this helpful
+              </span>
+            )}
           </div>
         </li>
       ))}

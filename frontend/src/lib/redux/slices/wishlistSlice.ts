@@ -19,10 +19,14 @@ const wishlistSlice = createSlice({
         ? state.productIds.filter((id) => id !== productId)
         : [...state.productIds, productId];
     },
+    /** Replaces the list with the server's copy (login, or recovering from a failed sync). */
+    setWishlist: (state, action: PayloadAction<string[]>) => {
+      state.productIds = action.payload;
+    },
   },
 });
 
-export const { toggleWishlist } = wishlistSlice.actions;
+export const { toggleWishlist, setWishlist } = wishlistSlice.actions;
 
 export const selectWishlistIds = (state: RootState) => state.wishlist.productIds;
 export const selectWishlistCount = (state: RootState) => state.wishlist.productIds.length;

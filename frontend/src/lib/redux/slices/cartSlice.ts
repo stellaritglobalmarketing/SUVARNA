@@ -21,6 +21,8 @@ export interface AddToCartPayload {
   unitPrice: number;
   unitMrp: number;
   quantity?: number;
+  /** Backend variant id — lets a logged-in customer's cart sync to the server. */
+  variantId?: number;
 }
 
 function makeLineId(productId: string, variantLabel: string): string {
@@ -57,6 +59,21 @@ const cartSlice = createSlice({
     clearCart: (state) => {
       state.items = [];
     },
+    /** Replaces the whole cart with the server's copy (login, or recovering from a failed sync). */
+    setCartItems: (state, action: PayloadAction<CartLineItem[]>) => {
+      state.items = action.payload;
+    },
+    /** Applies the server's view of one line (row id, authoritative quantity and prices). */
+    cartLineSynced: (state, action: PayloadAction<CartLineItem>) => {
+      const synced = action.payload;
+      const item = state.items.find((line) => line.lineId === synced.lineId);
+      if (!item) return;
+      item.serverId = synced.serverId;
+      item.variantId = synced.variantId;
+      item.quantity = synced.quantity;
+      item.unitPrice = synced.unitPrice;
+      item.unitMrp = synced.unitMrp;
+    },
     openCartDrawer: (state) => {
       state.isDrawerOpen = true;
     },
@@ -66,8 +83,16 @@ const cartSlice = createSlice({
   },
 });
 
-export const { addToCart, updateQuantity, removeFromCart, clearCart, openCartDrawer, closeCartDrawer } =
-  cartSlice.actions;
+export const {
+  addToCart,
+  updateQuantity,
+  removeFromCart,
+  clearCart,
+  setCartItems,
+  cartLineSynced,
+  openCartDrawer,
+  closeCartDrawer,
+} = cartSlice.actions;
 
 export const selectCartItems = (state: RootState) => state.cart.items;
 export const selectIsCartDrawerOpen = (state: RootState) => state.cart.isDrawerOpen;

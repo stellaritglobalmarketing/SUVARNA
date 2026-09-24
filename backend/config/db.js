@@ -26,22 +26,27 @@ const sslCa = loadSslCa();
 // just without verifying the certificate chain. Production should keep using DB_SSL_CA.
 const sslOption = sslCa ? { ca: sslCa } : /aivencloud\.com/.test(process.env.DB_HOST || "") ? { rejectUnauthorized: false } : null;
 
-// Create a connection pool for better performance and reliability under production load.
-const db = mysql.createPool({
+// Shared by the pool below and by scripts that need their own connection (e.g. the migration runner).
+export const connectionConfig = {
   host: process.env.DB_HOST || "localhost",
   port: Number(process.env.DB_PORT) || 3306,
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "pujara_print_n_pack",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
   // Some hosts (Render included) resolve a DB provider's hostname to an IPv6 address that
   // isn't actually routable outbound, which hangs until it times out instead of failing fast.
   // Forcing IPv4 avoids that class of ETIMEDOUT.
   family: 4,
   connectTimeout: 15000,
   ...(sslOption ? { ssl: sslOption } : {}),
+};
+
+// Create a connection pool for better performance and reliability under production load.
+const db = mysql.createPool({
+  ...connectionConfig,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
 // Without this, a dropped pooled connection (DB-side idle timeout, network blip,

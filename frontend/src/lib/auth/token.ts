@@ -1,5 +1,9 @@
 import type { AuthUser } from "@/types/auth";
 
+/** Fired on `window` when the backend rejects the stored token (expired, logged out elsewhere, account deactivated). */
+export const SESSION_EXPIRED_EVENT = "auth:session-expired";
+
+// Key names predate the Suvarna7 rebrand; kept so existing sessions survive.
 const TOKEN_KEY = "harvesta_auth_token";
 const USER_KEY = "harvesta_auth_user";
 

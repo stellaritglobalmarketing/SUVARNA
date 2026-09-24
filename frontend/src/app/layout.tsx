@@ -2,12 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { CartDrawer } from "@/components/layout/CartDrawer";
 import { ToastViewport } from "@/components/layout/ToastViewport";
-import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
-import { DeliverySheet } from "@/components/layout/DeliverySheet";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -45,20 +40,17 @@ export const viewport: Viewport = {
   themeColor: "#3d2b1c",
 };
 
+/**
+ * Shared by the storefront — app/(store)/layout.tsx adds its header, footer and cart — and the
+ * admin panel — app/admin/layout.tsx adds its sidebar.
+ */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable} h-full antialiased`}>
-      <body
-        className="min-h-full flex flex-col bg-brand-sand text-brand-ink overscroll-y-contain pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] lg:pb-0"
-      >
+      <body className="min-h-full flex flex-col bg-brand-sand text-brand-ink overscroll-y-contain">
         <Providers>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <CartDrawer />
+          {children}
           <ToastViewport />
-          <MobileBottomNav />
-          <DeliverySheet />
         </Providers>
       </body>
     </html>

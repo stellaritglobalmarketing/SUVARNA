@@ -68,6 +68,8 @@ function ComboCard({ combo }: { combo: (typeof COMBOS)[number] }) {
           variantLabel: variant.label,
           unitPrice: variant.price,
           unitMrp: variant.mrp,
+
+          variantId: variant.id,
         }),
       );
     });

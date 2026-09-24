@@ -11,3 +11,9 @@ npm-debug.log*
 
 # misc
 .DS_Store
+
+# local DB dumps (contain customer data + password hashes)
+/database/backups/
+
+# admin image uploads (runtime data)
+/uploads/

@@ -2,7 +2,7 @@ import type { OrderTracking, ShipmentDiagnostic, TrackingStage } from "@/types/o
 import { getMockOrderByAwb } from "@/lib/data/orders.mock";
 import { USE_MOCK_API } from "./config";
 import { mockDelay } from "./delay";
-import { apiGet } from "./http";
+import { apiGet, apiGetPaginated, type PaginationMeta } from "./http";
 
 // ---- Real backend response shape (see backend/README.md — "GET /order/:order_number") ----
 interface BackendShippingAddress {
@@ -131,4 +131,40 @@ export async function fetchOrderTracking(orderNumber: string): Promise<OrderTrac
   }
   const detail = await apiGet<BackendOrderDetail>(`/order/${encodeURIComponent(orderNumber)}`);
   return mapOrderDetailToTracking(detail);
+}
+
+// ---- My Orders (see backend/README.md — "GET /order/my-orders") ----
+export interface MyOrderItem {
+  product_name: string;
+  variant_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  image_url: string | null;
+}
+
+export interface MyOrder {
+  id: number;
+  order_number: string;
+  total_amount: number;
+  order_status: string;
+  payment_status: string;
+  fulfillment_status: string;
+  created_at: string;
+  items: MyOrderItem[];
+}
+
+export interface MyOrdersPage {
+  orders: MyOrder[];
+  pagination: PaginationMeta | undefined;
+}
+
+/** One page of the logged-in customer's orders, newest first. */
+export async function fetchMyOrders(page: number, limit = 10): Promise<MyOrdersPage> {
+  if (USE_MOCK_API) {
+    await mockDelay(300);
+    return { orders: [], pagination: { current_page: 1, per_page: limit, total: 0, total_pages: 0 } };
+  }
+  const { data, pagination } = await apiGetPaginated<MyOrder[]>("/order/my-orders", { page: String(page), limit: String(limit) });
+  return { orders: data, pagination };
 }

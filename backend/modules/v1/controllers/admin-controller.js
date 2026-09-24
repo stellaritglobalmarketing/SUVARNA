@@ -24,6 +24,24 @@ const getDashboard = async (req, res) => {
         const [statusRows] = await db.query(
             "SELECT order_status, COUNT(*) AS total FROM orders WHERE is_delete = 0 GROUP BY order_status"
         );
+
+        // Revenue counts paid orders only; a paid order that was later cancelled is money to refund, not revenue.
+        const [[revenue]] = await db.query(
+            `SELECT COALESCE(SUM(total_amount), 0) AS total_revenue,
+                    COALESCE(SUM(CASE WHEN created_at >= NOW() - INTERVAL 30 DAY THEN total_amount END), 0) AS revenue_last_30_days,
+                    COUNT(*) AS paid_orders
+             FROM orders
+             WHERE is_delete = 0 AND payment_status = 'paid' AND order_status <> 'cancelled'`
+        );
+        const [[today]] = await db.query(
+            "SELECT COUNT(*) AS orders_today FROM orders WHERE is_delete = 0 AND created_at >= CURDATE()"
+        );
+        const [[{ awaiting_payment }]] = await db.query(
+            "SELECT COUNT(*) AS awaiting_payment FROM orders WHERE is_delete = 0 AND order_status = 'pending' AND payment_status <> 'paid'"
+        );
+        const [[{ pending_reviews }]] = await db.query(
+            "SELECT COUNT(*) AS pending_reviews FROM reviews WHERE is_delete = 0 AND is_approved = 0"
+        );
         const orderStatusCounts = ORDER_STATUS_KEYS.reduce((acc, key) => ({ ...acc, [key]: 0 }), {});
         for (const row of statusRows) {
             if (Object.prototype.hasOwnProperty.call(orderStatusCounts, row.order_status)) {
@@ -44,6 +62,12 @@ const getDashboard = async (req, res) => {
             total_active_products,
             total_categories,
             total_orders,
+            total_revenue: toNumber(revenue.total_revenue),
+            revenue_last_30_days: toNumber(revenue.revenue_last_30_days),
+            paid_orders: Number(revenue.paid_orders),
+            orders_today: Number(today.orders_today),
+            awaiting_payment: Number(awaiting_payment),
+            pending_reviews: Number(pending_reviews),
             pending_orders: orderStatusCounts.pending,
             confirmed_orders: orderStatusCounts.confirmed,
             processing_orders: orderStatusCounts.processing,

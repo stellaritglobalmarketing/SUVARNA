@@ -14,7 +14,7 @@ export function FeaturedProducts() {
         <SectionHeading
           eyebrow="Fresh In"
           title="Featured Products"
-          subtitle="More from the full Harvesta range."
+          subtitle="More from the full Suvarna7 range."
           viewAllHref="/products"
         />
 

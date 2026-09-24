@@ -10,11 +10,11 @@
     "doc": "docs"
   },
   "scripts": {
-    "seed:portfolio": "node seeds/seed-portfolio.js",
-    "seed": "node seeds/seed-brochure.js",
-    "seed:preview": "node seeds/seed-brochure.js --dry-run",
+    "db:migrate": "node scripts/migrate.js",
+    "seed": "node seeds/seed.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "start": "node server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

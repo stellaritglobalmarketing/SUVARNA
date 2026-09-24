@@ -36,7 +36,7 @@ export function ProductsPageClient() {
     <>
       <div className="border-b border-brand-sand-dark bg-brand-sand-dark/30 py-8 sm:py-10">
         <Container>
-          <SectionHeading eyebrow="Dry Fruits & Pantry" title="Shop the Full Harvesta Range" />
+          <SectionHeading eyebrow="Dry Fruits & Pantry" title="Shop the Full Suvarna7 Range" />
         </Container>
       </div>
 

@@ -1,27 +1,16 @@
-"use client";
-
-import { useProducts } from "@/hooks/useProducts";
+import type { Product } from "@/types/product";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { ProductGrid, ProductGridSkeleton } from "@/components/product/ProductGrid";
-import type { ProductCategory } from "@/types/product";
+import { ProductGrid } from "@/components/product/ProductGrid";
 
-export function SimilarProducts({ category, excludeSlug }: { category: ProductCategory; excludeSlug: string }) {
-  const { data, isLoading } = useProducts({
-    page: 1,
-    pageSize: 8,
-    category,
-    sort: "popularity",
-  });
-  const similar = data?.items.filter((product) => product.slug !== excludeSlug).slice(0, 4) ?? [];
-
-  if (!isLoading && similar.length === 0) return null;
+/** Same-category products, delivered with the product detail response. */
+export function SimilarProducts({ products }: { products: Product[] }) {
+  if (products.length === 0) return null;
 
   return (
     <div>
       <SectionHeading eyebrow="Keep Exploring" title="You May Also Like" />
       <div className="mt-6">
-        {isLoading && <ProductGridSkeleton count={4} />}
-        {!isLoading && <ProductGrid products={similar} />}
+        <ProductGrid products={products} />
       </div>
     </div>
   );

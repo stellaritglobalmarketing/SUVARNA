@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { MOCK_PRODUCTS } from "@/lib/data/products.mock";
+import type { Product } from "@/types/product";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { addToCart } from "@/lib/redux/slices/cartSlice";
 import { pushToast } from "@/lib/redux/slices/uiSlice";
@@ -19,9 +19,9 @@ interface Selection {
 
 type Selections = Record<string, Selection>;
 
-function buildInitialSelections(presetSlugs: string[]): Selections {
+function buildInitialSelections(products: Product[], presetSlugs: string[]): Selections {
   const initial: Selections = {};
-  MOCK_PRODUCTS.forEach((product) => {
+  products.forEach((product) => {
     initial[product.slug] = { variantIndex: 0, quantity: presetSlugs.includes(product.slug) ? 1 : 0 };
   });
   return initial;
@@ -34,14 +34,17 @@ function buildInitialSelections(presetSlugs: string[]): Selections {
  */
 export function HamperBuilderModal({
   onClose,
+  products,
   presetSlugs,
 }: {
   onClose: () => void;
+  /** Everything that can go into a hamper — the home page's product list. */
+  products: Product[];
   /** Product slugs to pre-select at qty 1 when the modal opens (e.g. from a themed hamper tile). */
   presetSlugs: string[];
 }) {
   const dispatch = useAppDispatch();
-  const [selections, setSelections] = useState<Selections>(() => buildInitialSelections(presetSlugs));
+  const [selections, setSelections] = useState<Selections>(() => buildInitialSelections(products, presetSlugs));
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -59,8 +62,8 @@ export function HamperBuilderModal({
     setSelections((prev) => ({ ...prev, [slug]: { ...prev[slug], quantity } }));
   };
 
-  const activeRows = MOCK_PRODUCTS.map((product) => ({ product, selection: selections[product.slug] })).filter(
-    (row): row is { product: (typeof MOCK_PRODUCTS)[number]; selection: Selection } =>
+  const activeRows = products.map((product) => ({ product, selection: selections[product.slug] })).filter(
+    (row): row is { product: Product; selection: Selection } =>
       Boolean(row.selection && row.selection.quantity > 0),
   );
 
@@ -82,6 +85,7 @@ export function HamperBuilderModal({
           variantLabel: variant.label,
           unitPrice: variant.price,
           unitMrp: variant.mrp,
+          variantId: variant.id,
           quantity: selection.quantity,
         }),
       );
@@ -111,7 +115,7 @@ export function HamperBuilderModal({
         </div>
 
         <div className="flex-1 space-y-2.5 overflow-y-auto px-5 py-4">
-          {MOCK_PRODUCTS.map((product) => {
+          {products.map((product) => {
             const selection = selections[product.slug] ?? { variantIndex: 0, quantity: 0 };
             const variant = product.variants[selection.variantIndex] ?? product.variants[0];
             const active = selection.quantity > 0;

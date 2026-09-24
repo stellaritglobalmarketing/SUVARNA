@@ -1,5 +1,14 @@
-import { getToken } from "@/lib/auth/token";
+import { SESSION_EXPIRED_EVENT, clearSession, getToken } from "@/lib/auth/token";
 import { API_BASE_URL, API_KEY } from "./config";
+
+export const SESSION_EXPIRED_MESSAGE = "Your session has ended. Please log in again.";
+
+/** True when a request failed because the customer's session is no longer valid (they've been logged out). */
+export function isSessionExpiredError(error: unknown): boolean {
+  // Checked by shape rather than `instanceof`, which breaks if this module is ever loaded twice.
+  const candidate = error as Partial<ApiError> | null;
+  return typeof candidate === "object" && candidate !== null && candidate.status === 401 && candidate.code === -1;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -71,6 +80,13 @@ async function rawRequest<T>(
   }
 
   if (!res.ok) {
+    // The backend answers a bad/expired/revoked token with 401 + code -1. (A wrong api-key does
+    // too, but with message "Unauthorized" — that's a config problem, not the user's session.)
+    if (token && res.status === 401 && envelope?.code === -1 && envelope.message !== "Unauthorized") {
+      clearSession();
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+      throw new ApiError(SESSION_EXPIRED_MESSAGE, res.status, -1);
+    }
     throw new ApiError(envelope?.message || `Request failed: ${res.status} ${res.statusText}`, res.status, envelope?.code ?? -1);
   }
   if (!envelope || envelope.code !== 1) {

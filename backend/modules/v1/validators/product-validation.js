@@ -4,7 +4,9 @@
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 24;
 
+// Values are interpolated into ORDER BY, so only these fixed strings may ever be used.
 const ALLOWED_SORTS = {
+    featured: "p.sort_order ASC",
     latest: "p.created_at DESC",
     price_asc: "pr.min_price ASC",
     price_desc: "pr.min_price DESC",
@@ -35,11 +37,16 @@ function parseListingQuery(query = {}) {
         [minPrice, maxPrice] = [maxPrice, minPrice];
     }
 
-    const sort = Object.prototype.hasOwnProperty.call(ALLOWED_SORTS, query.sort) ? query.sort : "latest";
+    const sort = Object.prototype.hasOwnProperty.call(ALLOWED_SORTS, query.sort) ? query.sort : "featured";
 
     const category = query.category ? String(query.category).trim().toLowerCase().slice(0, 80) : null;
     const subcategory = query.subcategory ? String(query.subcategory).trim().toLowerCase().slice(0, 80) : null;
     const search = query.search ? String(query.search).trim().slice(0, 100) : null;
+
+    // Comma-separated product slugs, e.g. for rendering a wishlist in one call.
+    const slugs = query.slugs
+        ? [...new Set(String(query.slugs).split(",").map((s) => s.trim().toLowerCase()).filter(isValidSlug))].slice(0, MAX_LIMIT)
+        : [];
 
     return {
         page,
@@ -51,26 +58,36 @@ function parseListingQuery(query = {}) {
         category,
         subcategory,
         search: search || null,
+        slugs: slugs.length > 0 ? slugs : null,
     };
+}
+
+const DEFAULT_REVIEW_LIMIT = 10;
+const MAX_REVIEW_LIMIT = 20;
+
+function parseReviewQuery(query = {}) {
+    const page = parsePositiveInt(query.page, 1);
+    const limit = Math.min(parsePositiveInt(query.limit, DEFAULT_REVIEW_LIMIT), MAX_REVIEW_LIMIT);
+    return { page, limit, offset: (page - 1) * limit };
+}
+
+function validateReviewBody(body) {
+    const { rating, title, review_text } = body || {};
+    const parsed = Number(rating);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 5) {
+        return "rating must be a whole number from 1 to 5";
+    }
+    if (title !== undefined && title !== null && String(title).trim().length > 128) {
+        return "title must be 128 characters or fewer";
+    }
+    if (review_text !== undefined && review_text !== null && String(review_text).trim().length > 1000) {
+        return "review_text must be 1000 characters or fewer";
+    }
+    return null;
 }
 
 function isValidSlug(slug) {
     return typeof slug === "string" && slug.trim().length > 0 && slug.trim().length <= 160;
 }
 
-function validateToggle(body) {
-    const { variant_id } = body || {};
-
-    if (variant_id === undefined || variant_id === null || variant_id === "") {
-        return "variant_id is required";
-    }
-
-    const parsed = Number(variant_id);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-        return "variant_id must be a valid positive integer";
-    }
-
-    return null;
-}
-
-export { parseListingQuery, isValidSlug, validateToggle };
+export { parseListingQuery, parseReviewQuery, isValidSlug, validateReviewBody };

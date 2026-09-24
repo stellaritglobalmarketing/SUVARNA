@@ -100,7 +100,44 @@ function validateProductBody(body, { requireName, requireSubCategory }) {
         return "is_featured must be a boolean";
     }
 
+    const { origin, processing, delivery_min_days, delivery_max_days, is_bestseller, sort_order } = body || {};
+    if (origin !== undefined && origin !== null && String(origin).trim().length > 64) {
+        return "origin must be 64 characters or fewer";
+    }
+    if (processing !== undefined && processing !== null && String(processing).trim().length > 64) {
+        return "processing must be 64 characters or fewer";
+    }
+    for (const [key, value] of [["delivery_min_days", delivery_min_days], ["delivery_max_days", delivery_max_days]]) {
+        if (value !== undefined && (!Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > 60)) {
+            return `${key} must be a whole number from 0 to 60`;
+        }
+    }
+    if (delivery_min_days !== undefined && delivery_max_days !== undefined && Number(delivery_min_days) > Number(delivery_max_days)) {
+        return "delivery_min_days cannot be more than delivery_max_days";
+    }
+    if (is_bestseller !== undefined && ![0, 1].includes(Number(is_bestseller))) {
+        return "is_bestseller must be a boolean";
+    }
+    if (sort_order !== undefined && (!Number.isInteger(Number(sort_order)) || Number(sort_order) < 0 || Number(sort_order) > 65535)) {
+        return "sort_order must be a whole number ≥ 0";
+    }
+
     return null;
+}
+
+/**
+ * Storefront fields that older admin clients don't send: only the ones present in the body are
+ * returned, so an update that omits them leaves the stored values alone.
+ */
+function pickStorefrontFields(body = {}) {
+    const fields = {};
+    if (body.origin !== undefined) fields.origin = body.origin ? String(body.origin).trim() : null;
+    if (body.processing !== undefined) fields.processing = body.processing ? String(body.processing).trim() : null;
+    if (body.delivery_min_days !== undefined) fields.delivery_min_days = Number(body.delivery_min_days);
+    if (body.delivery_max_days !== undefined) fields.delivery_max_days = Number(body.delivery_max_days);
+    if (body.is_bestseller !== undefined) fields.is_bestseller = Number(body.is_bestseller) ? 1 : 0;
+    if (body.sort_order !== undefined) fields.sort_order = Number(body.sort_order);
+    return fields;
 }
 
 function validateVariantBody(body, { requireAll }) {
@@ -183,6 +220,7 @@ function validateStatusBody(body) {
 }
 
 export {
+    pickStorefrontFields,
     isPositiveInt,
     isNonNegativeNumber,
     slugify,

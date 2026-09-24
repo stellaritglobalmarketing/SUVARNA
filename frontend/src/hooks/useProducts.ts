@@ -9,10 +9,11 @@ import type { ProductListParams } from "@/types/product";
  * page/filter combination loads, and each unique params object is cached
  * under its own key so paging back is instant.
  */
-export function useProducts(params: ProductListParams) {
+export function useProducts(params: ProductListParams, { enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.products.list(params),
     queryFn: () => fetchProducts(params),
     placeholderData: keepPreviousData,
+    enabled,
   });
 }

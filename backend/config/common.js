@@ -70,15 +70,12 @@ const common = {
                 throw new Error("Invalid user data for token generation");
             }
 
+            // Only what tokenMiddleware/handlers read (req.user.id, req.user.role). Profile fields
+            // stay out of the token: they made its length depend on the user's name/email, and
+            // tokens longer than user_devices.token (512) were silently truncated on insert, so
+            // that user's session could never be found again.
             const payload = {
                 id: normalizedUser.id,
-                name: normalizedUser.name || null,
-                email: normalizedUser.email || null,
-                mobile_number: normalizedUser.mobile_number || null,
-                country_code: normalizedUser.country_code || null,
-                login_type: normalizedUser.login_type || null,
-                social_id: normalizedUser.social_id || null,
-                is_verified: normalizedUser.is_verified ?? null,
                 role: normalizedUser.role || null,
             };
             const jwtSecret = process.env.JWT_WEB_TOKEN;
