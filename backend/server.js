@@ -24,7 +24,20 @@ const PORT = process.env.PORT || 5020;
 
 const app = express();
 
-const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000").split(",").map(origin => origin.trim());
+// Browsers send a bare origin ("https://site.com"), so reduce each entry to that: a trailing
+// slash, a pasted path like "/api/v1" or a missing scheme would otherwise never match.
+const toOrigin = value => {
+  try {
+    return new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`).origin;
+  } catch {
+    return value;
+  }
+};
+const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
+  .split(",")
+  .map(origin => origin.trim())
+  .filter(Boolean)
+  .map(toOrigin);
 
 app.use(cors({
   origin: corsOrigins,

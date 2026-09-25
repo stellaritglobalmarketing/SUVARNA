@@ -34,7 +34,7 @@ export function HomeContent() {
 
   return (
     <>
-      {data.hero && <Hero banner={data.hero} highlights={data.heroHighlights} />}
+      {data.hero && <Hero banner={data.hero} />}
       {data.promo && <PromoBanner banner={data.promo} />}
       <TrustBadges badges={data.trustBadges} />
       <AllProducts products={data.products} />
@@ -49,8 +49,8 @@ export function HomeContent() {
 function HomeSkeleton() {
   return (
     <>
-      {/* Same footprint as the Hero / PromoBanner so the page doesn't jump when data lands */}
-      <div className="hidden min-h-[640px] bg-brand-forest lg:block" />
+      {/* Same footprint as the Hero poster (1717×916) so the page doesn't jump when data lands */}
+      <div className="aspect-[1717/916] w-full bg-brand-sand" />
       <Container className="pt-4 md:hidden">
         <Skeleton className="h-36 w-full rounded-2xl" />
       </Container>
