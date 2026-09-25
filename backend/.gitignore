@@ -17,3 +17,4 @@ npm-debug.log*
 
 # admin image uploads (runtime data)
 /uploads/
+/public/uploads/

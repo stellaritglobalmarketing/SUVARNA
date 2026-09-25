@@ -860,7 +860,7 @@ Send the image file itself as the request body with its type as `Content-Type` (
 { "code": 1, "message": "Image uploaded", "data": { "url": "http://localhost:5020/uploads/images/2026/09/<id>.png", "public_id": "local:images/2026/09/<id>.png", "bytes": 48213 } }
 ```
 
-Use `url` as an `image_url`; for product images pass `public_id` as `cloudinary_public_id`. Files are stored on the server's disk under `uploads/` — a host with an ephemeral disk (e.g. Render's free tier) loses them on redeploy, so production needs persistent storage. Set `PUBLIC_URL` if the server sits behind a proxy and the generated URLs come out wrong.
+Use `url` as an `image_url`; for product images pass `public_id` as `cloudinary_public_id`. Files are stored under `public/uploads/` in the backend folder and served at `/uploads/...`. If the host replaces the code folder on every redeploy, set `UPLOAD_DIR` to an absolute folder outside it so uploads survive. Set `PUBLIC_URL` (e.g. `https://api.example.com`) to pin the host used in the returned URLs.
 
 ## Reviews — `/admin/review`
 

@@ -20,7 +20,8 @@ export function PromoBanner({ banner }: { banner: HomeBanner }) {
             sizes="100vw"
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-forest/90 via-brand-forest/55 to-transparent" />
+          {/* Shade only behind the text so the products on the right stay clear */}
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-forest/85 from-25% via-brand-forest/45 via-50% to-transparent to-80%" />
           <div className="relative z-10 max-w-[70%] px-5">
             {banner.eyebrow && (
               <span className="inline-block rounded-full bg-brand-gold px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-ink">

@@ -17,12 +17,18 @@ import adminShippingRoutes from "./modules/v1/routes/admin-shipping-routes.js";
 import adminReviewRoutes from "./modules/v1/routes/admin-review-routes.js";
 import adminContentRoutes from "./modules/v1/routes/admin-content-routes.js";
 import cors from "cors";
+import { UPLOAD_ROOT } from "./config/uploads.js";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 5020;
 
 const app = express();
+
+// Hosting proxies (Hostinger, Render) end HTTPS and forward plain HTTP. Trusting the proxy
+// lets req.protocol read "https", so upload URLs built from the request aren't http://
+// links that browsers block on an https site.
+app.set("trust proxy", true);
 
 // Browsers send a bare origin ("https://site.com"), so reduce each entry to that: a trailing
 // slash, a pasted path like "/api/v1" or a missing scheme would otherwise never match.
@@ -49,7 +55,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json());
 
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(UPLOAD_ROOT, { maxAge: "30d", immutable: true }));
 
 // Unauthenticated health check — lets Render's own health monitor, and an external
 // uptime pinger (e.g. cron-job.org / UptimeRobot hitting this every few minutes),

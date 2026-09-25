@@ -4,14 +4,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
+import { UPLOAD_ROOT } from "../../../config/uploads.js";
 
 // Admin image upload: the request body is the raw image (Content-Type: image/jpeg | png | webp | avif),
-// saved under uploads/images/<yyyy>/<mm>/ and served by server.js's /uploads static route.
-// Note: a server with an ephemeral disk (e.g. Render's free tier) loses these files on redeploy —
-// production should put images on persistent storage or a CDN.
+// saved under <UPLOAD_ROOT>/images/<yyyy>/<mm>/ and served by server.js's /uploads static route.
+// See config/uploads.js for keeping these files across redeploys.
 
 const MAX_BYTES = 5 * 1024 * 1024;
-const UPLOAD_ROOT = path.resolve("uploads"); // same folder server.js serves at /uploads
 
 // Checked against the file's first bytes, so a renamed non-image is rejected.
 const FORMATS = {
