@@ -65,24 +65,6 @@ CREATE TABLE `cart` (
 
 
 
-CREATE TABLE `categories` (
-  `id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) NOT NULL,
-  `slug` varchar(80) NOT NULL,
-  `description` varchar(255) DEFAULT NULL,
-  `image_url` varchar(512) DEFAULT NULL,
-  `is_featured` tinyint(1) NOT NULL DEFAULT 0,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `is_delete` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_categories_slug` (`slug`),
-  KEY `idx_categories_listing` (`is_active`,`is_delete`,`is_featured`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
 CREATE TABLE `faqs` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `question` varchar(255) NOT NULL,
@@ -395,7 +377,6 @@ CREATE TABLE `product_variants` (
 
 CREATE TABLE `products` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `sub_category_id` smallint(5) unsigned NOT NULL,
   `name` varchar(128) NOT NULL,
   `slug` varchar(160) NOT NULL,
   `short_description` varchar(255) DEFAULT NULL,
@@ -414,10 +395,8 @@ CREATE TABLE `products` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_products_slug` (`slug`),
-  KEY `idx_products_category` (`sub_category_id`,`is_active`,`is_delete`),
   KEY `idx_products_featured` (`is_featured`,`is_active`,`is_delete`),
-  KEY `idx_products_sort` (`is_active`,`is_delete`,`sort_order`),
-  CONSTRAINT `fk_products_sub_category` FOREIGN KEY (`sub_category_id`) REFERENCES `sub_categories` (`id`) ON UPDATE CASCADE
+  KEY `idx_products_sort` (`is_active`,`is_delete`,`sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -503,26 +482,6 @@ CREATE TABLE `shipments` (
 
 
 
-CREATE TABLE `sub_categories` (
-  `id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
-  `category_id` smallint(5) unsigned NOT NULL,
-  `name` varchar(64) NOT NULL,
-  `slug` varchar(80) NOT NULL,
-  `description` varchar(255) DEFAULT NULL,
-  `image_url` varchar(512) DEFAULT NULL,
-  `is_featured` tinyint(1) NOT NULL DEFAULT 0,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `is_delete` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_sub_categories_slug` (`slug`),
-  KEY `idx_sub_categories_category` (`category_id`,`is_active`,`is_delete`),
-  CONSTRAINT `fk_sub_categories_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
 CREATE TABLE `testimonials` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `customer_name` varchar(64) NOT NULL,
@@ -593,5 +552,6 @@ INSERT INTO `schema_migrations` (`filename`) VALUES ('001_home_content.sql');
 INSERT INTO `schema_migrations` (`filename`) VALUES ('002_product_detail.sql');
 INSERT INTO `schema_migrations` (`filename`) VALUES ('003_wishlist_per_product.sql');
 INSERT INTO `schema_migrations` (`filename`) VALUES ('004_clean_schema.sql');
+INSERT INTO `schema_migrations` (`filename`) VALUES ('005_remove_categories.sql');
 
 SET FOREIGN_KEY_CHECKS = 1;

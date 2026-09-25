@@ -21,6 +21,14 @@ Both are safe to re-run. The seed only creates inventory rows and never overwrit
 
 **Fresh database:** create it, import `database/schema.sql` (the full current schema, with `schema_migrations` pre-filled), then run `npm run seed`. After adding a migration, regenerate `schema.sql` so it stays current.
 
+**Admin account:** there's no sign-up for admins. Create one (or reset an admin's password) with:
+
+```bash
+npm run admin:create -- "Full Name" admin@example.com 'Str0ng!Password'
+```
+
+Then sign in at the storefront's `/login` — admins land on the admin panel at `/admin`.
+
 ## Payment configuration
 
 Online payment uses Razorpay. Set both keys in `.env` (never in the frontend, never in git):
@@ -241,9 +249,6 @@ No query params. Returns everything the home page renders in one call.
             "trust_badges": [ { "id": 4, "icon": "leaf", "title": "100% Natural", "description": null } ],
             "trust_points": [ { "id": 8, "icon": "leaf", "title": "Direct Farmer Sourcing", "description": "We buy directly ..." } ]
         },
-        "categories": [
-            { "id": 9, "name": "Almonds", "slug": "almonds", "image_url": null }
-        ],
         "products": [
             {
                 "id": 13,
@@ -251,7 +256,6 @@ No query params. Returns everything the home page renders in one call.
                 "slug": "kashmir-mamra-almonds",
                 "short_description": "Wild-harvested, cold-pressed oil-rich almonds",
                 "description": "Hand-picked from the Mamra orchards of Kashmir, ...",
-                "category": { "id": 9, "name": "Almonds", "slug": "almonds" },
                 "origin": "Kashmir",
                 "processing": "Raw",
                 "health_benefits": ["Heart Health", "Keto Friendly", "High Protein"],
@@ -320,10 +324,8 @@ Search / listing with filters, sort and pagination. Returns the **same full prod
 |---|---|---|
 | `page` | `1` | |
 | `limit` | `12` | capped at `24` |
-| `search` | — | matches product name / short description / brand / category name |
+| `search` | — | matches product name / short description / brand |
 | `slugs` | — | comma-separated product slugs (max 24), e.g. to render a wishlist in one call; unknown slugs are skipped |
-| `category` | — | category slug, e.g. `almonds` |
-| `subcategory` | — | sub-category slug |
 | `min_price` / `max_price` | — | matches products with at least one variant priced in this range |
 | `sort` | `featured` | one of `featured` (storefront order, same as home), `latest`, `price_asc`, `price_desc`, `name_asc`, `name_desc` |
 
@@ -340,7 +342,7 @@ Example: `GET /product?search=almond&sort=price_asc`
 }
 ```
 
-A product only appears here if it, its category and at least one of its variants are active.
+A product only appears here if it and at least one of its variants are active.
 
 ## `GET /product/:slug`
 
@@ -354,9 +356,8 @@ Example: `GET /product/kashmir-mamra-almonds`. Returns everything the product pa
         "id": 13,
         "name": "Kashmir Mamra Almonds",
         "slug": "kashmir-mamra-almonds",
-        "...": "every product card field (see GET /product/home): category, origin, certifications, rating, variants, images...",
+        "...": "every product card field (see GET /product/home): origin, certifications, rating, variants, images...",
         "brand_name": "Suvarna7",
-        "sub_category": { "id": 9, "name": "Almonds", "slug": "almonds" },
         "nutrients": [
             { "label": "Protein", "value_per_100g": "21.2 g", "daily_value_percent": 42 }
         ],
@@ -373,7 +374,7 @@ Example: `GET /product/kashmir-mamra-almonds`. Returns everything the product pa
             "usage": "Soak overnight for a softer bite ..."
         },
         "frequently_bought_with": [ "...product cards, in the order set on the product" ],
-        "similar_products": [ "...up to 4 product cards from the same category" ]
+        "similar_products": [ "...up to 4 other products, those sharing the most health benefits first" ]
     }
 }
 ```
@@ -747,8 +748,9 @@ Every endpoint below requires `api-key` + `Authorization: Bearer <admin token>` 
     "data": {
         "total_users": 12,
         "total_active_products": 8,
-        "total_categories": 3,
         "total_orders": 20,
+        "total_revenue": 48210, "revenue_last_30_days": 12900, "paid_orders": 17,
+        "orders_today": 2, "awaiting_payment": 1, "pending_reviews": 3,
         "pending_orders": 2, "confirmed_orders": 1, "processing_orders": 1,
         "shipped_orders": 3, "delivered_orders": 12, "cancelled_orders": 1,
         "low_stock_variants": 2,
@@ -759,30 +761,15 @@ Every endpoint below requires `api-key` + `Authorization: Bearer <admin token>` 
 }
 ```
 
-## Category — `/admin/category`
-
-| Method | Path | Notes |
-|---|---|---|
-| POST | `/admin/category` | `{ "name", "slug"? (auto-generated from name), "description"?, "image_url"?, "is_featured"? }` |
-| GET | `/admin/category` | query: `page, limit, search, status` (`active`/`inactive`) |
-| GET | `/admin/category/:id` | |
-| PUT | `/admin/category/:id` | same body as create (full update) |
-| PATCH | `/admin/category/:id/status` | `{ "is_active": 0 \| 1 }` |
-| DELETE | `/admin/category/:id` | soft delete |
-
-`slug` has a project-wide unique constraint (checked across active **and** soft-deleted rows) — a duplicate returns `code: 0` `"A category with this slug already exists"`.
-
-## Sub-category — `/admin/subcategory`
-
-Same shape as Category, plus a required `category_id` (must reference a non-deleted category — unknown/deleted id returns `code: 3` `"Category not found"`). Listing also supports `?category_id=`.
+Revenue counts paid orders that weren't cancelled. `awaiting_payment` = pending orders not yet paid.
 
 ## Product — `/admin/product`
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/admin/product` | `{ "sub_category_id", "name", "slug"?, "short_description"?, "description"?, "brand_name"?, "is_featured"?, "is_bestseller"?, "origin"?, "processing"?, "delivery_min_days"?, "delivery_max_days"?, "sort_order"? }` |
-| GET | `/admin/product` | query: `page, limit, search, category_id, subcategory_id, status, sort` (`latest`\|`oldest`\|`name_asc`\|`name_desc`) |
-| GET | `/admin/product/:id` | full detail: product + category + sub-category + `variants[]` (with stock) + `images[]` + all product-page content (below) |
+| POST | `/admin/product` | `{ "name", "slug"?, "short_description"?, "description"?, "brand_name"?, "is_featured"?, "is_bestseller"?, "origin"?, "processing"?, "delivery_min_days"?, "delivery_max_days"?, "sort_order"? }` |
+| GET | `/admin/product` | query: `page, limit, search, status, sort` (`latest`\|`oldest`\|`name_asc`\|`name_desc`) |
+| GET | `/admin/product/:id` | full detail: product + `variants[]` (with stock) + `images[]` + all product-page content (below) |
 | PUT | `/admin/product/:id` | full update (the storefront fields `is_bestseller`, `origin`, … are only changed when sent) |
 | PUT | `/admin/product/:id/content` | product-page content — see below |
 | PATCH | `/admin/product/:id/status` | `{ "is_active": 0 \| 1 }` |
@@ -845,6 +832,36 @@ This API only stores Cloudinary metadata — the actual file upload to Cloudinar
 
 Removing more than what's currently unreserved returns `code: 0` with the exact available count. Stock can never go negative or below what's already reserved by pending orders. `reason` is accepted for API completeness but not persisted — there is no stock-movement log table yet.
 
+## Home content — `/admin/content/:resource`
+
+`:resource` is one of `banners`, `highlights`, `hampers`, `testimonials`, `faqs` — the blocks on the home page.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/admin/content/:resource` | all non-deleted rows (hampers include `products[]`) |
+| POST | `/admin/content/:resource` | create — body fields below |
+| PUT | `/admin/content/:resource/:id` | full update |
+| PATCH | `/admin/content/:resource/:id/status` | `{ "is_active": 0 \| 1 }` — hide/show on the site |
+| DELETE | `/admin/content/:resource/:id` | soft delete |
+
+| resource | fields (`*` required) |
+|---|---|
+| banners | `placement*` (`hero` \| `promo`), `title*`, `image_url*`, `eyebrow`, `subtitle`, `image_alt`, `cta_label`, `cta_href`, `secondary_cta_label`, `secondary_cta_href`, `sort_order` |
+| highlights | `placement*` (`hero` \| `trust_badge` \| `trust_point`), `icon*` (`badge-check`, `heart-pulse`, `leaf`, `package-check`, `shield-check`, `sprout`, `truck`, `users`), `title*`, `description`, `sort_order` |
+| hampers | `name*`, `slug` (auto from name), `subtitle`, `image_url`, `sort_order`, `product_ids` (list, replaces the hamper's products) |
+| testimonials | `customer_name*`, `rating*` (1–5), `quote*`, `location`, `sort_order` |
+| faqs | `question*`, `answer*`, `sort_order` |
+
+## Image upload — `POST /admin/upload`
+
+Send the image file itself as the request body with its type as `Content-Type` (`image/jpeg`, `image/png`, `image/webp` or `image/avif`; max 5 MB). The file's bytes are checked, not just its type.
+
+```json
+{ "code": 1, "message": "Image uploaded", "data": { "url": "http://localhost:5020/uploads/images/2026/09/<id>.png", "public_id": "local:images/2026/09/<id>.png", "bytes": 48213 } }
+```
+
+Use `url` as an `image_url`; for product images pass `public_id` as `cloudinary_public_id`. Files are stored on the server's disk under `uploads/` — a host with an ephemeral disk (e.g. Render's free tier) loses them on redeploy, so production needs persistent storage. Set `PUBLIC_URL` if the server sits behind a proxy and the generated URLs come out wrong.
+
 ## Reviews — `/admin/review`
 
 | Method | Path | Notes |
@@ -858,7 +875,7 @@ Removing more than what's currently unreserved returns `code: 0` with the exact 
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/admin/order` | query: `page, limit, search` (order number/customer name/phone/email), `order_status, payment_status, fulfillment_status, date_from, date_to` (`YYYY-MM-DD`, on `created_at`) |
-| GET | `/admin/order/:orderNumber` | full detail incl. the shipping-address snapshot and line items |
+| GET | `/admin/order/:orderNumber` | full detail incl. the shipping-address snapshot, line items and `shipments[]` |
 | PATCH | `/admin/order/:orderNumber/status` | see below |
 
 **`PATCH /admin/order/:orderNumber/status`** accepts any of `order_status`, `payment_status`, `fulfillment_status` in the same body — only the fields you send are changed; they're never inferred from one another.

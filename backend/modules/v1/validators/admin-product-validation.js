@@ -57,8 +57,6 @@ function parseProductListingQuery(query = {}) {
         status = 0;
     }
 
-    const category_id = isPositiveInt(query.category_id) ? Number(query.category_id) : null;
-    const subcategory_id = isPositiveInt(query.subcategory_id) ? Number(query.subcategory_id) : null;
 
     return {
         page,
@@ -66,21 +64,13 @@ function parseProductListingQuery(query = {}) {
         offset: (page - 1) * limit,
         search,
         status,
-        category_id,
-        subcategory_id,
         sortSql: ALLOWED_SORTS[sort],
     };
 }
 
-function validateProductBody(body, { requireName, requireSubCategory }) {
-    const { sub_category_id, name, slug, short_description, description, brand_name, is_featured } = body || {};
+function validateProductBody(body, { requireName }) {
+    const { name, slug, short_description, description, brand_name, is_featured } = body || {};
 
-    if (requireSubCategory && !isPositiveInt(sub_category_id)) {
-        return "sub_category_id is required and must be a valid positive integer";
-    }
-    if (sub_category_id !== undefined && sub_category_id !== null && !isPositiveInt(sub_category_id)) {
-        return "sub_category_id must be a valid positive integer";
-    }
     if (requireName && (!name || !String(name).trim())) {
         return "name is required";
     }

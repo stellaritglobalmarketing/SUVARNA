@@ -1,11 +1,10 @@
-// Seeds the catalog, home page and product page content from seeds/data/store-data.js.
+// Seeds the products, home page and product page content from seeds/data/store-data.js.
 // Idempotent: rows are matched on their natural keys (slug / sku / question / ...) and
 // updated in place, so it's safe to re-run after editing the data file. Inventory is only
 // created, never overwritten, so a re-run can't clobber real stock levels.
 // Run `npm run db:migrate` first, then `npm run seed`.
 import db from "../config/db.js";
 import {
-    CATEGORIES,
     PRODUCTS,
     BANNERS,
     HIGHLIGHTS,
@@ -13,33 +12,6 @@ import {
     TESTIMONIALS,
     FAQS,
 } from "./data/store-data.js";
-
-async function upsertCategories(conn) {
-    const subCategoryIdBySlug = new Map();
-
-    for (const [index, cat] of CATEGORIES.entries()) {
-        await conn.query(
-            `INSERT INTO categories (name, slug, description, is_featured, is_active, is_delete)
-             VALUES (?, ?, ?, 1, 1, 0)
-             ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description), is_active = 1, is_delete = 0`,
-            [cat.name, cat.slug, cat.description]
-        );
-        const [[{ id: categoryId }]] = await conn.query("SELECT id FROM categories WHERE slug = ?", [cat.slug]);
-
-        await conn.query(
-            `INSERT INTO sub_categories (category_id, name, slug, description, is_active, is_delete)
-             VALUES (?, ?, ?, ?, 1, 0)
-             ON DUPLICATE KEY UPDATE category_id = VALUES(category_id), name = VALUES(name), is_active = 1, is_delete = 0`,
-            [categoryId, cat.name, cat.slug, cat.description]
-        );
-        const [[{ id: subId }]] = await conn.query("SELECT id FROM sub_categories WHERE slug = ?", [cat.slug]);
-        subCategoryIdBySlug.set(cat.slug, subId);
-
-        console.log(`  category ${index + 1}/${CATEGORIES.length}: ${cat.name}`);
-    }
-
-    return subCategoryIdBySlug;
-}
 
 // Replaces one product's rows in a child table with `rows` (arrays of column values, in order).
 async function replaceProductRows(conn, table, productId, columns, rows) {
@@ -51,30 +23,24 @@ async function replaceProductRows(conn, table, productId, columns, rows) {
     }
 }
 
-async function upsertProducts(conn, subCategoryIdBySlug) {
+async function upsertProducts(conn) {
     const productIdBySlug = new Map();
-    const tipsByCategory = new Map(CATEGORIES.map((cat) => [cat.slug, cat.tips]));
 
     for (const [index, p] of PRODUCTS.entries()) {
-        const subCategoryId = subCategoryIdBySlug.get(p.category);
-        if (!subCategoryId) {
-            throw new Error(`Unknown category "${p.category}" for product ${p.slug}`);
-        }
-
         await conn.query(
             `INSERT INTO products
-                (sub_category_id, name, slug, short_description, description, brand_name, origin, processing,
+                (name, slug, short_description, description, brand_name, origin, processing,
                  delivery_min_days, delivery_max_days, is_featured, is_bestseller, sort_order, is_active, is_delete)
-             VALUES (?, ?, ?, ?, ?, 'Suvarna7', ?, ?, ?, ?, 1, ?, ?, 1, 0)
+             VALUES (?, ?, ?, ?, 'Suvarna7', ?, ?, ?, ?, 1, ?, ?, 1, 0)
              ON DUPLICATE KEY UPDATE
-                sub_category_id = VALUES(sub_category_id), name = VALUES(name),
+                name = VALUES(name),
                 short_description = VALUES(short_description), description = VALUES(description),
                 brand_name = VALUES(brand_name), origin = VALUES(origin), processing = VALUES(processing),
                 delivery_min_days = VALUES(delivery_min_days), delivery_max_days = VALUES(delivery_max_days),
                 is_featured = VALUES(is_featured), is_bestseller = VALUES(is_bestseller),
                 sort_order = VALUES(sort_order), is_active = 1, is_delete = 0`,
             [
-                subCategoryId, p.name, p.slug, p.short_description, p.description, p.origin, p.processing,
+                p.name, p.slug, p.short_description, p.description, p.origin, p.processing,
                 p.delivery_days[0], p.delivery_days[1], p.is_bestseller ? 1 : 0, index + 1,
             ]
         );
@@ -129,7 +95,7 @@ async function upsertProducts(conn, subCategoryIdBySlug) {
         );
         await replaceProductRows(conn, "product_health_benefits", productId, ["benefit"], p.health_benefits.map((b) => [b]));
 
-        const tips = tipsByCategory.get(p.category);
+        const tips = p.storage_tips;
         await conn.query("DELETE FROM product_storage_tips WHERE product_id = ?", [productId]);
         if (tips) {
             await conn.query(
@@ -257,8 +223,7 @@ async function seed() {
     try {
         await conn.beginTransaction();
 
-        const subCategoryIdBySlug = await upsertCategories(conn);
-        const productIdBySlug = await upsertProducts(conn, subCategoryIdBySlug);
+        const productIdBySlug = await upsertProducts(conn);
         await upsertRelatedProducts(conn, productIdBySlug);
         await upsertBanners(conn);
         await upsertHighlights(conn);

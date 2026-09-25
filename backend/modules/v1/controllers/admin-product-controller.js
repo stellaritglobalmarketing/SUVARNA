@@ -37,11 +37,6 @@ async function isSkuTaken(sku, excludeId = null) {
     return rows.length > 0;
 }
 
-async function getActiveSubCategory(sub_category_id) {
-    const [rows] = await db.query("SELECT id FROM sub_categories WHERE id = ? AND is_delete = 0 LIMIT 1", [sub_category_id]);
-    return rows[0] || null;
-}
-
 async function getActiveProduct(product_id) {
     const [rows] = await db.query("SELECT id FROM products WHERE id = ? AND is_delete = 0 LIMIT 1", [product_id]);
     return rows[0] || null;
@@ -51,14 +46,9 @@ async function getActiveProduct(product_id) {
 
 const createProduct = async (req, res) => {
     try {
-        const error = validateProductBody(req.body, { requireName: true, requireSubCategory: true });
+        const error = validateProductBody(req.body, { requireName: true });
         if (error) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, error, null);
-        }
-
-        const sub_category_id = Number(req.body.sub_category_id);
-        if (!(await getActiveSubCategory(sub_category_id))) {
-            return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Sub-category not found", null);
         }
 
         const name = String(req.body.name).trim();
@@ -71,7 +61,6 @@ const createProduct = async (req, res) => {
         }
 
         const [result] = await dbHelper.insertQuery("products", {
-            sub_category_id,
             name,
             slug,
             short_description: req.body.short_description ? String(req.body.short_description).trim() : null,
@@ -90,7 +79,7 @@ const createProduct = async (req, res) => {
 
 const getProducts = async (req, res) => {
     try {
-        const { page, limit, offset, search, status, category_id, subcategory_id, sortSql } = parseProductListingQuery(req.query);
+        const { page, limit, offset, search, status, sortSql } = parseProductListingQuery(req.query);
 
         const conditions = ["p.is_delete = 0"];
         const params = [];
@@ -103,20 +92,10 @@ const getProducts = async (req, res) => {
             conditions.push("p.is_active = ?");
             params.push(status);
         }
-        if (subcategory_id) {
-            conditions.push("p.sub_category_id = ?");
-            params.push(subcategory_id);
-        }
-        if (category_id) {
-            conditions.push("c.id = ?");
-            params.push(category_id);
-        }
         const whereClause = conditions.join(" AND ");
 
         const baseFrom = `
             FROM products p
-            JOIN sub_categories sc ON sc.id = p.sub_category_id
-            JOIN categories c ON c.id = sc.category_id
             WHERE ${whereClause}
         `;
 
@@ -124,8 +103,6 @@ const getProducts = async (req, res) => {
 
         const [rows] = await db.query(
             `SELECT p.id, p.name, p.slug, p.short_description, p.brand_name, p.is_featured, p.is_bestseller, p.is_active, p.created_at,
-                    sc.id AS sub_category_id, sc.name AS sub_category_name,
-                    c.id AS category_id, c.name AS category_name,
                     (SELECT pi.image_url FROM product_images pi
                      WHERE pi.product_id = p.id AND pi.is_delete = 0
                      ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url,
@@ -156,8 +133,6 @@ const getProducts = async (req, res) => {
             max_price: toNumber(r.max_price),
             variant_count: Number(r.variant_count),
             available_stock: Number(r.available_stock),
-            category: { id: r.category_id, name: r.category_name },
-            sub_category: { id: r.sub_category_id, name: r.sub_category_name },
         }));
 
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Products fetched successfully", products, {
@@ -181,12 +156,8 @@ const getProductById = async (req, res) => {
 
         const [productRows] = await db.query(
             `SELECT p.id, p.name, p.slug, p.short_description, p.description, p.brand_name, p.is_featured, p.is_active, p.created_at, p.updated_at,
-                    p.origin, p.processing, p.delivery_min_days, p.delivery_max_days, p.is_bestseller, p.sort_order,
-                    sc.id AS sub_category_id, sc.name AS sub_category_name,
-                    c.id AS category_id, c.name AS category_name
+                    p.origin, p.processing, p.delivery_min_days, p.delivery_max_days, p.is_bestseller, p.sort_order
              FROM products p
-             JOIN sub_categories sc ON sc.id = p.sub_category_id
-             JOIN categories c ON c.id = sc.category_id
              WHERE p.id = ? AND p.is_delete = 0
              LIMIT 1`,
             [id]
@@ -199,7 +170,8 @@ const getProductById = async (req, res) => {
         const [variantRows] = await db.query(
             `SELECT pv.id, pv.variant_name, pv.weight_value, pv.weight_unit, pv.sku, pv.mrp, pv.selling_price, pv.is_default, pv.is_active,
                     COALESCE(inv.stock_quantity, 0) AS stock_quantity,
-                    COALESCE(inv.reserved_quantity, 0) AS reserved_quantity
+                    COALESCE(inv.reserved_quantity, 0) AS reserved_quantity,
+                    COALESCE(inv.low_stock_limit, 5) AS low_stock_limit
              FROM product_variants pv
              LEFT JOIN inventory inv ON inv.variant_id = pv.id AND inv.is_delete = 0
              WHERE pv.product_id = ? AND pv.is_delete = 0
@@ -234,8 +206,6 @@ const getProductById = async (req, res) => {
             sort_order: product.sort_order,
             created_at: product.created_at,
             updated_at: product.updated_at,
-            category: { id: product.category_id, name: product.category_name },
-            sub_category: { id: product.sub_category_id, name: product.sub_category_name },
             variants: variantRows.map((v) => ({
                 id: v.id,
                 variant_name: v.variant_name,
@@ -248,6 +218,7 @@ const getProductById = async (req, res) => {
                 is_active: !!v.is_active,
                 stock_quantity: toNumber(v.stock_quantity),
                 reserved_quantity: toNumber(v.reserved_quantity),
+                low_stock_limit: toNumber(v.low_stock_limit),
                 available_quantity: Math.max(toNumber(v.stock_quantity) - toNumber(v.reserved_quantity), 0),
             })),
             images: images.map((img) => ({ ...img, is_primary: !!img.is_primary, is_active: !!img.is_active })),
@@ -266,18 +237,13 @@ const updateProduct = async (req, res) => {
         if (!isPositiveInt(id)) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Product not found", null);
         }
-        const error = validateProductBody(req.body, { requireName: true, requireSubCategory: true });
+        const error = validateProductBody(req.body, { requireName: true });
         if (error) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, error, null);
         }
 
         if (!(await getActiveProduct(id))) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Product not found", null);
-        }
-
-        const sub_category_id = Number(req.body.sub_category_id);
-        if (!(await getActiveSubCategory(sub_category_id))) {
-            return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Sub-category not found", null);
         }
 
         const name = String(req.body.name).trim();
@@ -292,7 +258,6 @@ const updateProduct = async (req, res) => {
         await dbHelper.updateQuery(
             "products",
             {
-                sub_category_id,
                 name,
                 slug,
                 short_description: req.body.short_description ? String(req.body.short_description).trim() : null,

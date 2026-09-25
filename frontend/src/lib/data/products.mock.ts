@@ -13,7 +13,6 @@ export const MOCK_PRODUCTS: Product[] = [
     tagline: "Grade-1 mongra kesar, hand-picked from Pampore",
     description:
       "Hand-harvested from the saffron fields of Pampore, Kashmir, this Mongra-grade saffron is prized for its deep crimson threads, intense aroma and rich flavour — the finest grade of Indian kesar.",
-    category: "Saffron",
     origin: "Kashmir",
     processing: "Traditional",
     healthBenefits: ["Immunity Boost", "Heart Health"],
@@ -51,7 +50,6 @@ export const MOCK_PRODUCTS: Product[] = [
     tagline: "Unheated, cold-extracted honey straight from the hive",
     description:
       "Naturally extracted and never heated above room temperature, this raw honey retains its live enzymes, pollen and natural aroma — a wholesome everyday sweetener straight from the hive.",
-    category: "Honey",
     origin: "India",
     processing: "Raw",
     healthBenefits: ["Immunity Boost", "Heart Health"],
@@ -92,7 +90,6 @@ export const MOCK_PRODUCTS: Product[] = [
     tagline: "Slim, sweet almonds from the Gurbandi valley",
     description:
       "Grown in the Gurbandi valley of Afghanistan, these slim-shelled almonds are prized for their delicate sweetness and soft bite — a traditional favourite across South Asian kitchens.",
-    category: "Almonds",
     origin: "Afghanistan",
     processing: "Raw",
     healthBenefits: ["Heart Health", "High Protein"],
@@ -134,7 +131,6 @@ export const MOCK_PRODUCTS: Product[] = [
     tagline: "Wild-harvested, cold-pressed oil-rich almonds",
     description:
       "Hand-picked from the Mamra orchards of Kashmir, these almonds are prized for their dense, oil-rich kernel and distinct sweet aroma. Sun-dried naturally with zero chemical treatment.",
-    category: "Almonds",
     origin: "Kashmir",
     processing: "Raw",
     healthBenefits: ["Heart Health", "Keto Friendly", "High Protein"],
@@ -176,7 +172,6 @@ export const MOCK_PRODUCTS: Product[] = [
     tagline: "A2 bilona-method cow ghee, slow-churned",
     description:
       "Made using the traditional bilona method from A2 cow milk, this ghee is slow-churned in small batches for a rich, nutty aroma and golden-grain texture — the way ghee was made generations ago.",
-    category: "Ghee",
     origin: "India",
     processing: "Traditional",
     healthBenefits: ["Keto Friendly", "Heart Health"],
@@ -217,7 +212,6 @@ export const MOCK_PRODUCTS: Product[] = [
     tagline: "Rich, traditionally simmered buffalo-milk ghee",
     description:
       "Slow-simmered from full-cream buffalo milk, this ghee has a paler colour and a richer, more intense texture than cow ghee — a traditional favourite for its deep flavour in everyday cooking.",
-    category: "Ghee",
     origin: "India",
     processing: "Traditional",
     healthBenefits: ["Keto Friendly", "Heart Health"],
@@ -258,7 +252,6 @@ export const MOCK_PRODUCTS: Product[] = [
     tagline: "Light amber halves, cracked fresh to order",
     description:
       "Premium light-amber walnut kernels cracked fresh from Kashmiri orchards, prized for their thin skin, low bitterness, and high omega-3 content.",
-    category: "Walnuts",
     origin: "Kashmir",
     processing: "Raw",
     healthBenefits: ["Heart Health", "Keto Friendly", "Diabetic Friendly"],

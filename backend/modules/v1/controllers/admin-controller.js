@@ -13,7 +13,6 @@ const getDashboard = async (req, res) => {
     try {
         const [[{ total_users }]] = await db.query("SELECT COUNT(*) AS total_users FROM users WHERE is_delete = 0");
         const [[{ total_active_products }]] = await db.query("SELECT COUNT(*) AS total_active_products FROM products WHERE is_active = 1 AND is_delete = 0");
-        const [[{ total_categories }]] = await db.query("SELECT COUNT(*) AS total_categories FROM categories WHERE is_delete = 0");
         const [[{ total_orders }]] = await db.query("SELECT COUNT(*) AS total_orders FROM orders WHERE is_delete = 0");
         const [[{ low_stock_variants }]] = await db.query(
             `SELECT COUNT(*) AS low_stock_variants
@@ -60,7 +59,6 @@ const getDashboard = async (req, res) => {
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Dashboard data fetched successfully", {
             total_users,
             total_active_products,
-            total_categories,
             total_orders,
             total_revenue: toNumber(revenue.total_revenue),
             revenue_last_30_days: toNumber(revenue.revenue_last_30_days),

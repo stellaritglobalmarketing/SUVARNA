@@ -20,20 +20,12 @@ import {
   MOCK_TRUST_BADGES,
   MOCK_TRUST_POINTS,
 } from "@/lib/data/home.mock";
-import { MOCK_STORAGE_TIPS } from "@/lib/data/storageTips.mock";
-import { CATEGORIES } from "@/lib/data/categories";
 import { USE_MOCK_API } from "./config";
 import { mockDelay } from "./delay";
 import { apiGet, apiGetPaginated } from "./http";
 
 // ---- Real backend response shapes (see backend/README.md — Product section) ----
 // Home, listing/search and detail all return the same full product card (mapCardToProduct).
-
-interface BackendCategoryRef {
-  id: number;
-  name: string;
-  slug: string;
-}
 
 interface BackendHomeProductCard {
   id: number;
@@ -42,13 +34,6 @@ interface BackendHomeProductCard {
   short_description?: string | null;
   min_price: number;
   max_price: number;
-  image_url?: string | null;
-}
-
-interface BackendHomeCategory {
-  id: number;
-  name: string;
-  slug: string;
   image_url?: string | null;
 }
 
@@ -68,7 +53,6 @@ interface BackendCardVariant {
 /** Full storefront card from GET /product/home — carries everything ProductCard renders. */
 interface BackendProductCard extends BackendHomeProductCard {
   description?: string | null;
-  category: BackendCategoryRef;
   origin?: string | null;
   processing?: string | null;
   health_benefits: string[];
@@ -120,7 +104,6 @@ interface BackendHome {
     trust_badges: BackendHomeHighlight[];
     trust_points: BackendHomeHighlight[];
   };
-  categories: BackendHomeCategory[];
   products: BackendProductCard[];
   featured_products: BackendProductCard[];
   best_sellers: BackendProductCard[];
@@ -170,12 +153,10 @@ function applyClientOnlyFilters(items: Product[], params: ProductListParams): Pr
 export async function fetchProducts(params: ProductListParams = {}): Promise<PaginatedResponse<Product>> {
   if (USE_MOCK_API) return fetchProductsMock(params);
 
-  const { page = 1, pageSize = 8, category, search, priceMin, priceMax, sort } = params;
+  const { page = 1, pageSize = 8, search, priceMin, priceMax, sort } = params;
   const { data, pagination } = await apiGetPaginated<BackendProductCard[]>("/product", {
     page: String(page),
     limit: String(pageSize),
-    // Product.category holds the category name; the API filters by slug.
-    category: category ? category.toLowerCase() : undefined,
     search: search || undefined,
     min_price: priceMin != null ? String(priceMin) : undefined,
     max_price: priceMax != null ? String(priceMax) : undefined,
@@ -201,9 +182,9 @@ export async function fetchProductBySlug(slug: string): Promise<ProductDetail> {
     if (!product) throw new Error(`Product not found: ${slug}`);
     return {
       ...product,
-      storageTips: MOCK_STORAGE_TIPS[product.category] ?? null,
+      storageTips: null,
       frequentlyBoughtWithProducts: getMockProductsByIds(product.frequentlyBoughtWith),
-      similarProducts: MOCK_PRODUCTS.filter((p) => p.category === product.category && p.slug !== product.slug).slice(0, 4),
+      similarProducts: MOCK_PRODUCTS.filter((p) => p.slug !== product.slug).slice(0, 4),
     };
   }
   const detail = await apiGet<BackendProductDetail>(`/product/${encodeURIComponent(slug)}`);
@@ -258,7 +239,6 @@ function mapCardToProduct(card: BackendProductCard): Product {
     name: card.name,
     tagline: card.short_description || "",
     description: card.description || card.short_description || "",
-    category: card.category.name,
     origin: (card.origin ?? "India") as ProductOrigin,
     processing: (card.processing ?? "Raw") as ProductProcessing,
     healthBenefits: card.health_benefits as HealthBenefit[],
@@ -318,7 +298,6 @@ export async function fetchHome(): Promise<HomeData> {
       heroHighlights: MOCK_HERO_HIGHLIGHTS,
       trustBadges: MOCK_TRUST_BADGES,
       trustPoints: MOCK_TRUST_POINTS,
-      categories: CATEGORIES.map((cat, index) => ({ id: index, name: cat.label, slug: cat.category, imageUrl: cat.image })),
       products: MOCK_PRODUCTS,
       featuredProducts: MOCK_PRODUCTS.slice(0, 8),
       bestSellers: MOCK_PRODUCTS.filter((product) => product.isBestSeller).slice(0, 8),
@@ -334,7 +313,6 @@ export async function fetchHome(): Promise<HomeData> {
     heroHighlights: home.highlights.hero,
     trustBadges: home.highlights.trust_badges,
     trustPoints: home.highlights.trust_points,
-    categories: home.categories.map((cat) => ({ id: cat.id, name: cat.name, slug: cat.slug, imageUrl: cat.image_url ?? null })),
     products: home.products.map(mapCardToProduct),
     featuredProducts: home.featured_products.map(mapCardToProduct),
     bestSellers: home.best_sellers.map(mapCardToProduct),
@@ -353,12 +331,10 @@ export async function fetchHome(): Promise<HomeData> {
 async function fetchProductsMock(params: ProductListParams): Promise<PaginatedResponse<Product>> {
   await mockDelay();
 
-  const { page = 1, pageSize = 8, category, search, priceMin, priceMax, weights, origins, processing, healthBenefits, sort } =
+  const { page = 1, pageSize = 8, search, priceMin, priceMax, weights, origins, processing, healthBenefits, sort } =
     params;
 
   let items = [...MOCK_PRODUCTS];
-
-  if (category) items = items.filter((product) => product.category === category);
 
   if (search) {
     const query = search.trim().toLowerCase();

@@ -10,16 +10,6 @@ export type HealthBenefit =
   | "Weight Management"
   | "Immunity Boost";
 
-/**
- * The real backend's categories are dynamic, admin-managed rows (see
- * backend/README.md's Category/Sub-category admin APIs) rather than a fixed
- * set, so this is a plain string — the category's slug — instead of a
- * closed union. Existing lookups keyed by the old union values (e.g.
- * StorageTips) simply fall back to their generic copy for slugs they don't
- * recognise.
- */
-export type ProductCategory = string;
-
 export interface WeightVariant {
   /** Backend product_variants.id — set when the product came from the API; server-side cart/wishlist need it. */
   id?: number;
@@ -55,7 +45,6 @@ export interface Product {
   name: string;
   tagline: string;
   description: string;
-  category: ProductCategory;
   origin: ProductOrigin;
   processing: ProductProcessing;
   healthBenefits: HealthBenefit[];
@@ -73,7 +62,7 @@ export interface Product {
   frequentlyBoughtWith: string[];
 }
 
-/** Category-level copy for the product page's "Storage & Usage Tips" box. */
+/** The product's copy for the "Storage & Usage Tips" box. */
 export interface StorageTipSet {
   shelfLife: string | null;
   storage: string | null;
@@ -90,7 +79,6 @@ export interface ProductDetail extends Product {
 export interface ProductListParams {
   page?: number;
   pageSize?: number;
-  category?: ProductCategory;
   search?: string;
   priceMin?: number;
   priceMax?: number;

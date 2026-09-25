@@ -19,7 +19,7 @@ router.put("/content/:resource/:id", ...requireAdmin, updateContent);
 router.patch("/content/:resource/:id/status", ...requireAdmin, updateContentStatus);
 router.delete("/content/:resource/:id", ...requireAdmin, deleteContent);
 
-// Image upload for products, categories, banners and hampers. The body is the raw file.
+// Image upload for products, banners and hampers. The body is the raw file.
 router.post("/upload", ...requireAdmin, uploadImage);
 
 export default router;

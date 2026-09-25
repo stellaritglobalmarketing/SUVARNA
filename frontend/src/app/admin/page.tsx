@@ -62,7 +62,7 @@ export default function AdminDashboardPage() {
             <Tile label="Revenue" value={formatInr(data.total_revenue)} sub={`${formatInr(data.revenue_last_30_days)} in the last 30 days`} icon={IndianRupee} />
             <Tile label="Orders" value={data.total_orders} sub={`${data.orders_today} today · ${data.paid_orders} paid`} icon={ShoppingCart} href="/admin/orders" />
             <Tile label="Customers" value={data.total_users} icon={Users} href="/admin/customers" />
-            <Tile label="Live products" value={data.total_active_products} sub={`${data.total_categories} categories`} icon={Package} href="/admin/products" />
+            <Tile label="Live products" value={data.total_active_products} icon={Package} href="/admin/products" />
           </>
         )}
       </div>

@@ -1,9 +1,8 @@
 import { createSelector, createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { HealthBenefit, ProductCategory, ProductListParams, ProductOrigin, ProductProcessing } from "@/types/product";
+import type { HealthBenefit, ProductListParams, ProductOrigin, ProductProcessing } from "@/types/product";
 import type { RootState } from "../store";
 
 interface FiltersState {
-  category?: ProductCategory;
   search: string;
   priceMin?: number;
   priceMax?: number;
@@ -17,7 +16,6 @@ interface FiltersState {
 }
 
 const initialState: FiltersState = {
-  category: undefined,
   search: "",
   priceMin: undefined,
   priceMax: undefined,
@@ -38,10 +36,6 @@ const filtersSlice = createSlice({
   name: "filters",
   initialState,
   reducers: {
-    setCategory: (state, action: PayloadAction<ProductCategory | undefined>) => {
-      state.category = action.payload;
-      state.page = 1;
-    },
     setSearch: (state, action: PayloadAction<string>) => {
       state.search = action.payload;
       state.page = 1;
@@ -83,7 +77,6 @@ const filtersSlice = createSlice({
 });
 
 export const {
-  setCategory,
   setSearch,
   setPriceRange,
   toggleWeight,
@@ -103,7 +96,6 @@ export const selectProductListParams = createSelector(
   (filters): ProductListParams => ({
     page: filters.page,
     pageSize: filters.pageSize,
-    category: filters.category,
     search: filters.search || undefined,
     priceMin: filters.priceMin,
     priceMax: filters.priceMax,

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getSubCategories, type AdminProduct, type ProductInput } from "@/lib/api/admin";
+import type { AdminProduct, ProductInput } from "@/lib/api/admin";
 import { AdminButton, Checkbox, Field, inputClass } from "@/components/admin/ui";
 
 const ORIGINS = ["India", "Kashmir", "Afghanistan", "Iran", "California"];
@@ -10,7 +9,6 @@ const PROCESSING = ["Raw", "Traditional", "Smoked", "Roasted & Salted"];
 
 function initialValues(product?: AdminProduct): ProductInput {
   return {
-    sub_category_id: product?.sub_category.id ?? 0,
     name: product?.name ?? "",
     slug: product?.slug ?? "",
     short_description: product?.short_description ?? "",
@@ -39,16 +37,7 @@ export function ProductDetailsForm({
   submitLabel: string;
 }) {
   const [values, setValues] = useState<ProductInput>(() => initialValues(product));
-  const { data: subCategories } = useQuery({ queryKey: ["admin", "subcategories"], queryFn: () => getSubCategories() });
   const set = <K extends keyof ProductInput>(key: K, value: ProductInput[K]) => setValues((prev) => ({ ...prev, [key]: value }));
-
-  // Group sub-categories under their category in the select.
-  const groups = new Map<string, { id: number; name: string }[]>();
-  for (const sc of subCategories?.items ?? []) {
-    const list = groups.get(sc.category_name) ?? [];
-    list.push({ id: sc.id, name: sc.name });
-    groups.set(sc.category_name, list);
-  }
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -63,24 +52,8 @@ export function ProductDetailsForm({
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <Field label="Name *">
+      <Field label="Name *" className="md:col-span-2">
         <input required maxLength={128} value={values.name} onChange={(e) => set("name", e.target.value)} className={inputClass} />
-      </Field>
-      <Field label="Category *" hint={subCategories && subCategories.items.length === 0 ? "Create a category and sub-category first." : undefined}>
-        <select required value={values.sub_category_id || ""} onChange={(e) => set("sub_category_id", Number(e.target.value))} className={inputClass}>
-          <option value="" disabled>
-            Choose…
-          </option>
-          {[...groups.entries()].map(([category, subs]) => (
-            <optgroup key={category} label={category}>
-              {subs.map((sc) => (
-                <option key={sc.id} value={sc.id}>
-                  {sc.name === category ? category : `${category} › ${sc.name}`}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
       </Field>
       <Field label="Tagline / short description" hint="Shown under the name on the product page." className="md:col-span-2">
         <input maxLength={255} value={values.short_description} onChange={(e) => set("short_description", e.target.value)} className={inputClass} />

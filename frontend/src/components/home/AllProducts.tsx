@@ -12,7 +12,7 @@ import { ProductGrid, ProductGridSkeleton } from "@/components/product/ProductGr
 const SEARCH_PAGE_SIZE = 24;
 
 /**
- * Single unified catalog listing — the client's full (and only) product range, no categories/best-sellers split.
+ * Single unified catalog listing — the client's full product range in one grid.
  * A search from the header swaps the grid for the backend's search results until it's cleared.
  */
 export function AllProducts({ products }: { products: Product[] }) {

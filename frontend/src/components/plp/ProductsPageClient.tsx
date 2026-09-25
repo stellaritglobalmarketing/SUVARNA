@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProducts } from "@/hooks/useProducts";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { selectProductListParams, setCategory, toggleHealthBenefit } from "@/lib/redux/slices/filtersSlice";
-import type { HealthBenefit, ProductCategory } from "@/types/product";
+import { selectProductListParams, toggleHealthBenefit } from "@/lib/redux/slices/filtersSlice";
+import type { HealthBenefit } from "@/types/product";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { FilterSidebar } from "./FilterSidebar";
@@ -26,8 +26,6 @@ export function ProductsPageClient() {
   useEffect(() => {
     if (didSyncFromUrl.current) return;
     didSyncFromUrl.current = true;
-    const category = searchParams.get("category") as ProductCategory | null;
-    if (category) dispatch(setCategory(category));
     const health = searchParams.get("health") as HealthBenefit | null;
     if (health) dispatch(toggleHealthBenefit(health));
   }, [searchParams, dispatch]);

@@ -58,7 +58,6 @@ export const HIGHLIGHT_ICONS = ["badge-check", "heart-pulse", "leaf", "package-c
 export interface Dashboard {
   total_users: number;
   total_active_products: number;
-  total_categories: number;
   total_orders: number;
   total_revenue: number;
   revenue_last_30_days: number;
@@ -191,41 +190,6 @@ export const getCustomer = (id: number) => apiGet<AdminCustomerDetail>(`/admin/c
 export const setCustomerStatus = (id: number, is_active: boolean) =>
   apiPatch<unknown>(`/admin/customer/${id}/status`, { is_active: is_active ? 1 : 0 });
 
-// ============================================================================ categories
-
-export interface AdminCategory {
-  id: number;
-  name: string;
-  slug: string;
-  description: string | null;
-  image_url: string | null;
-  is_featured: boolean | number;
-  is_active: boolean | number;
-}
-export interface AdminSubCategory extends AdminCategory {
-  category_id: number;
-  category_name: string;
-}
-export interface CategoryInput {
-  name: string;
-  slug?: string;
-  description?: string;
-  image_url?: string;
-  is_featured?: number;
-}
-export const getCategories = (query: Query = {}) => paged<AdminCategory>("/admin/category", { limit: 100, ...query });
-export const createCategory = (body: CategoryInput) => apiPost<unknown>("/admin/category", body);
-export const updateCategory = (id: number, body: CategoryInput) => apiPut<unknown>(`/admin/category/${id}`, body);
-export const setCategoryStatus = (id: number, active: boolean) => apiPatch<unknown>(`/admin/category/${id}/status`, { is_active: active ? 1 : 0 });
-export const deleteCategory = (id: number) => apiDelete<unknown>(`/admin/category/${id}`);
-
-export const getSubCategories = (query: Query = {}) => paged<AdminSubCategory>("/admin/subcategory", { limit: 100, ...query });
-export const createSubCategory = (body: CategoryInput & { category_id: number }) => apiPost<unknown>("/admin/subcategory", body);
-export const updateSubCategory = (id: number, body: CategoryInput & { category_id: number }) => apiPut<unknown>(`/admin/subcategory/${id}`, body);
-export const setSubCategoryStatus = (id: number, active: boolean) =>
-  apiPatch<unknown>(`/admin/subcategory/${id}/status`, { is_active: active ? 1 : 0 });
-export const deleteSubCategory = (id: number) => apiDelete<unknown>(`/admin/subcategory/${id}`);
-
 // ============================================================================ products
 
 export interface AdminProductRow {
@@ -243,8 +207,6 @@ export interface AdminProductRow {
   max_price: number | null;
   variant_count: number;
   available_stock: number;
-  category: { id: number; name: string };
-  sub_category: { id: number; name: string };
 }
 
 export interface AdminVariant {
@@ -259,6 +221,7 @@ export interface AdminVariant {
   is_active: boolean;
   stock_quantity: number;
   reserved_quantity: number;
+  low_stock_limit: number;
   available_quantity: number;
 }
 
@@ -298,14 +261,11 @@ export interface AdminProduct extends ProductContent {
   sort_order: number;
   created_at: string;
   updated_at: string;
-  category: { id: number; name: string };
-  sub_category: { id: number; name: string };
   variants: AdminVariant[];
   images: AdminImage[];
 }
 
 export interface ProductInput {
-  sub_category_id: number;
   name: string;
   slug?: string;
   short_description?: string;

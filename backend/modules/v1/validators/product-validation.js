@@ -39,8 +39,6 @@ function parseListingQuery(query = {}) {
 
     const sort = Object.prototype.hasOwnProperty.call(ALLOWED_SORTS, query.sort) ? query.sort : "featured";
 
-    const category = query.category ? String(query.category).trim().toLowerCase().slice(0, 80) : null;
-    const subcategory = query.subcategory ? String(query.subcategory).trim().toLowerCase().slice(0, 80) : null;
     const search = query.search ? String(query.search).trim().slice(0, 100) : null;
 
     // Comma-separated product slugs, e.g. for rendering a wishlist in one call.
@@ -55,8 +53,6 @@ function parseListingQuery(query = {}) {
         minPrice,
         maxPrice,
         sortSql: ALLOWED_SORTS[sort],
-        category,
-        subcategory,
         search: search || null,
         slugs: slugs.length > 0 ? slugs : null,
     };

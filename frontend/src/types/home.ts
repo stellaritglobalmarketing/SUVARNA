@@ -22,13 +22,6 @@ export interface HomeHighlight {
   description: string | null;
 }
 
-export interface HomeCategory {
-  id: number;
-  name: string;
-  slug: string;
-  imageUrl: string | null;
-}
-
 export interface HomeHamper {
   slug: string;
   name: string;
@@ -56,7 +49,6 @@ export interface HomeData {
   heroHighlights: HomeHighlight[];
   trustBadges: HomeHighlight[];
   trustPoints: HomeHighlight[];
-  categories: HomeCategory[];
   products: Product[];
   featuredProducts: Product[];
   bestSellers: Product[];

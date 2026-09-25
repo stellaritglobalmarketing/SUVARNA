@@ -25,18 +25,15 @@ const VARIANT_ORDER_SQL = `pv.is_default DESC,
 const HOME_PRODUCT_LIMIT = 24;
 const SIMILAR_PRODUCT_LIMIT = 4;
 
-// Columns every product card needs (see buildProductCards). Only products whose category,
-// sub-category and at least one variant are live come through the joins.
+// Columns every product card needs (see buildProductCards). Only products with at least one
+// live variant come through the join.
 const PRODUCT_CARD_COLUMNS = `
     p.id, p.name, p.slug, p.short_description, p.description, p.origin, p.processing,
     p.delivery_min_days, p.delivery_max_days, p.is_featured, p.is_bestseller,
-    pr.min_price, pr.max_price,
-    c.id AS category_id, c.name AS category_name, c.slug AS category_slug`;
+    pr.min_price, pr.max_price`;
 
 const PRODUCT_CARD_FROM = `
     FROM products p
-    JOIN sub_categories sc ON sc.id = p.sub_category_id AND sc.is_active = 1 AND sc.is_delete = 0
-    JOIN categories c ON c.id = sc.category_id AND c.is_active = 1 AND c.is_delete = 0
     JOIN (${PRICE_AGGREGATE_SUBQUERY}) pr ON pr.product_id = p.id`;
 
 const LIVE_PRODUCT_WHERE = "p.is_active = 1 AND p.is_delete = 0";
@@ -45,7 +42,7 @@ function productWhere(where) {
     return where ? `${LIVE_PRODUCT_WHERE} AND (${where})` : LIVE_PRODUCT_WHERE;
 }
 
-// Card rows for live products, optionally narrowed by an extra SQL condition on `p`/`c`/`sc`.
+// Card rows for live products, optionally narrowed by an extra SQL condition on `p`.
 // `orderBy` must come from a fixed whitelist (never user input) since it's interpolated.
 async function queryProductCardRows({ where = null, params = [], orderBy = "p.sort_order ASC", limit, offset = 0 }) {
     const [rows] = await db.query(
@@ -156,7 +153,6 @@ async function buildProductCards(rows) {
             slug: r.slug,
             short_description: r.short_description,
             description: r.description,
-            category: { id: r.category_id, name: r.category_name, slug: r.category_slug },
             origin: r.origin,
             processing: r.processing,
             health_benefits: benefitsByProduct.get(r.id) || [],
@@ -218,7 +214,6 @@ function mapBanner(row) {
 const getHome = async (req, res) => {
     try {
         const [
-            [categories],
             productRows,
             [bannerRows],
             [highlightRows],
@@ -226,12 +221,6 @@ const getHome = async (req, res) => {
             [testimonialRows],
             [faqRows],
         ] = await Promise.all([
-            db.query(
-                `SELECT id, name, slug, image_url
-                 FROM categories
-                 WHERE is_active = 1 AND is_delete = 0
-                 ORDER BY is_featured DESC, name ASC`
-            ),
             queryProductCardRows({ limit: HOME_PRODUCT_LIMIT }),
             db.query(
                 `SELECT id, placement, eyebrow, title, subtitle, image_url, image_alt,
@@ -285,7 +274,6 @@ const getHome = async (req, res) => {
                 trust_badges: highlightsFor("trust_badge"),
                 trust_points: highlightsFor("trust_point"),
             },
-            categories,
             products,
             featured_products: products.filter((p) => p.is_featured),
             best_sellers: products.filter((p) => p.is_bestseller),
@@ -316,27 +304,19 @@ const getHome = async (req, res) => {
 // products in one call (wishlist, recently viewed).
 const getProducts = async (req, res) => {
     try {
-        const { page, limit, offset, minPrice, maxPrice, sortSql, category, subcategory, search, slugs } = parseListingQuery(req.query);
+        const { page, limit, offset, minPrice, maxPrice, sortSql, search, slugs } = parseListingQuery(req.query);
 
         const conditions = [];
         const params = [];
 
-        if (category) {
-            conditions.push("c.slug = ?");
-            params.push(category);
-        }
-        if (subcategory) {
-            conditions.push("sc.slug = ?");
-            params.push(subcategory);
-        }
         if (slugs) {
             conditions.push(`p.slug IN (${slugs.map(() => "?").join(",")})`);
             params.push(...slugs);
         }
         if (search) {
-            conditions.push("(p.name LIKE ? OR p.short_description LIKE ? OR p.brand_name LIKE ? OR c.name LIKE ?)");
+            conditions.push("(p.name LIKE ? OR p.short_description LIKE ? OR p.brand_name LIKE ?)");
             const like = `%${search}%`;
-            params.push(like, like, like, like);
+            params.push(like, like, like);
         }
         if (minPrice !== null || maxPrice !== null) {
             let priceCondition = `EXISTS (
@@ -383,7 +363,7 @@ const getProductDetails = async (req, res) => {
 
         const [productRows] = await db.query(
             `SELECT ${PRODUCT_CARD_COLUMNS},
-                    p.brand_name, sc.id AS sub_category_id, sc.name AS sub_category_name, sc.slug AS sub_category_slug
+                    p.brand_name
              ${PRODUCT_CARD_FROM}
              WHERE p.slug = ? AND ${LIVE_PRODUCT_WHERE}
              LIMIT 1`,
@@ -414,9 +394,14 @@ const getProductDetails = async (req, res) => {
                 [product.id]
             ),
             ratingBreakdown(product.id),
+            // "You may also like": other products, those sharing the most health benefits first.
             queryProductCardRows({
-                where: "c.id = ? AND p.id <> ?",
-                params: [product.category_id, product.id],
+                where: "p.id <> ?",
+                params: [product.id, product.id],
+                orderBy: `(SELECT COUNT(*) FROM product_health_benefits phb
+                           WHERE phb.product_id = p.id
+                             AND phb.benefit IN (SELECT benefit FROM product_health_benefits WHERE product_id = ?)) DESC,
+                          p.sort_order ASC`,
                 limit: SIMILAR_PRODUCT_LIMIT,
             }),
         ]);
@@ -442,7 +427,6 @@ const getProductDetails = async (req, res) => {
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Product details fetched successfully", {
             ...card,
             brand_name: product.brand_name,
-            sub_category: { id: product.sub_category_id, name: product.sub_category_name, slug: product.sub_category_slug },
             nutrients: nutrientRows,
             lipid_profile: lipidRows.map((row) => ({ ...row, percent: toNumber(row.percent) })),
             rating_breakdown: breakdown,

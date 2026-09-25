@@ -4,13 +4,13 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { getCategories, getProducts, setProductStatus } from "@/lib/api/admin";
+import { getProducts, setProductStatus } from "@/lib/api/admin";
 import { formatInr } from "@/lib/utils/format";
 import { ProductImagePlaceholder } from "@/components/ui/ProductImagePlaceholder";
 import { ActivePill, AdminButton, FilterSelect, PageHeader, Pagination, SearchInput, StatusPill, Table, TableState, useAdminMutation } from "@/components/admin/ui";
 import { useUrlFilters } from "@/components/admin/useUrlFilters";
 
-const FILTERS = ["search", "category_id", "status", "sort"] as const;
+const FILTERS = ["search", "status", "sort"] as const;
 const PLACEHOLDER_GRADIENT: [string, string] = ["#8a6a4f", "#d4a373"];
 
 function ProductsList() {
@@ -20,7 +20,6 @@ function ProductsList() {
     queryFn: () => getProducts({ ...filters, page, limit: 20 }),
     placeholderData: keepPreviousData,
   });
-  const { data: categories } = useQuery({ queryKey: ["admin", "categories"], queryFn: () => getCategories() });
 
   const toggle = useAdminMutation(({ id, active }: { id: number; active: boolean }) => setProductStatus(id, active), {
     success: "Product updated",
@@ -47,12 +46,6 @@ function ProductsList() {
       <div className="mb-4 flex flex-wrap gap-2">
         <SearchInput value={filters.search} onChange={(v) => setFilter("search", v)} placeholder="Search products…" />
         <FilterSelect
-          label="Category"
-          value={filters.category_id}
-          onChange={(v) => setFilter("category_id", v)}
-          options={[{ value: "", label: "All categories" }, ...(categories?.items ?? []).map((c) => ({ value: String(c.id), label: c.name }))]}
-        />
-        <FilterSelect
           label="Status"
           value={filters.status}
           onChange={(v) => setFilter("status", v)}
@@ -76,8 +69,8 @@ function ProductsList() {
       </div>
 
       <div className={isPlaceholderData ? "opacity-60" : ""}>
-        <Table head={["Product", "Category", "Price", "Variants", "Stock", "Status", ""]} minWidth={900}>
-          <TableState isLoading={isLoading} isError={isError} isEmpty={!!data && data.items.length === 0} columns={7} emptyText="No products found." onRetry={refetch} />
+        <Table head={["Product", "Price", "Variants", "Stock", "Status", ""]} minWidth={780}>
+          <TableState isLoading={isLoading} isError={isError} isEmpty={!!data && data.items.length === 0} columns={6} emptyText="No products found." onRetry={refetch} />
           {data?.items.map((product) => (
             <tr key={product.id} className="hover:bg-brand-sand/40">
               <td className="px-4 py-3">
@@ -98,10 +91,6 @@ function ProductsList() {
                     </span>
                   </span>
                 </Link>
-              </td>
-              <td className="px-4 py-3 text-brand-ink/70">
-                {product.category.name}
-                {product.sub_category.name !== product.category.name && <span className="block text-xs text-brand-ink/50">{product.sub_category.name}</span>}
               </td>
               <td className="px-4 py-3">{priceRange(product.min_price, product.max_price)}</td>
               <td className="px-4 py-3">{product.variant_count}</td>

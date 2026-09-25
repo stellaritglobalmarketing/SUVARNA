@@ -1,41 +1,12 @@
-// Initial catalog, home page and product page content, taken verbatim from the storefront's original
+// Initial products, home page and product page content, taken verbatim from the storefront's original
 // design mock data (frontend/src/lib/data/*.mock.ts and the home section components).
 // Consumed by seeds/seed.js.
 
-// Each category gets one sub-category of the same name — products hang off sub-categories.
-// `tips` are copied to every product in the category (product_storage_tips); without them the page shows generic copy.
-export const CATEGORIES = [
-    { name: "Saffron", slug: "saffron", description: "Kashmiri Mongra kesar", tips: null },
-    { name: "Honey", slug: "honey", description: "Raw, unheated honey", tips: null },
-    {
-        name: "Almonds",
-        slug: "almonds",
-        description: "Mamra and Gurbandi almonds",
-        tips: {
-            shelf_life: "Best consumed within 6 months from opening when stored airtight.",
-            usage: "Soak overnight for a softer bite and easier digestion, especially during breakfast or post-workout snacking.",
-            storage: "Keep in a dry, airtight jar after opening; avoid the kitchen counter during monsoon humidity.",
-        },
-    },
-    { name: "Ghee", slug: "ghee", description: "Traditionally made cow and buffalo ghee", tips: null },
-    {
-        name: "Walnuts",
-        slug: "walnuts",
-        description: "Kashmiri walnut kernels",
-        tips: {
-            shelf_life: "Quality stays excellent for around 4–5 months once opened if stored airtight.",
-            usage: "Add to oats, smoothies, or yogurt in the morning for an easy Omega-3 boost.",
-            storage: "Prefer a cool cupboard or refrigerator after opening to preserve the delicate nutty aroma.",
-        },
-    },
-];
-
-// `variants[].weight` is [value, unit]; unit is one of g | kg | ml | l.
+// `variants[].weight` is [value, unit]; unit is one of g | kg | ml | l. `storage_tips` is optional (generic copy otherwise).
 export const PRODUCTS = [
     {
         slug: "kashmiri-mongra-saffron",
         name: "Kashmiri Mongra Saffron",
-        category: "saffron",
         short_description: "Grade-1 mongra kesar, hand-picked from Pampore",
         description:
             "Hand-harvested from the saffron fields of Pampore, Kashmir, this Mongra-grade saffron is prized for its deep crimson threads, intense aroma and rich flavour — the finest grade of Indian kesar.",
@@ -68,7 +39,6 @@ export const PRODUCTS = [
     {
         slug: "raw-forest-honey",
         name: "Raw Forest Honey",
-        category: "honey",
         short_description: "Unheated, cold-extracted honey straight from the hive",
         description:
             "Naturally extracted and never heated above room temperature, this raw honey retains its live enzymes, pollen and natural aroma — a wholesome everyday sweetener straight from the hive.",
@@ -104,7 +74,11 @@ export const PRODUCTS = [
     {
         slug: "afghani-gurbandi-almonds",
         name: "Afghani Gurbandi Almonds",
-        category: "almonds",
+        storage_tips: {
+            shelf_life: "Best consumed within 6 months from opening when stored airtight.",
+            usage: "Soak overnight for a softer bite and easier digestion, especially during breakfast or post-workout snacking.",
+            storage: "Keep in a dry, airtight jar after opening; avoid the kitchen counter during monsoon humidity.",
+        },
         short_description: "Slim, sweet almonds from the Gurbandi valley",
         description:
             "Grown in the Gurbandi valley of Afghanistan, these slim-shelled almonds are prized for their delicate sweetness and soft bite — a traditional favourite across South Asian kitchens.",
@@ -141,7 +115,11 @@ export const PRODUCTS = [
     {
         slug: "kashmir-mamra-almonds",
         name: "Kashmir Mamra Almonds",
-        category: "almonds",
+        storage_tips: {
+            shelf_life: "Best consumed within 6 months from opening when stored airtight.",
+            usage: "Soak overnight for a softer bite and easier digestion, especially during breakfast or post-workout snacking.",
+            storage: "Keep in a dry, airtight jar after opening; avoid the kitchen counter during monsoon humidity.",
+        },
         short_description: "Wild-harvested, cold-pressed oil-rich almonds",
         description:
             "Hand-picked from the Mamra orchards of Kashmir, these almonds are prized for their dense, oil-rich kernel and distinct sweet aroma. Sun-dried naturally with zero chemical treatment.",
@@ -178,7 +156,6 @@ export const PRODUCTS = [
     {
         slug: "pure-cow-ghee",
         name: "Pure Cow Ghee",
-        category: "ghee",
         short_description: "A2 bilona-method cow ghee, slow-churned",
         description:
             "Made using the traditional bilona method from A2 cow milk, this ghee is slow-churned in small batches for a rich, nutty aroma and golden-grain texture — the way ghee was made generations ago.",
@@ -214,7 +191,6 @@ export const PRODUCTS = [
     {
         slug: "pure-buffalo-ghee",
         name: "Pure Buffalo Ghee",
-        category: "ghee",
         short_description: "Rich, traditionally simmered buffalo-milk ghee",
         description:
             "Slow-simmered from full-cream buffalo milk, this ghee has a paler colour and a richer, more intense texture than cow ghee — a traditional favourite for its deep flavour in everyday cooking.",
@@ -250,7 +226,11 @@ export const PRODUCTS = [
     {
         slug: "kashmiri-walnut-kernels",
         name: "Kashmiri Walnut Kernels",
-        category: "walnuts",
+        storage_tips: {
+            shelf_life: "Quality stays excellent for around 4–5 months once opened if stored airtight.",
+            usage: "Add to oats, smoothies, or yogurt in the morning for an easy Omega-3 boost.",
+            storage: "Prefer a cool cupboard or refrigerator after opening to preserve the delicate nutty aroma.",
+        },
         short_description: "Light amber halves, cracked fresh to order",
         description:
             "Premium light-amber walnut kernels cracked fresh from Kashmiri orchards, prized for their thin skin, low bitterness, and high omega-3 content.",

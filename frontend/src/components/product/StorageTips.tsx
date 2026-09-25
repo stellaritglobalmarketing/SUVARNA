@@ -8,7 +8,7 @@ const GENERAL_TIPS: { icon: typeof Sun; text: string }[] = [
   { icon: Snowflake, text: "Avoid freezing; it can dull the crunch and affect texture, especially in nuts and seeds." },
 ];
 
-/** `tips` is the product category's copy from the backend; any missing piece falls back to generic text. */
+/** `tips` is the product's copy from the backend; any missing piece falls back to generic text. */
 export function StorageTips({ tips }: { tips: StorageTipSet | null }) {
   return (
     <div className="rounded-2xl border border-brand-sand-dark bg-white p-5">
