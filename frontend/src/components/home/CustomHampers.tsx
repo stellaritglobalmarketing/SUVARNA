@@ -25,9 +25,9 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
   if (products.length === 0) return null;
 
   return (
-    <section className="py-4 sm:py-12">
+    <section id="hampers" tabIndex={-1} className="scroll-mt-52 border-y border-brand-sand-dark bg-[#f7f4ed] py-12 sm:py-16">
       <Container>
-        <SectionHeading eyebrow="Gift It" title="Customized Hampers" subtitle="Pick a starting theme, or build your own from scratch." />
+        <SectionHeading eyebrow="Thoughtfully Given" title="A little goodness, beautifully gifted." subtitle="Pick a starting theme, or build your own from scratch." />
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-5 lg:grid-cols-4">
           {hampers.map((theme) => (
@@ -35,14 +35,14 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
               key={theme.slug}
               type="button"
               onClick={() => openWithPreset(theme.productSlugs)}
-              className="overflow-hidden rounded-xl border border-brand-sand-dark bg-white text-left cursor-pointer"
+              className="overflow-hidden rounded-md border border-brand-sand-dark bg-white text-left cursor-pointer"
             >
               <div className="relative aspect-square w-full">
                 {theme.imageUrl && (
                   <Image src={theme.imageUrl} alt={theme.name} fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" />
                 )}
               </div>
-              <div className="p-3">
+              <div className="p-4">
                 <p className="text-sm font-semibold text-brand-forest">{theme.name}</p>
                 {theme.subtitle && <p className="mt-0.5 text-xs text-brand-ink/60">{theme.subtitle}</p>}
               </div>

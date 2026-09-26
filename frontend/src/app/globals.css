@@ -2,7 +2,7 @@
 
 :root {
   /* Suvarna7 brand palette — espresso brown + gold, off the "Suvarna7" wordmark. */
-  --background: #f8f1e3;
+  --background: #fffdf8;
   --foreground: #3d2b1c;
   --mobile-nav-height: 4.5rem;
 
@@ -10,8 +10,8 @@
   --color-forest-light: #6b4a2e;
   --color-walnut: #b8874a;
   --color-walnut-dark: #8a5c2e;
-  --color-sand: #f8f1e3;
-  --color-sand-dark: #ecdfc4;
+  --color-sand: #fffdf8;
+  --color-sand-dark: #eee8de;
   --color-gold: #cd7f1f;
   --color-gold-light: #eab54a;
   --color-ink: #2b1d12;
@@ -118,3 +118,37 @@ button {
 .snap-x {
   -webkit-overflow-scrolling: touch;
 }
+
+/* Full-width campaign artwork contains its own typography. */
+:focus-visible { outline: 2px solid var(--color-walnut-dark); outline-offset: 4px; }
+.store-hero { padding-inline: clamp(12px, 2.5vw, 48px); background: var(--background); }
+.hero-gallery { position: relative; overflow: hidden; border-radius: 0 0 48px 48px; touch-action: pan-y; }
+.hero-photographs { position: relative; width: 100%; height: calc((100svh - var(--store-header-height, 116px)) * 0.88); min-height: 320px; overflow: hidden; background: #f6eddf; }
+.hero-artwork { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hero-slide picture { display: block; width: 100%; height: 100%; }
+.hero-slide { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.hero-slide.is-active { opacity: 1; pointer-events: auto; z-index: 1; }
+.hero-slide:active { transform: none; }
+.hero-slide:focus-visible { outline-offset: -5px; }
+.hero-controls { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.hero-white-fade { position: absolute; inset: 0; z-index: 2; background: #fff; opacity: 0; pointer-events: none; }
+.hero-controls { z-index: 3; }
+.hero-pagination { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 0; pointer-events: auto; }
+.hero-dot { display: flex; align-items: center; justify-content: center; width: 36px; height: 44px; cursor: pointer; }
+.hero-dot::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #302a20; }
+.hero-dot.is-active::after { width: 17px; height: 17px; border: 1px solid #302a20; background: transparent; }
+.product-card { transition: border-color 180ms ease; }
+.product-card:hover { border-color: #bba586; }
+.announcement-bar { font-size: 11px; }
+@media (max-width: 1023px) {
+  .store-header .lg\:hidden form > div { border: 1px solid #e9e2d7; box-shadow: none; border-radius: 5px; }
+}
+@media (max-width: 1023px) {
+  .store-hero { padding-top: 12px; }
+  .hero-photographs { height: auto; aspect-ratio: 5 / 2; min-height: 0; }
+  .hero-artwork { object-fit: cover; object-position: center; }
+  .hero-gallery { border-radius: 0 0 24px 24px; }
+  .hero-pagination { bottom: 0; }
+  .hero-dot::after { width: 6px; height: 6px; }
+  .hero-dot.is-active::after { width: 12px; height: 12px; }}
+@media (prefers-reduced-motion: reduce) { .hero-slide { transition: none; } }

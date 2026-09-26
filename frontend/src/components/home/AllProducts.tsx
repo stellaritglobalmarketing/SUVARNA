@@ -27,7 +27,7 @@ export function AllProducts({ products }: { products: Product[] }) {
   const results = isSearching ? data?.items : products;
 
   return (
-    <section id="products" className="scroll-mt-20 py-4 sm:py-12">
+    <section id="products" tabIndex={-1} className="scroll-mt-52 py-10 sm:py-16">
       <Container>
         {isSearching ? (
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -45,7 +45,7 @@ export function AllProducts({ products }: { products: Product[] }) {
             </button>
           </div>
         ) : (
-          <SectionHeading eyebrow="Our Range" title="Our Products" subtitle="Everything we grow, harvest and churn — in one place." />
+          <SectionHeading eyebrow="The Suvarna Collection" title="Good food. Everyday rituals." subtitle="Everything we grow, harvest and churn — in one place." />
         )}
 
         <div className={`mt-6 transition-opacity sm:mt-8 ${isSearching && isPlaceholderData ? "opacity-60" : "opacity-100"}`}>

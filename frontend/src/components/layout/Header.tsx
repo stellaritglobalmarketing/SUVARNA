@@ -6,16 +6,13 @@ import { useState, type FormEvent } from "react";
 import {
   ChevronDown,
   Heart,
-  Leaf,
   LogOut,
   Menu,
   MapPin,
   PackageSearch,
   Pencil,
   Search,
-  ShieldCheck,
   ShoppingBag,
-  Truck,
   User,
   X,
 } from "lucide-react";
@@ -30,9 +27,9 @@ import { Container } from "@/components/ui/Container";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
 const NAV_LINKS = [
-  { href: "/", label: "Home" },
+  { href: "/#products", label: "Shop" },
   { href: "/our-story", label: "Our Story" },
-  { href: "/", label: "Quality" },
+  { href: "/#quality", label: "Quality" },
   { href: "/track-order", label: "Track Order" },
 ];
 
@@ -61,7 +58,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-brand-forest" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+    <header className="store-header sticky top-0 z-40 bg-brand-forest" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       {/* Mobile app-shell header: menu + logo + cart, location row, always-visible search */}
       <div className="lg:hidden">
         <Container className="flex h-20 items-center justify-between gap-3">
@@ -69,12 +66,12 @@ export function Header() {
             <button
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
-              aria-label="Toggle menu"
+              aria-label="Toggle menu" aria-expanded={isMenuOpen}
               className="flex h-9 w-9 items-center justify-center rounded-full text-brand-sand active:bg-white/10 cursor-pointer"
             >
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <BrandLogo className="w-36" sizes="144px" priority />
+            <BrandLogo className="w-36 rounded-md bg-brand-sand" sizes="144px" priority />
           </div>
           <button
             type="button"
@@ -116,7 +113,7 @@ export function Header() {
                 type="search"
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Search for dry fruits..."
+                aria-label="Search products" placeholder="Search our collection"
                 className="w-full bg-transparent text-sm outline-none placeholder:text-brand-ink/40"
               />
             </div>
@@ -184,22 +181,22 @@ export function Header() {
 
       {/* Desktop header: utility strip + full nav + search */}
       <div className="hidden lg:block">
-        <div className="bg-brand-forest text-brand-sand">
+        <div className="announcement-bar bg-brand-forest text-brand-sand">
           <Container className="flex h-9 items-center justify-between text-xs">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">
-                <Leaf size={12} className="text-brand-gold-light" /> 100% Natural
+                100% Natural
               </span>
               <span className="text-brand-sand/30">|</span>
               <span className="flex items-center gap-1.5">
-                <ShieldCheck size={12} className="text-brand-gold-light" /> No Preservatives
+                No Preservatives
               </span>
               <span className="text-brand-sand/30">|</span>
               <span>Farm to Pouch</span>
             </div>
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">
-                <Truck size={12} className="text-brand-gold-light" /> Pan-India Delivery
+                Pan-India Delivery
               </span>
               <span className="text-brand-sand/30">|</span>
               <Link href="/track-order" className="hover:text-brand-gold-light">
@@ -227,7 +224,7 @@ export function Header() {
           </Container>
         </div>
 
-        <div className="border-b border-brand-sand-dark bg-brand-sand/95 backdrop-blur">
+        <div className="border-b border-brand-sand-dark bg-white">
           <Container className="flex h-20 items-center justify-between gap-4">
             <BrandLogo priority />
 
@@ -244,13 +241,13 @@ export function Header() {
             </nav>
 
             <form onSubmit={handleSearch} className="max-w-sm flex-1">
-              <div className="flex items-center gap-2 rounded-full border border-brand-sand-dark bg-brand-sand-dark/40 px-4 py-2">
+              <div className="flex items-center gap-2 rounded-md border border-brand-sand-dark bg-brand-sand px-4 py-2">
                 <Search size={16} className="shrink-0 text-brand-ink/50" aria-hidden="true" />
                 <input
                   type="search"
                   value={searchValue}
                   onChange={(event) => setSearchValue(event.target.value)}
-                  placeholder="Search for dry fruits..."
+                  aria-label="Search products" placeholder="Search our collection"
                   className="w-full bg-transparent text-sm outline-none placeholder:text-brand-ink/40"
                 />
               </div>

@@ -48,7 +48,7 @@ export function ProductCard({ product }: { product: Product }) {
   const purityLabel = product.certifications.find((cert) => cert.label.startsWith("100%"))?.label;
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-brand-sand-dark bg-white transition-shadow sm:hover:shadow-lg">
+    <div className="product-card flex flex-col overflow-hidden rounded-md border border-brand-sand-dark bg-white">
       {/* Compact app-style card — quick-commerce density for mobile browsing */}
       <div className="sm:hidden">
         <div className="relative aspect-square overflow-hidden">
@@ -118,7 +118,7 @@ export function ProductCard({ product }: { product: Product }) {
             )}
           </p>
           <Link href={`/products/${product.slug}`}>
-            <p className="mt-0.5 truncate text-xs leading-snug text-brand-ink/80">{product.name}</p>
+            <p className="mt-0.5 min-h-9 text-xs leading-snug text-brand-ink/80">{product.name}</p>
           </Link>
           {purityLabel && (
             <p className="mt-0.5 flex items-center gap-1 text-[9px] font-medium text-brand-forest">
@@ -162,9 +162,9 @@ export function ProductCard({ product }: { product: Product }) {
         </button>
 
         <div className="flex flex-1 flex-col gap-2 p-4">
-          <p className="text-xs uppercase tracking-wide text-brand-walnut-dark">{product.origin} Origin</p>
+          <p className="text-[10px] uppercase tracking-[0.12em] text-brand-walnut-dark">{product.origin} Origin</p>
           <Link href={`/products/${product.slug}`}>
-            <h3 className="font-serif text-lg font-semibold text-brand-forest leading-tight">{product.name}</h3>
+            <h3 className="text-base font-medium text-brand-forest leading-snug">{product.name}</h3>
           </Link>
           <RatingStars rating={product.rating} reviewCount={product.reviewCount} />
 
@@ -186,9 +186,9 @@ export function ProductCard({ product }: { product: Product }) {
               onClick={() => addVariantToCart(selectedVariant)}
               disabled={selectedVariant.stock === 0}
               aria-label={`Add ${product.name} ${selectedVariant.label} to cart`}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-forest text-brand-sand transition-colors hover:bg-brand-forest-light disabled:opacity-40 cursor-pointer"
+              className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-md px-4 bg-brand-forest text-brand-sand transition-colors hover:bg-brand-forest-light disabled:opacity-40 cursor-pointer"
             >
-              <MdAddShoppingCart size={17} />
+              <MdAddShoppingCart size={17} /><span className="text-xs font-medium">{selectedVariant.stock === 0 ? "Sold out" : "Add to cart"}</span>
             </button>
           </div>
         </div>

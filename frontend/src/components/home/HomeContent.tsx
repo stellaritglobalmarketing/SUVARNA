@@ -7,7 +7,6 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ProductGridSkeleton } from "@/components/product/ProductGrid";
 import { Hero } from "./Hero";
 import { PromoBanner } from "./PromoBanner";
-import { TrustBadges } from "./TrustBadges";
 import { AllProducts } from "./AllProducts";
 import { CustomHampers } from "./CustomHampers";
 import { TrustSection } from "./TrustSection";
@@ -34,10 +33,9 @@ export function HomeContent() {
 
   return (
     <>
-      {data.hero && <Hero banner={data.hero} highlights={data.heroHighlights} />}
-      {data.promo && <PromoBanner banner={data.promo} />}
-      <TrustBadges badges={data.trustBadges} />
+      {data.hero && <Hero banner={data.hero} hasHampers={data.products.length > 0} />}
       <AllProducts products={data.products} />
+      {data.promo && <PromoBanner banner={data.promo} />}
       <CustomHampers hampers={data.hampers} products={data.products} />
       <TrustSection points={data.trustPoints} />
       <Testimonials testimonials={data.testimonials} />
@@ -50,7 +48,7 @@ function HomeSkeleton() {
   return (
     <>
       {/* Same footprint as the Hero / PromoBanner so the page doesn't jump when data lands */}
-      <div className="hidden min-h-[640px] bg-brand-forest lg:block" />
+      <div className="min-h-[480px] bg-brand-sand lg:min-h-[580px]" />
       <Container className="pt-4 md:hidden">
         <Skeleton className="h-36 w-full rounded-2xl" />
       </Container>
