@@ -376,19 +376,8 @@ const getProductDetails = async (req, res) => {
 
         const product = productRows[0];
 
-        const [[card], [nutrientRows], [lipidRows], [tipRows], [relatedRows], breakdown, similarRows] = await Promise.all([
+        const [[card], [relatedRows], breakdown, similarRows] = await Promise.all([
             buildProductCards([product]),
-            db.query(
-                `SELECT label, value_per_100g, daily_value_percent
-                 FROM product_nutrients WHERE product_id = ? ORDER BY sort_order ASC, id ASC`,
-                [product.id]
-            ),
-            db.query(
-                `SELECT label, percent, color
-                 FROM product_lipid_profile WHERE product_id = ? ORDER BY sort_order ASC, id ASC`,
-                [product.id]
-            ),
-            db.query("SELECT shelf_life_tip, storage_tip, usage_tip FROM product_storage_tips WHERE product_id = ?", [product.id]),
             db.query(
                 "SELECT related_product_id FROM product_related WHERE product_id = ? ORDER BY sort_order ASC",
                 [product.id]
@@ -422,17 +411,10 @@ const getProductDetails = async (req, res) => {
         // Keep the admin-chosen order of "frequently bought with", not the catalog order.
         companionCards.sort((a, b) => relatedIds.indexOf(a.id) - relatedIds.indexOf(b.id));
 
-        const tips = tipRows[0];
-
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Product details fetched successfully", {
             ...card,
             brand_name: product.brand_name,
-            nutrients: nutrientRows,
-            lipid_profile: lipidRows.map((row) => ({ ...row, percent: toNumber(row.percent) })),
             rating_breakdown: breakdown,
-            storage_tips: tips
-                ? { shelf_life: tips.shelf_life_tip, storage: tips.storage_tip, usage: tips.usage_tip }
-                : null,
             frequently_bought_with: companionCards,
             similar_products: similarCards,
         });

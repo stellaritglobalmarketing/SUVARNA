@@ -32,7 +32,7 @@ router.get("/product/:id", ...requireAdmin, getProductById);
 router.put("/product/:id", ...requireAdmin, updateProduct);
 router.patch("/product/:id/status", ...requireAdmin, updateProductStatus);
 router.delete("/product/:id", ...requireAdmin, deleteProduct);
-// Product-page content: nutrients, lipid profile, certifications, health benefits, storage tips, related products
+// Product-page content: certifications, health benefits, related products
 router.put("/product/:id/content", ...requireAdmin, updateProductContent);
 
 // Variant (nested under product for create/list, flat for id-based ops)

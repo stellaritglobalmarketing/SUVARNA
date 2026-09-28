@@ -222,7 +222,7 @@ const getProductById = async (req, res) => {
                 available_quantity: Math.max(toNumber(v.stock_quantity) - toNumber(v.reserved_quantity), 0),
             })),
             images: images.map((img) => ({ ...img, is_primary: !!img.is_primary, is_active: !!img.is_active })),
-            // nutrients, lipid_profile, certifications, health_benefits, storage_tips, related_products
+            // certifications, health_benefits, related_products
             ...content,
         });
     } catch (error) {

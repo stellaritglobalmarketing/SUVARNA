@@ -22,18 +22,6 @@ export interface WeightVariant {
   sku: string;
 }
 
-export interface NutrientInfo {
-  label: string;
-  valuePer100g: string;
-  dailyValuePercent?: number;
-}
-
-export interface LipidBreakdownItem {
-  label: string;
-  percent: number;
-  color: string;
-}
-
 export interface Certification {
   label: string;
   description: string;
@@ -56,22 +44,12 @@ export interface Product {
   discountPercent: number;
   certifications: Certification[];
   variants: WeightVariant[];
-  nutrients: NutrientInfo[];
-  lipidBreakdown: LipidBreakdownItem[];
   deliveryEstimateDays: [number, number];
   frequentlyBoughtWith: string[];
 }
 
-/** The product's copy for the "Storage & Usage Tips" box. */
-export interface StorageTipSet {
-  shelfLife: string | null;
-  storage: string | null;
-  usage: string | null;
-}
-
 /** Everything the product page renders, from the single GET /product/:slug call. */
 export interface ProductDetail extends Product {
-  storageTips: StorageTipSet | null;
   frequentlyBoughtWithProducts: Product[];
   similarProducts: Product[];
 }

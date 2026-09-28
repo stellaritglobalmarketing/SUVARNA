@@ -21,11 +21,9 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 import { ProductGallery } from "./ProductGallery";
 import { CertificationBadges } from "./CertificationBadges";
-import { NutrientTable } from "./NutrientTable";
-import { NutrientDonut } from "./NutrientDonut";
 import { PincodeChecker } from "./PincodeChecker";
 import { FrequentlyBoughtTogether } from "./FrequentlyBoughtTogether";
-import { StorageTips } from "./StorageTips";
+import { QualityProcess } from "./QualityProcess";
 import { SimilarProducts } from "./SimilarProducts";
 import { ReviewSummary } from "./ReviewSummary";
 import { ReviewList } from "./ReviewList";
@@ -146,25 +144,8 @@ export function ProductDetailClient({ slug }: { slug: string }) {
         <FrequentlyBoughtTogether mainProduct={product} companions={product.frequentlyBoughtWithProducts} />
       </Container>
 
-      <Container className="grid grid-cols-1 gap-10 py-10 lg:grid-cols-2">
-        <div>
-          <h2 className="font-serif text-xl font-semibold text-brand-forest">Nutrient Breakdown</h2>
-          <p className="mt-1 text-sm text-brand-ink/60">Macro &amp; micro nutrients per 100g serving.</p>
-          <div className="mt-4">
-            <NutrientTable nutrients={product.nutrients} />
-          </div>
-        </div>
-        <div>
-          <h2 className="font-serif text-xl font-semibold text-brand-forest">Lipid Profile</h2>
-          <p className="mt-1 text-sm text-brand-ink/60">Fat composition breakdown by weight.</p>
-          <div className="mt-4">
-            <NutrientDonut items={product.lipidBreakdown} />
-          </div>
-        </div>
-      </Container>
-
-      <Container className="pb-6">
-        <StorageTips tips={product.storageTips} />
+      <Container className="py-10">
+        <QualityProcess origin={product.origin} processing={product.processing} />
       </Container>
 
       <Container className="py-10">

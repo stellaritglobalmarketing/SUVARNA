@@ -68,9 +68,6 @@ interface BackendProductCard extends BackendHomeProductCard {
 
 /** GET /product/:slug — the full card plus product-page-only data. */
 interface BackendProductDetail extends BackendProductCard {
-  nutrients: { label: string; value_per_100g: string; daily_value_percent: number | null }[];
-  lipid_profile: { label: string; percent: number; color: string }[];
-  storage_tips: { shelf_life: string | null; storage: string | null; usage: string | null } | null;
   frequently_bought_with: BackendProductCard[];
   similar_products: BackendProductCard[];
 }
@@ -182,7 +179,6 @@ export async function fetchProductBySlug(slug: string): Promise<ProductDetail> {
     if (!product) throw new Error(`Product not found: ${slug}`);
     return {
       ...product,
-      storageTips: null,
       frequentlyBoughtWithProducts: getMockProductsByIds(product.frequentlyBoughtWith),
       similarProducts: MOCK_PRODUCTS.filter((p) => p.slug !== product.slug).slice(0, 4),
     };
@@ -219,7 +215,7 @@ export async function fetchProductsByIds(slugs: string[]): Promise<Product[]> {
 const FALLBACK_GRADIENT: [string, string] = ["#8a6a4f", "#d4a373"];
 
 /** Home/detail cards carry every field the card design shows, so no mock template is needed here. PDP-only
- * data (nutrients, lipid breakdown, "frequently bought with") is added by mapDetailToProduct. */
+ * data ("frequently bought with", similar products) is added by mapDetailToProduct. */
 function mapCardToProduct(card: BackendProductCard): Product {
   const variants: WeightVariant[] = card.variants.length
     ? card.variants.map((variant) => ({
@@ -251,25 +247,15 @@ function mapCardToProduct(card: BackendProductCard): Product {
     discountPercent: card.discount_percent,
     certifications: card.certifications,
     variants,
-    nutrients: [],
-    lipidBreakdown: [],
     deliveryEstimateDays: card.delivery_estimate_days,
     frequentlyBoughtWith: [],
   };
 }
 
 function mapDetailToProduct(detail: BackendProductDetail): ProductDetail {
-  const tips = detail.storage_tips;
   return {
     ...mapCardToProduct(detail),
-    nutrients: detail.nutrients.map((n) => ({
-      label: n.label,
-      valuePer100g: n.value_per_100g,
-      dailyValuePercent: n.daily_value_percent ?? undefined,
-    })),
-    lipidBreakdown: detail.lipid_profile,
     frequentlyBoughtWith: detail.frequently_bought_with.map((companion) => companion.slug),
-    storageTips: tips ? { shelfLife: tips.shelf_life, storage: tips.storage, usage: tips.usage } : null,
     frequentlyBoughtWithProducts: detail.frequently_bought_with.map(mapCardToProduct),
     similarProducts: detail.similar_products.map(mapCardToProduct),
   };

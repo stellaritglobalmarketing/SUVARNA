@@ -82,27 +82,10 @@ async function upsertProducts(conn) {
 
         // Product-page content lives in its own tables, one row per item.
         await replaceProductRows(
-            conn, "product_nutrients", productId, ["label", "value_per_100g", "daily_value_percent", "sort_order"],
-            p.nutrients.map((n, i) => [n.label, n.value_per_100g, n.daily_value_percent ?? null, i + 1])
-        );
-        await replaceProductRows(
-            conn, "product_lipid_profile", productId, ["label", "percent", "color", "sort_order"],
-            p.lipid_profile.map((l, i) => [l.label, l.percent, l.color, i + 1])
-        );
-        await replaceProductRows(
             conn, "product_certifications", productId, ["label", "description", "sort_order"],
             p.certifications.map((c, i) => [c.label, c.description, i + 1])
         );
         await replaceProductRows(conn, "product_health_benefits", productId, ["benefit"], p.health_benefits.map((b) => [b]));
-
-        const tips = p.storage_tips;
-        await conn.query("DELETE FROM product_storage_tips WHERE product_id = ?", [productId]);
-        if (tips) {
-            await conn.query(
-                "INSERT INTO product_storage_tips (product_id, shelf_life_tip, storage_tip, usage_tip) VALUES (?, ?, ?, ?)",
-                [productId, tips.shelf_life, tips.storage, tips.usage]
-            );
-        }
 
         console.log(`  product ${index + 1}/${PRODUCTS.length}: ${p.name} (${p.variants.length} variants)`);
     }

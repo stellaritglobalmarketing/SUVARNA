@@ -13,15 +13,9 @@ function isPositiveInt(value) {
  * GET /admin/product/:id so the edit form loads everything in one call.
  */
 async function getProductContent(conn, productId) {
-    const [[nutrients], [lipidProfile], [certifications], [benefits], [tips], [related]] = await Promise.all([
-        conn.query(
-            "SELECT label, value_per_100g, daily_value_percent FROM product_nutrients WHERE product_id = ? ORDER BY sort_order, id",
-            [productId]
-        ),
-        conn.query("SELECT label, percent, color FROM product_lipid_profile WHERE product_id = ? ORDER BY sort_order, id", [productId]),
+    const [[certifications], [benefits], [related]] = await Promise.all([
         conn.query("SELECT label, description FROM product_certifications WHERE product_id = ? ORDER BY sort_order, id", [productId]),
         conn.query("SELECT benefit FROM product_health_benefits WHERE product_id = ? ORDER BY benefit", [productId]),
-        conn.query("SELECT shelf_life_tip, storage_tip, usage_tip FROM product_storage_tips WHERE product_id = ?", [productId]),
         conn.query(
             `SELECT p.id, p.name, p.slug
              FROM product_related pr
@@ -33,19 +27,16 @@ async function getProductContent(conn, productId) {
     ]);
 
     return {
-        nutrients,
-        lipid_profile: lipidProfile.map((row) => ({ ...row, percent: Number(row.percent) })),
         certifications,
         health_benefits: benefits.map((row) => row.benefit),
-        storage_tips: tips[0] ? { shelf_life: tips[0].shelf_life_tip, storage: tips[0].storage_tip, usage: tips[0].usage_tip } : null,
         related_products: related,
     };
 }
 
 /**
- * PUT /admin/product/:id/content — replaces any of: nutrients, lipid_profile, certifications,
- * health_benefits, storage_tips, related_product_ids. Sections left out are untouched; an empty
- * array (or null storage_tips) clears that section. All changes apply together or not at all.
+ * PUT /admin/product/:id/content — replaces any of: certifications, health_benefits,
+ * related_product_ids. Sections left out are untouched; an empty array clears that section.
+ * All changes apply together or not at all.
  */
 const updateProductContent = async (req, res) => {
     const { id } = req.params;
@@ -97,20 +88,6 @@ const updateProductContent = async (req, res) => {
             }
         };
 
-        if (content.nutrients) {
-            await replaceList(
-                "product_nutrients",
-                ["label", "value_per_100g", "daily_value_percent", "sort_order"],
-                content.nutrients.map((n, i) => [n.label, n.value_per_100g, n.daily_value_percent, i + 1])
-            );
-        }
-        if (content.lipid_profile) {
-            await replaceList(
-                "product_lipid_profile",
-                ["label", "percent", "color", "sort_order"],
-                content.lipid_profile.map((l, i) => [l.label, l.percent, l.color, i + 1])
-            );
-        }
         if (content.certifications) {
             await replaceList(
                 "product_certifications",
@@ -128,19 +105,6 @@ const updateProductContent = async (req, res) => {
                 content.related_product_ids.map((relatedId, i) => [relatedId, i + 1])
             );
         }
-        if (content.storage_tips !== undefined) {
-            if (content.storage_tips === null) {
-                await conn.query("DELETE FROM product_storage_tips WHERE product_id = ?", [productId]);
-            } else {
-                await conn.query(
-                    `INSERT INTO product_storage_tips (product_id, shelf_life_tip, storage_tip, usage_tip)
-                     VALUES (?, ?, ?, ?)
-                     ON DUPLICATE KEY UPDATE shelf_life_tip = VALUES(shelf_life_tip), storage_tip = VALUES(storage_tip), usage_tip = VALUES(usage_tip)`,
-                    [productId, content.storage_tips.shelf_life_tip, content.storage_tips.storage_tip, content.storage_tips.usage_tip]
-                );
-            }
-        }
-
         const updated = await getProductContent(conn, productId);
         await conn.commit();
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Product content updated", updated);
