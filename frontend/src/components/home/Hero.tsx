@@ -1,6 +1,7 @@
 "use client";
 
-import { getImageProps } from "next/image";import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { getImageProps } from "next/image";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import type { HomeBanner } from "@/types/home";
 
 const BANNERS = [
@@ -15,7 +16,6 @@ export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: b
   const [focused, setFocused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(true);
   const fadeRef = useRef<HTMLDivElement>(null);
-  const transitioning = useRef(false);
   const sectionRef = useRef<HTMLElement>(null);
   const touchStart = useRef<number | null>(null);
   const swiped = useRef(false);
@@ -40,22 +40,20 @@ export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: b
   }, []);
 
   const changeBanner = useCallback(async (index: number) => {
-    if (index === active || transitioning.current) return;
     const overlay = fadeRef.current;
+    overlay?.getAnimations().forEach((animation) => animation.cancel());
+    if (index === active) return;
     if (reducedMotion || !overlay) { setActive(index); return; }
-    transitioning.current = true;
     try {
-      const fadeIn = overlay.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 850, easing: "ease-in-out", fill: "forwards" });
+      const fadeIn = overlay.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: "ease-in-out", fill: "forwards" });
       await fadeIn.finished;
       setActive(index);
-      const fadeOut = overlay.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1150, easing: "ease-in-out", fill: "forwards" });
+      const fadeOut = overlay.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, easing: "ease-in-out", fill: "forwards" });
       await fadeOut.finished;
       fadeIn.cancel();
       fadeOut.cancel();
     } catch {
-      // Animation cancellation is expected when navigating away.
-    } finally {
-      transitioning.current = false;
+      // A manual selection or navigation can cancel the animation.
     }
   }, [active, reducedMotion]);
 
@@ -68,7 +66,7 @@ export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: b
     if (hovered || focused || reducedMotion || slides.length < 2) return;
     const timer = window.setInterval(() => {
       if (!document.hidden) void changeBanner((active + 1) % slides.length);
-    }, 5000);
+    }, 3500);
     return () => window.clearInterval(timer);
   }, [active, hovered, focused, reducedMotion, slides.length, changeBanner]);
 

@@ -225,68 +225,70 @@ export function Header() {
         </div>
 
         <div className="border-b border-brand-sand-dark bg-white">
-          <Container className="flex h-20 items-center justify-between gap-4">
-            <BrandLogo priority />
-
-            <nav className="flex items-center gap-7">
+          <Container className="grid h-20 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 xl:gap-6">
+            <nav className="flex items-center gap-4 xl:gap-7">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="text-sm font-medium text-brand-ink hover:text-brand-forest transition-colors"
+                  className="whitespace-nowrap text-sm font-medium text-brand-ink hover:text-brand-forest transition-colors"
                 >
                   {link.label}
                 </Link>
               ))}
             </nav>
 
-            <form onSubmit={handleSearch} className="max-w-sm flex-1">
-              <div className="flex items-center gap-2 rounded-md border border-brand-sand-dark bg-brand-sand px-4 py-2">
-                <Search size={16} className="shrink-0 text-brand-ink/50" aria-hidden="true" />
-                <input
-                  type="search"
-                  value={searchValue}
-                  onChange={(event) => setSearchValue(event.target.value)}
-                  aria-label="Search products" placeholder="Search our collection"
-                  className="w-full bg-transparent text-sm outline-none placeholder:text-brand-ink/40"
-                />
-              </div>
-            </form>
+            <BrandLogo priority />
 
-            <div className="flex items-center gap-1.5">
-              <Link
-                href="/wishlist"
-                className="relative flex h-10 w-10 items-center justify-center rounded-full text-brand-forest hover:bg-brand-sand-dark"
-                aria-label={`Wishlist, ${wishlistCount} items`}
-              >
-                <Heart size={19} />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-gold px-1 text-[11px] font-bold text-brand-ink">
-                    {wishlistCount}
-                  </span>
-                )}
-              </Link>
-              <Link
-                href={authUser ? "/orders" : "/track-order"}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-brand-forest hover:bg-brand-sand-dark"
-                aria-label={authUser ? "My orders" : "Track order"}
-                title={authUser ? "My Orders" : "Track Order"}
-              >
-                <PackageSearch size={19} />
-              </Link>
-              <button
-                type="button"
-                onClick={() => dispatch(openCartDrawer())}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full text-brand-forest hover:bg-brand-sand-dark cursor-pointer"
-                aria-label={`Cart, ${cartCount} items`}
-              >
-                <ShoppingBag size={19} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-gold px-1 text-[11px] font-bold text-brand-ink">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
+            <div className="flex min-w-0 items-center justify-end gap-2 xl:gap-4">
+              <form onSubmit={handleSearch} className="min-w-0 max-w-sm flex-1">
+                <div className="flex items-center gap-2 rounded-md border border-brand-sand-dark bg-brand-sand px-4 py-2">
+                  <Search size={16} className="shrink-0 text-brand-ink/50" aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={searchValue}
+                    onChange={(event) => setSearchValue(event.target.value)}
+                    aria-label="Search products" placeholder="Search our collection"
+                    className="min-w-0 w-full bg-transparent text-sm outline-none placeholder:text-brand-ink/40"
+                  />
+                </div>
+              </form>
+
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Link
+                  href="/wishlist"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full text-brand-forest hover:bg-brand-sand-dark"
+                  aria-label={`Wishlist, ${wishlistCount} items`}
+                >
+                  <Heart size={19} />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-gold px-1 text-[11px] font-bold text-brand-ink">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </Link>
+                <Link
+                  href={authUser ? "/orders" : "/track-order"}
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-brand-forest hover:bg-brand-sand-dark"
+                  aria-label={authUser ? "My orders" : "Track order"}
+                  title={authUser ? "My Orders" : "Track Order"}
+                >
+                  <PackageSearch size={19} />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => dispatch(openCartDrawer())}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full text-brand-forest hover:bg-brand-sand-dark cursor-pointer"
+                  aria-label={`Cart, ${cartCount} items`}
+                >
+                  <ShoppingBag size={19} />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-gold px-1 text-[11px] font-bold text-brand-ink">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </Container>
         </div>
