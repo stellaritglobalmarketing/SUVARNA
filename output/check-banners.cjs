@@ -1,0 +1,34 @@
+﻿const { chromium } = require('C:/Users/admin/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
+const assert=require('node:assert/strict');
+(async()=>{
+const browser=await chromium.launch({headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:1000}});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://localhost:3000',{waitUntil:'networkidle'});
+await page.locator('.hero-slide.is-active img').waitFor();
+assert.equal(await page.locator('.hero-slide').count(),2);
+assert.equal(await page.locator('.announcement-bar').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(61, 43, 28)');
+const active=()=>page.locator('.hero-slide.is-active').getAttribute('href');
+const first=await active();await page.waitForTimeout(2100);assert.notEqual(await active(),first);
+await page.getByRole('button',{name:'Show products banner',exact:true}).click();
+await page.waitForTimeout(700);await page.screenshot({path:'output/banner-desktop-v2.png'});
+await page.getByRole('link',{name:'Shop the collection',exact:true}).click();
+await page.waitForTimeout(900);assert.equal(await page.evaluate(()=>location.hash),'#products');
+assert(await page.locator('#products').evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=100&&r.top<300;}));
+await page.evaluate(()=>scrollTo(0,0));
+await page.getByRole('button',{name:'Show hampers banner',exact:true}).click();
+await page.waitForTimeout(700);await page.screenshot({path:'output/banner-hampers-v2.png'});
+await page.getByRole('link',{name:'Explore hampers',exact:true}).click();
+await page.waitForTimeout(900);assert.equal(await page.evaluate(()=>location.hash),'#hampers');
+assert(await page.locator('#hampers').evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=100&&r.top<300;}));
+await page.setViewportSize({width:390,height:844});await page.evaluate(()=>scrollTo(0,0));
+await page.getByRole('button',{name:'Show products banner',exact:true}).click();await page.waitForTimeout(700);
+await page.screenshot({path:'output/banner-mobile-v2.png'});
+const gallery=page.locator('.hero-gallery');
+await gallery.evaluate(el=>{el.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,touches:[new Touch({identifier:1,target:el,clientX:280,clientY:100})]}));el.dispatchEvent(new TouchEvent('touchend',{bubbles:true,changedTouches:[new Touch({identifier:1,target:el,clientX:100,clientY:100})]}));});
+assert.equal(await active(),'#hampers');
+for(const width of [390,768,1024,1440]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);}
+await page.emulateMedia({reducedMotion:'reduce'});const reduced=await active();await page.waitForTimeout(2200);assert.equal(await active(),reduced);
+assert.deepEqual(errors,[]);console.log('PASS: brown header, two banners, autoplay, both scroll targets, swipe, reduced motion, four responsive widths; no browser errors.');
+await browser.close();
+})();
