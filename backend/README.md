@@ -40,6 +40,16 @@ RAZORPAY_KEY_SECRET=xxx
 
 The key id is sent to the checkout page by `POST /payment/razorpay/order`; the secret never leaves the server. Use **test** keys while developing — live keys charge real money.
 
+## Shipping configuration (Ekart)
+
+Shipping is booked through the Ekart Elite API (`config/ekart.js`, `modules/v1/services/ekart-shipping.js`). All settings are the `EKART_*` block in `.env`; with `EKART_CLIENT_ID` empty, Ekart is off and shipments can still be added by hand.
+
+1. Run `npm run db:migrate` (adds migration `006_ekart_shipping.sql`).
+2. Fill `EKART_CLIENT_ID`, `EKART_USERNAME`, `EKART_PASSWORD` (from Ekart onboarding), the seller details, and the pickup address (`EKART_PICKUP_ALIAS` if it is registered with Ekart; `EKART_PICKUP_PINCODE` + `EKART_PICKUP_STATE` always).
+3. Set `BACKEND_PUBLIC_URL` (e.g. `https://api.example.com`) and a made-up `EKART_WEBHOOK_SECRET` (6–30 letters/digits), restart, then click **Register webhook** in Admin → Shipments.
+
+Tracking reaches us by webhook (`POST /api/v1/webhooks/ekart/:secret`, no API key — the secret authenticates it); the server also re-syncs open shipments every `EKART_SYNC_INTERVAL_MINUTES` in case a webhook is missed. Only prepaid (paid) orders can be booked — there is no COD checkout.
+
 ## Required Headers
 
 **Every single request** (including public/guest endpoints) must include the API key header, or the server returns `401 Unauthorized`:
@@ -659,12 +669,15 @@ Example: `GET /order/ORD-20260919-0001`
         },
         "subtotal": 897, "discount_amount": 0, "shipping_amount": 0, "tax_amount": 0, "total_amount": 897,
         "notes": "Please deliver after 6 PM",
+        "shipment": null,
         "items": [
             { "product_name": "Almonds", "variant_name": "Mamra 500g", "sku": "ALM-MAM-500", "quantity": 2, "unit_price": 299, "total_price": 897, "image_url": "https://..." }
         ]
     }
 }
 ```
+
+`shipment` is `null` until the order is shipped; then it is `{ "courier", "awb_number", "tracking_url", "status", "ndr_status", "expected_delivery_at", "shipped_at", "delivered_at", "events": [{ "status", "label", "location", "message", "time" }] }` — the courier's scans, oldest first.
 
 Product name/variant name/price shown here are a **snapshot from when the order was placed** — they will not change even if the product is later renamed, repriced, or removed. `code: 3` if the order doesn't exist or isn't yours (an invalid-format order number also returns this).
 
@@ -905,9 +918,26 @@ Provider-agnostic — `provider` is a free-text field (Ekart, DTDC, Shiprocket, 
 | POST | `/admin/order/:orderNumber/shipment` | `{ "provider", "awb_number"?, "courier_name"?, "tracking_url"?, "shipping_charge"?, "package_weight"?, "length_cm"?, "width_cm"?, "height_cm"? }` — records a shipment after booking it with a courier (no live courier API integration) |
 | GET | `/admin/shipment` | query: `page, limit, search` (AWB/order number), `provider, shipment_status, order_id` |
 | GET | `/admin/shipment/:id` | shipment detail + `tracking_history[]` (newest first) |
-| PATCH | `/admin/shipment/:id/status` | `{ "shipment_status" }` — one of `created\|pickup_scheduled\|picked_up\|in_transit\|out_for_delivery\|delivered\|failed\|rto\|cancelled` |
+| PATCH | `/admin/shipment/:id/status` | `{ "shipment_status" }` — one of `created\|pickup_scheduled\|picked_up\|in_transit\|out_for_delivery\|ndr\|delivered\|failed\|rto\|rto_delivered\|lost\|cancelled` (for hand-added shipments; Ekart ones update themselves) |
 
 Updating `shipment_status` stamps `shipped_at`/`delivered_at` when appropriate and appends a row to `tracking_history` automatically.
+
+### Ekart
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/shipping/serviceability/:pincode` | **public** (API key only) — `{ serviceable, cod_available, city, state, estimated_days: [min, max] \| null }` |
+| GET | `/admin/order/:orderNumber/ekart/quote` | suggested `package` (variant weights + packaging, default box), serviceability and Ekart's charge `estimate`; pass `weight_g, length_cm, width_cm, height_cm` to quote another package |
+| POST | `/admin/order/:orderNumber/ekart/shipment` | `{ weight_g, length_cm, width_cm, height_cm, preferred_dispatch_date? }` — books a **paid** order with Ekart; saves AWB, tracking URL, charge; order → `processing` |
+| GET | `/admin/shipment/:id/label` | the label PDF (binary) |
+| POST | `/admin/shipment/manifest` | `{ ids: [shipment ids] }` — pickup manifest for up to 100 open parcels → `{ manifest_number, manifest_url }` |
+| POST | `/admin/shipment/:id/sync` | pull the latest tracking from Ekart now |
+| POST | `/admin/shipment/:id/cancel` | cancel before pickup |
+| POST | `/admin/shipment/:id/ndr` | failed delivery: `{ action: "Re-Attempt", date: "YYYY-MM-DD" }` (within 7 days, not today) or `{ action: "RTO" }` |
+| GET | `/admin/shipping/ekart/status` | setup checklist incl. whether our webhook is registered |
+| POST | `/admin/shipping/ekart/webhook` | registers/updates our tracking webhook with Ekart |
+
+Ekart statuses map to ours: picked up / in transit / out for delivery / undelivered (`ndr`) move the order to `shipped`; `delivered` moves it to `delivered`; a cancelled booking puts `fulfillment_status` back to `unfulfilled` so a new one can be booked.
 
 ---
 
@@ -920,4 +950,4 @@ Updating `shipment_status` stamps `shipped_at`/`delivered_at` when appropriate a
 5. `POST /order` with a saved `address_id` to place the order.
 6. `GET /order/my-orders` / `GET /order/:order_number` to show order history and status; `PATCH /order/:order_number/cancel` while still `pending`.
 
-**Not implemented yet** (later phases): OTP/forgot-password, profile editing, Razorpay webhooks and refunds, live courier API integration, coupons, tax, review photos.
+**Not implemented yet** (later phases): OTP/forgot-password, profile editing, Razorpay webhooks and refunds, COD, shipping charges to customers, returns/restocking after RTO, coupons, tax, review photos.

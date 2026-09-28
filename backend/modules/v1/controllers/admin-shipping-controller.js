@@ -8,7 +8,7 @@ function toNumber(value) {
     return value === null || value === undefined ? value : Number(value);
 }
 
-const STATUSES_IMPLYING_SHIPPED = ["picked_up", "in_transit", "out_for_delivery", "delivered"];
+const STATUSES_IMPLYING_SHIPPED = ["picked_up", "in_transit", "out_for_delivery", "ndr", "delivered", "rto", "rto_delivered"];
 
 const createShipmentForOrder = async (req, res) => {
     try {
@@ -90,7 +90,8 @@ const getShipments = async (req, res) => {
 
         const [rows] = await db.query(
             `SELECT s.id, s.order_id, o.order_number, s.provider, s.awb_number, s.courier_name,
-                    s.shipping_charge, s.shipment_status, s.shipped_at, s.delivered_at, s.created_at
+                    s.shipping_charge, s.shipment_status, s.provider_status, s.ndr_status, s.manifest_number,
+                    s.shipped_at, s.delivered_at, s.created_at
              ${baseFrom}
              ORDER BY s.created_at DESC
              LIMIT ? OFFSET ?`,

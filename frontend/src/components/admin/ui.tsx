@@ -119,7 +119,10 @@ const STATUS_TONES: Record<string, string> = {
   picked_up: "bg-indigo-100 text-indigo-800",
   in_transit: "bg-violet-100 text-violet-800",
   out_for_delivery: "bg-violet-100 text-violet-800",
+  ndr: "bg-amber-100 text-amber-800",
   rto: "bg-red-100 text-red-700",
+  rto_delivered: "bg-red-100 text-red-700",
+  lost: "bg-red-100 text-red-700",
   // generic
   active: "bg-emerald-100 text-emerald-800",
   inactive: "bg-slate-200 text-slate-600",

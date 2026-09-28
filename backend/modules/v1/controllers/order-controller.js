@@ -2,6 +2,8 @@ import db from "../../../config/db.js";
 import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import { validateCreateOrder, isValidOrderNumber, parseMyOrdersQuery } from "../validators/order-validation.js";
+import ekart from "../../../config/ekart.js";
+import { checkServiceability } from "../services/ekart-shipping.js";
 
 // order_number has to satisfy a UNIQUE constraint and be known only after the
 // row's auto-increment id exists, so we insert with a throwaway placeholder
@@ -71,6 +73,22 @@ const createOrder = async (req, res) => {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Address not found", null);
         }
         const address = addressRows[0];
+
+        // Don't take money for an order the courier can't deliver. An Ekart outage doesn't block sales.
+        if (ekart.isConfigured() && process.env.EKART_BLOCK_UNSERVICEABLE !== "false") {
+            const pincode = String(address.pincode || "").trim();
+            const serviceable = await checkServiceability(pincode).then(
+                (result) => result.serviceable,
+                (serviceError) => {
+                    console.warn(`Serviceability check for ${pincode} failed, allowing the order: ${serviceError.message}`);
+                    return true;
+                }
+            );
+            if (!serviceable) {
+                await connection.rollback();
+                return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, `Sorry, we don't deliver to pincode ${pincode} yet. Please choose another address.`, null);
+            }
+        }
 
         // FOR UPDATE locks the matched product_variants/inventory rows so a
         // second, concurrent checkout on the same variant can't also read
@@ -290,6 +308,43 @@ const getOrderDetails = async (req, res) => {
 
         const imageMap = await batchImagesByProduct(itemRows.map((i) => i.product_id));
 
+        // The latest shipment that's still live (else the latest one), with its courier scans.
+        const [shipmentRows] = await db.query(
+            `SELECT id, provider, courier_name, awb_number, tracking_url, shipment_status, ndr_status,
+                    expected_delivery_at, shipped_at, delivered_at
+             FROM shipments
+             WHERE order_id = ? AND is_delete = 0
+             ORDER BY shipment_status IN ('cancelled', 'failed', 'lost') ASC, id DESC
+             LIMIT 1`,
+            [order.id]
+        );
+        let shipment = null;
+        if (shipmentRows.length > 0) {
+            const sh = shipmentRows[0];
+            const [events] = await db.query(
+                `SELECT status, status_code, location, message, event_time
+                 FROM shipment_tracking WHERE shipment_id = ? ORDER BY event_time ASC, id ASC`,
+                [sh.id]
+            );
+            shipment = {
+                courier: sh.courier_name || sh.provider,
+                awb_number: sh.awb_number,
+                tracking_url: sh.tracking_url,
+                status: sh.shipment_status,
+                ndr_status: sh.ndr_status,
+                expected_delivery_at: sh.expected_delivery_at,
+                shipped_at: sh.shipped_at,
+                delivered_at: sh.delivered_at,
+                events: events.map((e) => ({
+                    status: e.status,
+                    label: e.status_code,
+                    location: e.location,
+                    message: e.message,
+                    time: e.event_time,
+                })),
+            };
+        }
+
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Order details fetched successfully", {
             order_number: order.order_number,
             order_status: order.order_status,
@@ -314,6 +369,7 @@ const getOrderDetails = async (req, res) => {
             tax_amount: Number(order.tax_amount),
             total_amount: Number(order.total_amount),
             notes: order.notes,
+            shipment,
             items: itemRows.map((i) => ({
                 product_name: i.product_name,
                 variant_name: i.variant_name,

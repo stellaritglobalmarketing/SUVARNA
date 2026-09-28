@@ -27,6 +27,27 @@ interface BackendOrderItem {
   image_url?: string | null;
 }
 
+interface BackendShipmentEvent {
+  status: string;
+  /** Courier's own wording, e.g. "Out for Delivery". */
+  label: string | null;
+  location: string | null;
+  message: string | null;
+  time: string;
+}
+
+interface BackendShipment {
+  courier: string;
+  awb_number: string | null;
+  tracking_url: string | null;
+  status: string;
+  ndr_status: string | null;
+  expected_delivery_at: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  events: BackendShipmentEvent[];
+}
+
 interface BackendOrderDetail {
   order_number: string;
   order_status: string;
@@ -36,6 +57,7 @@ interface BackendOrderDetail {
   shipping_address: BackendShippingAddress;
   total_amount: number;
   notes?: string | null;
+  shipment?: BackendShipment | null;
   items: BackendOrderItem[];
 }
 
@@ -57,12 +79,60 @@ const STAGE_DESCRIPTION: Record<string, string> = {
   delivered: "Your order has been delivered.",
 };
 
+const SHIPMENT_LABEL: Record<string, string> = {
+  created: "Shipment Booked",
+  pickup_scheduled: "Pickup Scheduled",
+  picked_up: "Picked Up by Courier",
+  in_transit: "In Transit",
+  out_for_delivery: "Out for Delivery",
+  ndr: "Delivery Attempt Failed",
+  delivered: "Delivered",
+  rto: "Returning to Seller",
+  rto_delivered: "Returned to Seller",
+  cancelled: "Shipment Cancelled",
+  failed: "Shipment Failed",
+  lost: "Shipment Lost",
+};
+
+const PROBLEM_STATUSES = ["ndr", "rto", "rto_delivered", "cancelled", "failed", "lost"];
+
 /**
- * Real customer orders only track `order_status`/`payment_status`/`fulfillment_status` — there's no
- * courier-level tracking exposed to customers yet, so the timeline is built from that status instead
- * of fabricated courier milestones.
+ * Before the courier has the parcel, the timeline follows `order_status`. Once a shipment exists, the
+ * order steps up to "Processing" are followed by the courier's real scans, then a pending "Delivered".
  */
-function buildStages(orderStatus: string, placedOn: string): TrackingStage[] {
+function buildStages(orderStatus: string, placedOn: string, shipment?: BackendShipment | null): TrackingStage[] {
+  if (shipment && shipment.events.length > 0 && orderStatus !== "cancelled") {
+    const orderSteps: TrackingStage[] = ["pending", "confirmed", "processing"].map((key) => ({
+      key,
+      label: STAGE_LABEL[key],
+      description: STAGE_DESCRIPTION[key],
+      status: "completed",
+      timestamp: key === "pending" ? placedOn : null,
+    }));
+    const last = shipment.events.length - 1;
+    const courierSteps: TrackingStage[] = shipment.events.map((event, index) => ({
+      key: `scan-${index}`,
+      label: event.label || SHIPMENT_LABEL[event.status] || event.status,
+      description: event.message || SHIPMENT_LABEL[event.status] || "",
+      status:
+        index < last || event.status === "delivered"
+          ? "completed"
+          : PROBLEM_STATUSES.includes(event.status)
+            ? "failed"
+            : "current",
+      timestamp: event.time,
+      location: event.location ?? undefined,
+    }));
+    const finished = ["delivered", "rto_delivered", "cancelled", "failed", "lost"].includes(shipment.status);
+    return [
+      ...orderSteps,
+      ...courierSteps,
+      ...(finished
+        ? []
+        : [{ key: "delivered", label: STAGE_LABEL.delivered, description: STAGE_DESCRIPTION.delivered, status: "pending" as const, timestamp: null }]),
+    ];
+  }
+
   if (orderStatus === "cancelled") {
     return [
       { key: "pending", label: "Order Placed", description: STAGE_DESCRIPTION.pending, status: "completed", timestamp: placedOn },
@@ -86,8 +156,24 @@ function buildStages(orderStatus: string, placedOn: string): TrackingStage[] {
   }));
 }
 
-function toDiagnostic(orderStatus: string): ShipmentDiagnostic {
-  return orderStatus === "cancelled" ? "cancelled" : "on-track";
+function toDiagnostic(orderStatus: string, shipment?: BackendShipment | null): ShipmentDiagnostic {
+  if (orderStatus === "cancelled") return "cancelled";
+  switch (shipment?.status) {
+    case "ndr":
+      return "delivery-attempt-failed";
+    case "rto":
+    case "rto_delivered":
+      return "rto";
+    case "cancelled":
+    case "failed":
+    case "lost":
+      return "delayed";
+    default:
+      break;
+  }
+  const expected = shipment?.expected_delivery_at ? new Date(shipment.expected_delivery_at).getTime() : null;
+  if (expected && shipment?.status !== "delivered" && expected < Date.now() - 24 * 60 * 60 * 1000) return "delayed";
+  return "on-track";
 }
 
 function mapOrderDetailToTracking(detail: BackendOrderDetail): OrderTracking {
@@ -97,9 +183,11 @@ function mapOrderDetailToTracking(detail: BackendOrderDetail): OrderTracking {
   return {
     awb: detail.order_number,
     orderId: detail.order_number,
-    courierPartner: null,
+    courierPartner: detail.shipment?.courier ?? null,
+    courierAwb: detail.shipment?.awb_number ?? null,
+    trackingUrl: detail.shipment?.tracking_url ?? null,
     placedOn: detail.created_at,
-    expectedDelivery: null,
+    expectedDelivery: detail.shipment?.delivered_at ?? detail.shipment?.expected_delivery_at ?? null,
     destination: {
       name: address.name,
       addressLine,
@@ -113,8 +201,8 @@ function mapOrderDetailToTracking(detail: BackendOrderDetail): OrderTracking {
       quantity: item.quantity,
       price: item.unit_price,
     })),
-    stages: buildStages(detail.order_status, detail.created_at),
-    diagnostic: toDiagnostic(detail.order_status),
+    stages: buildStages(detail.order_status, detail.created_at, detail.shipment),
+    diagnostic: toDiagnostic(detail.order_status, detail.shipment),
   };
 }
 

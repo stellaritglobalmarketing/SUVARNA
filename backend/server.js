@@ -16,6 +16,10 @@ import adminInventoryRoutes from "./modules/v1/routes/admin-inventory-routes.js"
 import adminShippingRoutes from "./modules/v1/routes/admin-shipping-routes.js";
 import adminReviewRoutes from "./modules/v1/routes/admin-review-routes.js";
 import adminContentRoutes from "./modules/v1/routes/admin-content-routes.js";
+import shippingRoutes from "./modules/v1/routes/shipping-routes.js";
+import webhookRoutes from "./modules/v1/routes/webhook-routes.js";
+import ekart from "./config/ekart.js";
+import { syncOpenShipments } from "./modules/v1/services/ekart-shipping.js";
 import cors from "cors";
 import { UPLOAD_ROOT } from "./config/uploads.js";
 
@@ -64,6 +68,9 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok", uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
+// Courier webhooks can't send our API key; each authenticates with its own secret instead.
+app.use("/api/v1/webhooks/", webhookRoutes);
+
 app.use(middleware.checkAPI);
 
 // API Routes
@@ -73,6 +80,7 @@ app.use("/api/v1/product/", productRoutes);
 app.use("/api/v1/cart/", cartRoutes);
 app.use("/api/v1/order/", orderRoutes);
 app.use("/api/v1/payment/", paymentRoutes);
+app.use("/api/v1/shipping/", shippingRoutes);
 app.use("/api/v1/admin/", adminRoutes);
 app.use("/api/v1/admin/", adminProductRoutes);
 app.use("/api/v1/admin/", adminOrderRoutes);
@@ -114,6 +122,24 @@ async function testDbConnection() {
   }
 }
 
+// Safety net for missed Ekart webhooks: every EKART_SYNC_INTERVAL_MINUTES (default 60), re-fetch
+// tracking for open Ekart shipments that haven't been updated in that long. 0 turns it off.
+function startEkartSync() {
+  const minutes = Number(process.env.EKART_SYNC_INTERVAL_MINUTES ?? 60);
+  if (!ekart.isConfigured() || !Number.isFinite(minutes) || minutes <= 0) {
+    return;
+  }
+  const run = () =>
+    syncOpenShipments({ staleMinutes: minutes })
+      .then(({ synced, failed }) => {
+        if (synced || failed) console.log(`Ekart sync: ${synced} updated, ${failed} failed`);
+      })
+      .catch((error) => console.error("Ekart sync error:", error.message));
+  setInterval(run, minutes * 60 * 1000);
+  setTimeout(run, 30 * 1000);
+  console.log(`✓ Ekart tracking sync every ${minutes} min`);
+}
+
 // Start server
 async function startServer() {
   try {
@@ -123,6 +149,7 @@ async function startServer() {
     }
     
     // startCronJobs();
+    startEkartSync();
     app.listen(PORT, () => {
       console.log(`✓ Server is running on port ${PORT}`);
     });

@@ -3,7 +3,8 @@ const MAX_LIMIT = 100;
 
 // Provider-agnostic by design — any courier name is accepted, not just a fixed list,
 // so Ekart/DTDC/Shiprocket/Delhivery/others all work without code changes.
-const SHIPMENT_STATUSES = ["created", "pickup_scheduled", "picked_up", "in_transit", "out_for_delivery", "delivered", "failed", "rto", "cancelled"];
+// ndr = delivery attempt failed (awaiting re-attempt/RTO); rto = returning to us; rto_delivered = back with us.
+const SHIPMENT_STATUSES = ["created", "pickup_scheduled", "picked_up", "in_transit", "out_for_delivery", "ndr", "delivered", "failed", "rto", "rto_delivered", "lost", "cancelled"];
 
 function isPositiveInt(value) {
     const parsed = Number(value);

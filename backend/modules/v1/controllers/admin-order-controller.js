@@ -126,7 +126,9 @@ const getOrderByNumber = async (req, res) => {
         const imageMap = await batchImagesByProduct(itemRows.map((i) => i.product_id));
 
         const [shipmentRows] = await db.query(
-            `SELECT id, provider, awb_number, courier_name, tracking_url, shipping_charge, shipment_status, shipped_at, delivered_at, created_at
+            `SELECT id, provider, awb_number, courier_name, tracking_url, shipping_charge, shipment_status, provider_status,
+                    ndr_status, ndr_actions, expected_delivery_at, manifest_number, manifest_url, last_synced_at,
+                    package_weight, length_cm, width_cm, height_cm, shipped_at, delivered_at, created_at
              FROM shipments
              WHERE order_id = ? AND is_delete = 0
              ORDER BY id DESC`,
@@ -158,7 +160,15 @@ const getOrderByNumber = async (req, res) => {
             notes: order.notes,
             created_at: order.created_at,
             updated_at: order.updated_at,
-            shipments: shipmentRows.map((sh) => ({ ...sh, shipping_charge: toNumber(sh.shipping_charge) })),
+            shipments: shipmentRows.map((sh) => ({
+                ...sh,
+                shipping_charge: toNumber(sh.shipping_charge),
+                package_weight: toNumber(sh.package_weight),
+                length_cm: toNumber(sh.length_cm),
+                width_cm: toNumber(sh.width_cm),
+                height_cm: toNumber(sh.height_cm),
+                ndr_actions: sh.ndr_actions ? sh.ndr_actions.split(",") : [],
+            })),
             items: itemRows.map((i) => ({
                 product_id: i.product_id,
                 product_variant_id: i.product_variant_id,

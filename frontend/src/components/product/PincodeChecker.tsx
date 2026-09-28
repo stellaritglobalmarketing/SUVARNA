@@ -62,7 +62,9 @@ export function PincodeChecker({
 
       {data && data.serviceable && (
         <p className="mt-3 flex items-center gap-1.5 text-sm text-green-700">
-          <CheckCircle2 size={16} /> Delivers in {data.estimatedDays[0]}–{data.estimatedDays[1]} days
+          <CheckCircle2 size={16} />
+          {data.estimatedDays ? `Delivers in ${data.estimatedDays[0]}–${data.estimatedDays[1]} days` : "Delivery available"}
+          {data.city && ` to ${data.city}`}
           {data.codAvailable && " · Cash on Delivery available"}
         </p>
       )}

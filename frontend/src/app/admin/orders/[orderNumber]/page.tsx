@@ -30,6 +30,7 @@ import {
   useAdminMutation,
 } from "@/components/admin/ui";
 import { ProductImagePlaceholder } from "@/components/ui/ProductImagePlaceholder";
+import { EkartBookingForm, EkartShipmentActions } from "@/components/admin/orders/EkartShipping";
 
 const PLACEHOLDER_GRADIENT: [string, string] = ["#8a6a4f", "#d4a373"];
 const EMPTY_SHIPMENT: ShipmentInput = { provider: "", courier_name: "", awb_number: "", tracking_url: "", shipping_charge: "" };
@@ -49,7 +50,9 @@ export default function AdminOrderDetailPage() {
     { success: "Shipment updated", ...refresh },
   );
   const [shipment, setShipment] = useState<ShipmentInput>(EMPTY_SHIPMENT);
-  const [isAddingShipment, setAddingShipment] = useState(false);
+  const [shipmentForm, setShipmentForm] = useState<"ekart" | "manual" | null>(null);
+  const isAddingShipment = shipmentForm === "manual";
+  const setAddingShipment = (adding: boolean) => setShipmentForm(adding ? "manual" : null);
   const addShipmentMutation = useAdminMutation((body: ShipmentInput) => createShipment(orderNumber, body), {
     success: "Shipment added",
     ...refresh,
@@ -69,6 +72,8 @@ export default function AdminOrderDetailPage() {
   }
 
   const nextStatuses = ORDER_TRANSITIONS[order.order_status] ?? [];
+  const hasLiveShipment = order.shipments.some((sh) => !["cancelled", "failed", "lost"].includes(sh.shipment_status));
+  const canShip = order.order_status !== "cancelled" && !hasLiveShipment;
   const address = order.shipping_address;
 
   return (
@@ -149,16 +154,28 @@ export default function AdminOrderDetailPage() {
           <Card
             title={`Shipments (${order.shipments.length})`}
             actions={
-              !isAddingShipment &&
-              order.order_status !== "cancelled" && (
-                <AdminButton variant="outline" size="sm" onClick={() => setAddingShipment(true)}>
-                  Add shipment
-                </AdminButton>
+              shipmentForm === null &&
+              canShip && (
+                <div className="flex gap-2">
+                  <AdminButton
+                    size="sm"
+                    onClick={() => setShipmentForm("ekart")}
+                    disabled={order.payment_status !== "paid"}
+                    title={order.payment_status !== "paid" ? "Only paid orders can be shipped with Ekart" : undefined}
+                  >
+                    Ship with Ekart
+                  </AdminButton>
+                  <AdminButton variant="outline" size="sm" onClick={() => setAddingShipment(true)}>
+                    Add manually
+                  </AdminButton>
+                </div>
               )
             }
           >
-            {order.shipments.length === 0 && !isAddingShipment && (
-              <p className="text-sm text-brand-ink/60">No shipment yet. Book the courier, then add the AWB here.</p>
+            {order.shipments.length === 0 && shipmentForm === null && (
+              <p className="text-sm text-brand-ink/60">
+                No shipment yet. Use &ldquo;Ship with Ekart&rdquo; to book the pickup, or add a courier you booked yourself.
+              </p>
             )}
             <ul className="space-y-3">
               {order.shipments.map((sh) => (
@@ -169,19 +186,24 @@ export default function AdminOrderDetailPage() {
                       {sh.courier_name ? ` · ${sh.courier_name}` : ""}
                       {sh.awb_number && <span className="ml-2 text-brand-ink/60">AWB {sh.awb_number}</span>}
                     </p>
-                    <select
-                      value={sh.shipment_status}
-                      onChange={(e) => shipmentStatusMutation.mutate({ id: sh.id, status: e.target.value })}
-                      disabled={shipmentStatusMutation.isPending}
-                      aria-label="Shipment status"
-                      className={`${inputClass} w-auto py-1 text-xs`}
-                    >
-                      {SHIPMENT_STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {humanize(s)}
-                        </option>
-                      ))}
-                    </select>
+                    {sh.provider === "ekart" ? (
+                      // Ekart shipments are updated from Ekart's tracking, not by hand.
+                      <StatusPill status={sh.shipment_status} />
+                    ) : (
+                      <select
+                        value={sh.shipment_status}
+                        onChange={(e) => shipmentStatusMutation.mutate({ id: sh.id, status: e.target.value })}
+                        disabled={shipmentStatusMutation.isPending}
+                        aria-label="Shipment status"
+                        className={`${inputClass} w-auto py-1 text-xs`}
+                      >
+                        {SHIPMENT_STATUSES.map((s) => (
+                          <option key={s} value={s}>
+                            {humanize(s)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <p className="mt-1 text-xs text-brand-ink/60">
                     Created {formatDateTime(sh.created_at)}
@@ -194,9 +216,12 @@ export default function AdminOrderDetailPage() {
                       Tracking link <ExternalLink size={11} />
                     </a>
                   )}
+                  {sh.provider === "ekart" && sh.awb_number && <EkartShipmentActions shipment={sh} refresh={refresh} />}
                 </li>
               ))}
             </ul>
+
+            {shipmentForm === "ekart" && <EkartBookingForm orderNumber={order.order_number} refresh={refresh} onDone={() => setShipmentForm(null)} />}
 
             {isAddingShipment && (
               <form

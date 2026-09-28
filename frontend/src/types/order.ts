@@ -23,6 +23,10 @@ export interface OrderTracking {
   awb: string;
   orderId: string;
   courierPartner: string | null;
+  /** Courier's tracking number, once the parcel is booked. */
+  courierAwb?: string | null;
+  /** Courier's public tracking page. */
+  trackingUrl?: string | null;
   placedOn: string;
   expectedDelivery: string | null;
   destination: {

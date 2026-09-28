@@ -45,9 +45,12 @@ export const SHIPMENT_STATUSES = [
   "picked_up",
   "in_transit",
   "out_for_delivery",
+  "ndr",
   "delivered",
   "failed",
   "rto",
+  "rto_delivered",
+  "lost",
   "cancelled",
 ] as const;
 export const WEIGHT_UNITS = ["g", "kg", "ml", "l", "pcs"] as const;
@@ -98,6 +101,20 @@ export interface AdminShipment {
   tracking_url: string | null;
   shipping_charge: number;
   shipment_status: string;
+  /** Courier's own status text, e.g. "In Transit" (Ekart shipments). */
+  provider_status?: string | null;
+  /** Why the last delivery attempt failed, while shipment_status is "ndr". */
+  ndr_status?: string | null;
+  /** Actions the courier allows for a failed delivery, e.g. ["Re-Attempt", "RTO"]. */
+  ndr_actions?: string[];
+  expected_delivery_at?: string | null;
+  manifest_number?: string | null;
+  manifest_url?: string | null;
+  last_synced_at?: string | null;
+  package_weight?: number | null;
+  length_cm?: number | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
   shipped_at: string | null;
   delivered_at: string | null;
   created_at: string;
@@ -171,6 +188,84 @@ export const getShipments = (query: Query) => paged<AdminShipmentRow>("/admin/sh
 export const updateShipmentStatus = (id: number, shipment_status: string) =>
   apiPatch<unknown>(`/admin/shipment/${id}/status`, { shipment_status });
 
+// ============================================================================ Ekart
+
+export interface EkartPackage {
+  weight_g: number;
+  length_cm: number;
+  width_cm: number;
+  height_cm: number;
+}
+
+export interface EkartQuote {
+  configured: boolean;
+  package: EkartPackage;
+  serviceability:
+    | { serviceable: boolean; cod_available: boolean; city: string | null; state: string | null; estimated_days: [number, number] | null }
+    | { error: string }
+    | null;
+  estimate:
+    | { zone: string | null; billing_weight: string | null; volumetric_weight: string | null; shipping_charge: number | null; taxes: number | null; total: number | null }
+    | { error: string }
+    | null;
+}
+
+export interface EkartStatus {
+  configured: boolean;
+  pickup_pincode: string | null;
+  seller_details: boolean;
+  webhook_url: string | null;
+  webhook_secret_valid: boolean;
+  webhook_registered: boolean;
+  error: string | null;
+}
+
+export const getEkartQuote = (orderNumber: string, pkg?: EkartPackage) =>
+  apiGet<EkartQuote>(
+    `/admin/order/${encodeURIComponent(orderNumber)}/ekart/quote`,
+    pkg ? toParams({ ...pkg }) : undefined,
+  );
+export const createEkartShipment = (orderNumber: string, body: EkartPackage & { preferred_dispatch_date?: string }) =>
+  apiPost<{ id: number; tracking_id: string; courier_name: string; shipping_charge: number }>(
+    `/admin/order/${encodeURIComponent(orderNumber)}/ekart/shipment`,
+    body,
+  );
+export const syncShipment = (id: number) => apiPost<unknown>(`/admin/shipment/${id}/sync`);
+export const cancelEkartShipment = (id: number) => apiPost<unknown>(`/admin/shipment/${id}/cancel`);
+export const shipmentNdrAction = (id: number, body: { action: "Re-Attempt" | "RTO"; date?: string; phone?: string; address?: string; instructions?: string }) =>
+  apiPost<unknown>(`/admin/shipment/${id}/ndr`, body);
+export const generateManifest = (ids: number[]) =>
+  apiPost<{ manifest_number: number | null; manifest_url: string | null; shipment_ids: number[] }>("/admin/shipment/manifest", { ids });
+export const getEkartStatus = () => apiGet<EkartStatus>("/admin/shipping/ekart/status");
+export const registerEkartWebhook = () => apiPost<unknown>("/admin/shipping/ekart/webhook");
+
+/** Opens the shipment's courier label PDF in a new tab (fetched with the admin token, so not a plain link). */
+export async function openShipmentLabel(id: number): Promise<void> {
+  // Open the tab right away (inside the click) so pop-up blockers allow it, then point it at the PDF.
+  const tab = window.open("", "_blank");
+  const headers: Record<string, string> = { Accept: "application/pdf" };
+  if (API_KEY) headers["api-key"] = API_KEY;
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/admin/shipment/${id}/label`, { headers });
+  } catch {
+    tab?.close();
+    throw new ApiError("Unable to reach the server. Check your connection and try again.", 0, 0);
+  }
+  if (!res.ok || (res.headers.get("content-type") ?? "").includes("json")) {
+    tab?.close();
+    const envelope = (await res.json().catch(() => null)) as { code?: number; message?: string } | null;
+    throw new ApiError(envelope?.message || "Couldn't download the label.", res.status, envelope?.code ?? 0);
+  }
+  const url = URL.createObjectURL(await res.blob());
+  if (tab) tab.location.href = url;
+  else window.location.href = url;
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 // ============================================================================ customers
 
 export interface AdminCustomer {
@@ -236,11 +331,8 @@ export interface AdminImage {
 }
 
 export interface ProductContent {
-  nutrients: { label: string; value_per_100g: string; daily_value_percent: number | null }[];
-  lipid_profile: { label: string; percent: number; color: string }[];
   certifications: { label: string; description: string | null }[];
   health_benefits: string[];
-  storage_tips: { shelf_life: string | null; storage: string | null; usage: string | null } | null;
   related_products: { id: number; name: string; slug: string }[];
 }
 
@@ -281,11 +373,8 @@ export interface ProductInput {
 }
 
 export interface ContentInput {
-  nutrients?: ProductContent["nutrients"];
-  lipid_profile?: ProductContent["lipid_profile"];
   certifications?: ProductContent["certifications"];
   health_benefits?: string[];
-  storage_tips?: { shelf_life?: string | null; storage?: string | null; usage?: string | null } | null;
   related_product_ids?: number[];
 }
 

@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, RotateCcw, Truck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, RotateCcw, Truck, XCircle } from "lucide-react";
 import type { OrderTracking } from "@/types/order";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils/format";
@@ -36,6 +36,25 @@ export function ShipmentSummary({ order }: { order: OrderTracking }) {
         <SummaryField label="Placed On" value={formatDate(order.placedOn)} />
         <SummaryField label="Expected Delivery" value={order.expectedDelivery ? formatDate(order.expectedDelivery) : "To be confirmed"} />
       </div>
+
+      {order.courierAwb && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-brand-sand-dark pt-4 text-sm">
+          <p>
+            <span className="text-xs uppercase tracking-wide text-brand-ink/50">Tracking Number </span>
+            <span className="ml-1 font-mono font-semibold text-brand-ink">{order.courierAwb}</span>
+          </p>
+          {order.trackingUrl && (
+            <a
+              href={order.trackingUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium text-brand-forest underline"
+            >
+              Track on {order.courierPartner ?? "courier"} site <ExternalLink size={13} />
+            </a>
+          )}
+        </div>
+      )}
 
       <div className="mt-4 border-t border-brand-sand-dark pt-4 text-sm">
         <p className="text-xs uppercase tracking-wide text-brand-ink/50">Delivering To</p>

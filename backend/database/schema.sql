@@ -466,8 +466,16 @@ CREATE TABLE `shipments` (
   `height_cm` decimal(8,2) DEFAULT NULL,
   `shipping_charge` decimal(12,2) NOT NULL DEFAULT 0.00,
   `shipment_status` varchar(32) NOT NULL DEFAULT 'created',
+  `provider_status` varchar(64) DEFAULT NULL COMMENT 'Courier''s own status text, e.g. "In Transit"',
+  `ndr_status` varchar(64) DEFAULT NULL COMMENT 'Why the last delivery attempt failed',
+  `ndr_actions` varchar(64) DEFAULT NULL COMMENT 'Comma-separated actions the courier allows, e.g. Re-Attempt,RTO',
+  `expected_delivery_at` datetime DEFAULT NULL,
+  `manifest_number` varchar(64) DEFAULT NULL,
+  `manifest_url` varchar(512) DEFAULT NULL,
+  `last_synced_at` datetime DEFAULT NULL,
   `shipped_at` datetime DEFAULT NULL,
   `delivered_at` datetime DEFAULT NULL,
+  `cancelled_at` datetime DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `is_delete` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -477,7 +485,25 @@ CREATE TABLE `shipments` (
   KEY `idx_shipments_order` (`order_id`),
   KEY `idx_shipments_provider_order` (`provider`,`provider_order_id`),
   KEY `idx_shipments_status` (`shipment_status`,`created_at`),
+  KEY `idx_shipments_sync` (`provider`,`shipment_status`,`last_synced_at`),
+  KEY `idx_shipments_courier_id` (`shipment_id`),
   CONSTRAINT `fk_shipments_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+CREATE TABLE `shipping_webhook_events` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `provider` varchar(32) NOT NULL,
+  `topic` varchar(64) DEFAULT NULL,
+  `reference` varchar(128) DEFAULT NULL COMMENT 'Courier tracking id the event is about',
+  `payload` text NOT NULL,
+  `processed` tinyint(1) NOT NULL DEFAULT 0,
+  `error` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_webhook_events_reference` (`provider`,`reference`,`created_at`),
+  KEY `idx_webhook_events_processed` (`processed`,`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
