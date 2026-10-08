@@ -2,6 +2,7 @@ import express from "express";
 import middleware from "../../../middleware/middleware.js";
 import { getOrders, getOrderByNumber, updateOrderStatus } from "../controllers/admin-order-controller.js";
 import { getAdminInvoice } from "../controllers/invoice-controller.js";
+import { adminSyncRazorpayPayment } from "../controllers/payment-controller.js";
 
 const router = express.Router();
 const requireAdmin = [middleware.tokenMiddleware, middleware.allowedRoles("admin")];
@@ -9,6 +10,7 @@ const requireAdmin = [middleware.tokenMiddleware, middleware.allowedRoles("admin
 router.get("/order", ...requireAdmin, getOrders);
 router.get("/order/:orderNumber", ...requireAdmin, getOrderByNumber);
 router.get("/order/:orderNumber/invoice", ...requireAdmin, getAdminInvoice);
+router.post("/order/:orderNumber/payment-sync", ...requireAdmin, adminSyncRazorpayPayment);
 router.patch("/order/:orderNumber/status", ...requireAdmin, updateOrderStatus);
 
 export default router;

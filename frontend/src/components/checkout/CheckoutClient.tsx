@@ -12,7 +12,7 @@ import { pushToast } from "@/lib/redux/slices/uiSlice";
 import { getToken } from "@/lib/auth/token";
 import { createAddress, fetchAddresses } from "@/lib/api/addresses";
 import { fetchServerCart } from "@/lib/api/cart";
-import { createPaymentOrder, fetchOrderDetail, placeOrder, verifyPayment } from "@/lib/api/checkout";
+import { createPaymentOrder, fetchOrderDetail, placeOrder, syncPayment, verifyPayment } from "@/lib/api/checkout";
 import { openRazorpay } from "@/lib/razorpay";
 import { IS_WHATSAPP_CHECKOUT, WHATSAPP_ORDER_NUMBER_DISPLAY, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
 import { queryKeys } from "@/lib/query/keys";
@@ -91,6 +91,36 @@ export function CheckoutClient() {
       router.replace(`/checkout/success?order=${encodeURIComponent(pendingOrder)}`);
     }
   }, [orderQuery.data, pendingOrder, router]);
+
+  // A paid order can still read "pending" here when Razorpay's success callback never ran — usually
+  // UPI on a phone, where the customer pays in the GPay/PhonePe app and comes back to a reloaded tab.
+  // So on arrival, and whenever the tab becomes visible again, ask the backend to check with Razorpay.
+  const orderIsUnpaid = Boolean(pendingOrder) && orderQuery.data != null && orderQuery.data.payment_status !== "paid";
+  useEffect(() => {
+    if (!isCustomer || !pendingOrder || !orderIsUnpaid) return;
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const result = await syncPayment(pendingOrder);
+        if (!cancelled && result.payment_status === "paid") {
+          queryClient.invalidateQueries({ queryKey: queryKeys.orderDetail(pendingOrder) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.orders.allMine });
+          router.replace(`/checkout/success?order=${encodeURIComponent(pendingOrder)}`);
+        }
+      } catch {
+        // Not fatal: the customer can still press Pay, which re-checks before charging again.
+      }
+    };
+    check();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [isCustomer, pendingOrder, orderIsUnpaid, queryClient, router]);
 
   const saveAddress = useMutation({
     mutationFn: (input: AddressInput) => createAddress(input),

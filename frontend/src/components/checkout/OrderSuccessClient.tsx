@@ -1,10 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, Clock, Download, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { downloadOrderInvoice, fetchOrderDetail } from "@/lib/api/checkout";
+import { downloadOrderInvoice, fetchOrderDetail, syncPayment } from "@/lib/api/checkout";
 import { IS_WHATSAPP_CHECKOUT, WHATSAPP_ORDER_NUMBER_DISPLAY, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
 import { queryKeys } from "@/lib/query/keys";
 import { formatInr } from "@/lib/utils/format";
@@ -26,6 +27,32 @@ export function OrderSuccessClient() {
     enabled: isAuthenticated && Boolean(orderNumber),
   });
   const invoice = useMutation({ mutationFn: () => downloadOrderInvoice(orderNumber) });
+  const queryClient = useQueryClient();
+
+  // Still unpaid after Razorpay: re-check with Razorpay every few seconds for about a minute, so a
+  // payment whose browser callback was lost (UPI in another app) still lands on "confirmed".
+  const awaitingRazorpay = Boolean(order) && !IS_WHATSAPP_CHECKOUT && order?.payment_status !== "paid" && order?.order_status !== "cancelled";
+  useEffect(() => {
+    if (!awaitingRazorpay) return;
+    let attempts = 0;
+    const check = async () => {
+      attempts += 1;
+      try {
+        const result = await syncPayment(orderNumber);
+        if (result.payment_status === "paid") {
+          queryClient.invalidateQueries({ queryKey: queryKeys.orderDetail(orderNumber) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.orders.allMine });
+          window.clearInterval(timer);
+        }
+      } catch {
+        // Try again on the next tick.
+      }
+      if (attempts >= 12) window.clearInterval(timer);
+    };
+    const timer = window.setInterval(check, 5000);
+    check();
+    return () => window.clearInterval(timer);
+  }, [awaitingRazorpay, orderNumber, queryClient]);
 
   if (!orderNumber || isError) {
     return (
@@ -73,7 +100,7 @@ export function OrderSuccessClient() {
             ? " — we'll start packing it right away."
             : awaitingWhatsapp
               ? ` — please send your order details to us on WhatsApp (${WHATSAPP_ORDER_NUMBER_DISPLAY}) and we'll reply there with payment details to confirm it.`
-              : " — this usually takes a few seconds. Refresh to check again."}
+              : " — we're checking with Razorpay. If money was deducted, please don't pay again; this page updates on its own."}
         </p>
         {awaitingWhatsapp && (
           <>

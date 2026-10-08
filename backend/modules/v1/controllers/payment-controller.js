@@ -90,6 +90,32 @@ async function markPaid(payment, rzpPayment, signature) {
 }
 
 /**
+ * Asks Razorpay whether any open attempt for this order was actually paid, and records it if so.
+ * This catches payments whose browser callback never reached us — typically UPI on a phone, where
+ * the customer pays in the GPay/PhonePe app and the checkout tab is reloaded or never returns.
+ * Returns true when the order is (now) paid. Razorpay API errors propagate.
+ */
+async function recoverPaidAttempt(orderId) {
+    const [openRows] = await db.query(
+        `SELECT id, order_id, gateway_order_id, amount
+         FROM payments
+         WHERE order_id = ? AND gateway = 'razorpay' AND payment_status = 'created'
+         ORDER BY id DESC`,
+        [orderId]
+    );
+    for (const payment of openRows) {
+        const { items = [] } = await razorpay.fetchOrderPayments(payment.gateway_order_id);
+        const paid = items.find((p) => p.status === "captured" || p.status === "authorized");
+        if (paid) {
+            const rzpPayment = await confirmCapturedPayment(payment, paid.id);
+            await markPaid(payment, rzpPayment, null);
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Checkout step 2 (after POST /order): creates — or reuses — the Razorpay order for one of the
  * customer's pending orders and returns what Razorpay Checkout needs to open. The amount always
  * comes from our order row, never from the client.
@@ -134,18 +160,14 @@ const createRazorpayOrder = async (req, res) => {
         );
         let payment = openRows[0] && toPaise(openRows[0].amount) === amount ? openRows[0] : null;
 
-        if (payment) {
-            const { items = [] } = await razorpay.fetchOrderPayments(payment.gateway_order_id);
-            const paid = items.find((p) => p.status === "captured" || p.status === "authorized");
-            if (paid) {
-                const rzpPayment = await confirmCapturedPayment(payment, paid.id);
-                await markPaid(payment, rzpPayment, null);
-                return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Order is already paid", {
-                    order_number,
-                    already_paid: true,
-                });
-            }
-        } else {
+        // Any earlier attempt that was in fact paid is recorded instead of charging again.
+        if (openRows.length > 0 && (await recoverPaidAttempt(order.id))) {
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Order is already paid", {
+                order_number,
+                already_paid: true,
+            });
+        }
+        if (!payment) {
             const rzpOrder = await razorpay.createOrder({
                 amount,
                 receipt: order_number,
@@ -254,4 +276,88 @@ const verifyRazorpayPayment = async (req, res) => {
     }
 };
 
-export { createRazorpayOrder, verifyRazorpayPayment };
+/**
+ * Customer: "did my payment go through?" — used when the checkout or success page is opened again
+ * for an unpaid order. Checks Razorpay and records a payment that was made but never confirmed.
+ */
+const syncRazorpayPayment = async (req, res) => {
+    try {
+        const order_number = String(req.body?.order_number || "").trim();
+        if (!isValidOrderNumber(order_number)) {
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, "A valid order_number is required", null);
+        }
+        const order = await getOwnOrder(db, order_number, req.user.id);
+        if (!order) {
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Order not found", null);
+        }
+        if (order.payment_status !== "paid") {
+            await recoverPaidAttempt(order.id);
+        }
+        const updated = await getOwnOrder(db, order_number, req.user.id);
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Payment status checked", {
+            order_number,
+            order_status: updated.order_status,
+            payment_status: updated.payment_status,
+        });
+    } catch (error) {
+        console.error("Sync Razorpay payment error: ", error);
+        return middleware.sendResponse(res, Codes.INTERNAL_ERROR, Codes.RESPONSE_ERROR, "Couldn't check the payment right now. Please try again in a minute.", null);
+    }
+};
+
+/** Admin: same check for any order (Admin → order page → "Check payment with Razorpay"). */
+const adminSyncRazorpayPayment = async (req, res) => {
+    try {
+        const orderNumber = String(req.params.orderNumber || "").trim();
+        const [[order]] = await db.query("SELECT id, payment_status FROM orders WHERE order_number = ? AND is_delete = 0 LIMIT 1", [orderNumber]);
+        if (!order) {
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Order not found", null);
+        }
+        const found = order.payment_status === "paid" ? true : await recoverPaidAttempt(order.id);
+        return middleware.sendResponse(
+            res,
+            Codes.SUCCESS,
+            Codes.RESPONSE_SUCCESS,
+            found ? "Payment found — the order is marked paid" : "Razorpay has no completed payment for this order",
+            { paid: found }
+        );
+    } catch (error) {
+        console.error("Admin sync Razorpay payment error: ", error);
+        return middleware.sendResponse(res, Codes.INTERNAL_ERROR, Codes.RESPONSE_ERROR, "Couldn't reach Razorpay. Please try again.", null);
+    }
+};
+
+/**
+ * Razorpay webhook (Dashboard → Settings → Webhooks → https://api.suvarna7.com/api/v1/webhooks/razorpay,
+ * events payment.captured + order.paid, secret = RAZORPAY_WEBHOOK_SECRET). Records the payment on the
+ * server even if the customer's browser never comes back. Always answers 200 for events we accept so
+ * Razorpay doesn't keep retrying; the payment is re-fetched from Razorpay before anything is marked paid.
+ */
+const handleRazorpayWebhook = async (req, res) => {
+    if (!razorpay.isValidWebhookSignature(req.rawBody, req.headers["x-razorpay-signature"])) {
+        return res.status(400).json({ ok: false });
+    }
+    try {
+        const event = req.body?.event;
+        const entity = req.body?.payload?.payment?.entity;
+        if ((event === "payment.captured" || event === "order.paid") && entity?.order_id && entity?.id) {
+            const [[payment]] = await db.query(
+                `SELECT id, order_id, gateway_order_id, amount, payment_status
+                 FROM payments WHERE gateway = 'razorpay' AND gateway_order_id = ? LIMIT 1`,
+                [entity.order_id]
+            );
+            if (payment && payment.payment_status !== "paid") {
+                const rzpPayment = await confirmCapturedPayment(payment, entity.id);
+                await markPaid(payment, rzpPayment, null);
+                console.log(`Razorpay webhook: ${event} recorded payment ${entity.id}`);
+            }
+        }
+        return res.status(200).json({ ok: true });
+    } catch (error) {
+        console.error("Razorpay webhook error: ", error);
+        // 500 makes Razorpay retry later, which is what we want for a transient failure.
+        return res.status(500).json({ ok: false });
+    }
+};
+
+export { createRazorpayOrder, verifyRazorpayPayment, syncRazorpayPayment, adminSyncRazorpayPayment, handleRazorpayWebhook };

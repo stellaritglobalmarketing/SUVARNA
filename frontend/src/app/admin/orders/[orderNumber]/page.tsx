@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Download, ExternalLink } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, RefreshCw } from "lucide-react";
 import {
   FULFILLMENT_STATUSES,
   ORDER_TRANSITIONS,
@@ -13,6 +13,7 @@ import {
   createShipment,
   downloadAdminInvoice,
   getOrder,
+  syncAdminPayment,
   updateOrderStatus,
   updateShipmentStatus,
   type ShipmentInput,
@@ -51,6 +52,12 @@ export default function AdminOrderDetailPage() {
     { success: "Shipment updated", ...refresh },
   );
   const invoiceMutation = useAdminMutation(() => downloadAdminInvoice(orderNumber));
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const syncMutation = useAdminMutation(() => syncAdminPayment(orderNumber), {
+    ...refresh,
+    onSuccess: (result) =>
+      setSyncMessage(result.paid ? "Payment found on Razorpay — the order is now marked paid." : "Razorpay has no completed payment for this order."),
+  });
   const [shipment, setShipment] = useState<ShipmentInput>(EMPTY_SHIPMENT);
   const [shipmentForm, setShipmentForm] = useState<"ekart" | "manual" | null>(null);
   const isAddingShipment = shipmentForm === "manual";
@@ -94,11 +101,22 @@ export default function AdminOrderDetailPage() {
           </span>
         }
         actions={
-          <AdminButton variant="outline" onClick={() => invoiceMutation.mutate(undefined)} loading={invoiceMutation.isPending}>
-            {!invoiceMutation.isPending && <Download size={15} />} Download invoice
-          </AdminButton>
+          <>
+            {order.payment_status !== "paid" && (
+              <AdminButton variant="outline" onClick={() => syncMutation.mutate(undefined)} loading={syncMutation.isPending}>
+                {!syncMutation.isPending && <RefreshCw size={15} />} Check payment with Razorpay
+              </AdminButton>
+            )}
+            <AdminButton variant="outline" onClick={() => invoiceMutation.mutate(undefined)} loading={invoiceMutation.isPending}>
+              {!invoiceMutation.isPending && <Download size={15} />} Download invoice
+            </AdminButton>
+          </>
         }
       />
+
+      {syncMessage && (
+        <p className="rounded-xl border border-brand-sand-dark bg-white px-4 py-3 text-sm text-brand-ink">{syncMessage}</p>
+      )}
 
       {order.order_status === "cancelled" && order.payment_status === "paid" && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

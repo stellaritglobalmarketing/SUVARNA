@@ -64,6 +64,19 @@ const razorpay = {
         const expected = crypto.createHmac("sha256", credentials().keySecret).update(`${orderId}|${paymentId}`).digest("hex");
         return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
     },
+
+    /** True once RAZORPAY_WEBHOOK_SECRET (the secret typed in Dashboard → Webhooks) is set. */
+    webhookConfigured: () => Boolean(process.env.RAZORPAY_WEBHOOK_SECRET?.trim()),
+
+    /** Webhook signature: HMAC-SHA256 of the raw request body with the webhook secret (X-Razorpay-Signature). */
+    isValidWebhookSignature(rawBody, signature) {
+        const secret = process.env.RAZORPAY_WEBHOOK_SECRET?.trim();
+        if (!secret || !Buffer.isBuffer(rawBody) || typeof signature !== "string" || !/^[a-f0-9]{64}$/.test(signature)) {
+            return false;
+        }
+        const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+        return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    },
 };
 
 export default razorpay;

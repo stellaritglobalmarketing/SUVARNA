@@ -66,6 +66,16 @@ export async function createPaymentOrder(orderNumber: string): Promise<PaymentOr
   return apiPost<PaymentOrder>("/payment/razorpay/order", { order_number: orderNumber });
 }
 
+/**
+ * Asks the backend to re-check an unpaid order with Razorpay. Catches payments whose success callback
+ * never ran (e.g. UPI paid in the GPay app on a phone and the checkout tab reloaded).
+ */
+export async function syncPayment(orderNumber: string) {
+  return apiPost<{ order_number: string; order_status: string; payment_status: string }>("/payment/razorpay/sync", {
+    order_number: orderNumber,
+  });
+}
+
 export async function verifyPayment(orderNumber: string, response: RazorpaySuccess) {
   return apiPost<{ order_number: string; order_status: string; payment_status: string }>("/payment/razorpay/verify", {
     order_number: orderNumber,

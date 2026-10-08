@@ -161,6 +161,9 @@ export interface AdminOrder {
 
 export const getOrders = (query: Query) => paged<AdminOrderRow>("/admin/order", query);
 export const getOrder = (orderNumber: string) => apiGet<AdminOrder>(`/admin/order/${encodeURIComponent(orderNumber)}`);
+/** Asks Razorpay whether an unpaid order was in fact paid, and marks it paid if so. */
+export const syncAdminPayment = (orderNumber: string) =>
+  apiPost<{ paid: boolean }>(`/admin/order/${encodeURIComponent(orderNumber)}/payment-sync`, {});
 export const downloadAdminInvoice = (orderNumber: string) =>
   downloadFile(`/admin/order/${encodeURIComponent(orderNumber)}/invoice`, `Suvarna7-Invoice-${orderNumber}.pdf`);
 export const updateOrderStatus = (

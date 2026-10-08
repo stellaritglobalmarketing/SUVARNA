@@ -43,6 +43,14 @@ RAZORPAY_KEY_SECRET=xxx
 
 The key id is sent to the checkout page by `POST /payment/razorpay/order`; the secret never leaves the server. Use **test** keys while developing — live keys charge real money.
 
+**Webhook (recommended in production).** On phones, UPI is often paid in the GPay/PhonePe app and the checkout tab never gets Razorpay's success callback, so the order would stay unpaid although the money was taken. Razorpay's webhook records the payment on the server regardless. In Razorpay Dashboard → Settings → Webhooks add:
+
+- URL: `https://api.suvarna7.com/api/v1/webhooks/razorpay`
+- Events: `payment.captured` and `order.paid`
+- Secret: any long random string, also set on the server as `RAZORPAY_WEBHOOK_SECRET=...`
+
+Without the webhook, a lost callback is still picked up when the customer reopens the order (checkout and success pages call `POST /payment/razorpay/sync`, which asks Razorpay), when they press Pay again, or from the admin order page ("Check payment with Razorpay", `POST /admin/order/:orderNumber/payment-sync`).
+
 ## Invoice & WhatsApp configuration
 
 Every paid order has a PDF invoice: customers download it from the order success page (`GET /order/:order_number/invoice`), admins from the order page (`GET /admin/order/:orderNumber/invoice`). The seller block on it comes from these optional vars (each falls back to the matching `EKART_PICKUP_*` value; GSTIN prints only when set):
