@@ -14,6 +14,18 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "**" },
     ],
   },
+  // One address for the store: www.suvarna7.com permanently redirects to suvarna7.com, so customers,
+  // search engines and Razorpay's registered-website check all see the same site.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.suvarna7.com" }],
+        destination: "https://suvarna7.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -523,6 +523,13 @@ CREATE TABLE `shipping_webhook_events` (
 
 
 
+CREATE TABLE `store_settings` (
+  `setting_key` varchar(64) NOT NULL,
+  `setting_value` varchar(512) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `testimonials` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `customer_name` varchar(64) NOT NULL,

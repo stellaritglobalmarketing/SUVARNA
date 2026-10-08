@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Ban, Camera, CheckCircle2, Clock, MessageCircle, PackageCheck, XCircle } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { WHATSAPP_ORDER_NUMBER, WHATSAPP_ORDER_NUMBER_DISPLAY } from "@/lib/whatsapp";
+import { getStoreSettings } from "@/lib/api/settings";
 
 export const metadata: Metadata = {
   title: "Suvarna7 — Exchange & Return Policy",
@@ -45,10 +45,10 @@ const NOT_ELIGIBLE = [
   "Requests without photos or an unboxing video",
 ];
 
-const STEPS = [
+const steps = (whatsappDisplay: string) => [
   {
     title: "Message us on WhatsApp",
-    description: `Within 36 hours of delivery, send a message to ${WHATSAPP_ORDER_NUMBER_DISPLAY} with your order number and what went wrong.`,
+    description: `Within 36 hours of delivery, send a message to ${whatsappDisplay} with your order number and what went wrong.`,
   },
   {
     title: "Share photos and video",
@@ -66,7 +66,11 @@ const STEPS = [
   },
 ];
 
-export default function ReturnPolicyPage() {
+export default async function ReturnPolicyPage() {
+  // The number is set in Admin → Settings.
+  const { whatsapp_number, whatsapp_display } = await getStoreSettings();
+  const STEPS = steps(whatsapp_display);
+
   return (
     <div>
       {/* Hero */}
@@ -192,10 +196,10 @@ export default function ReturnPolicyPage() {
           <MessageCircle className="text-brand-forest" size={28} />
           <h2 className="font-serif text-2xl font-bold text-brand-forest">Something wrong with your order?</h2>
           <p className="max-w-md text-sm text-brand-ink/70">
-            Message us on WhatsApp at {WHATSAPP_ORDER_NUMBER_DISPLAY} within 36 hours of delivery with your order
+            Message us on WhatsApp at {whatsapp_display} within 36 hours of delivery with your order
             number and photos.
           </p>
-          <Button href={`https://wa.me/${WHATSAPP_ORDER_NUMBER}`} size="lg" external>
+          <Button href={`https://wa.me/${whatsapp_number}`} size="lg" external>
             Chat on WhatsApp
           </Button>
         </section>

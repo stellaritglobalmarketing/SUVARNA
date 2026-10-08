@@ -24,4 +24,5 @@ export const queryKeys = {
   },
   addresses: ["addresses"] as const,
   orderDetail: (orderNumber: string) => ["orders", "detail", orderNumber] as const,
+  storeSettings: ["store-settings"] as const,
 } as const;

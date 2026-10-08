@@ -14,7 +14,8 @@ import { createAddress, fetchAddresses } from "@/lib/api/addresses";
 import { fetchServerCart } from "@/lib/api/cart";
 import { createPaymentOrder, fetchOrderDetail, placeOrder, syncPayment, verifyPayment } from "@/lib/api/checkout";
 import { openRazorpay } from "@/lib/razorpay";
-import { IS_WHATSAPP_CHECKOUT, WHATSAPP_ORDER_NUMBER_DISPLAY, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
+import { IS_WHATSAPP_CHECKOUT, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { queryKeys } from "@/lib/query/keys";
 import { formatInr } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
@@ -49,6 +50,7 @@ export function CheckoutClient() {
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const isCustomer = isAuthenticated && user?.role === "user";
+  const store = useStoreSettings();
 
   const cartItems = useAppSelector(selectCartItems);
   const cartSubtotal = useAppSelector(selectCartSubtotal);
@@ -146,7 +148,7 @@ export function CheckoutClient() {
     setStatus("sending");
     try {
       const detail = await fetchOrderDetail(orderNumber);
-      const url = whatsappOrderUrl(buildOrderMessage(detail, user ?? undefined, orderNotes));
+      const url = whatsappOrderUrl(buildOrderMessage(detail, user ?? undefined, orderNotes), store.whatsapp_number);
       if (waWindow && !waWindow.closed) waWindow.location.href = url;
       else window.open(url, "_blank", "noopener");
     } catch {
@@ -313,7 +315,7 @@ export function CheckoutClient() {
                   <Button
                     className="mt-5 w-full"
                     size="lg"
-                    href={whatsappOrderUrl(buildOrderMessage(order, user ?? undefined))}
+                    href={whatsappOrderUrl(buildOrderMessage(order, user ?? undefined), store.whatsapp_number)}
                     external
                   >
                     <MessageCircle size={18} /> Send Order on WhatsApp
@@ -502,6 +504,7 @@ function SummaryCard({
   savings?: number;
   children: React.ReactNode;
 }) {
+  const store = useStoreSettings();
   return (
     <div className="h-fit rounded-2xl border border-brand-sand-dark bg-white p-5 lg:sticky lg:top-28">
       <h3 className="font-serif text-lg font-semibold text-brand-forest">Order Summary</h3>
@@ -549,7 +552,7 @@ function SummaryCard({
       {children}
       <p className="mt-3 text-center text-xs text-brand-ink/50">
         {IS_WHATSAPP_CHECKOUT
-          ? `Your order details are sent to us on WhatsApp (${WHATSAPP_ORDER_NUMBER_DISPLAY}). We'll confirm and share payment details (UPI / bank transfer) there.`
+          ? `Your order details are sent to us on WhatsApp (${store.whatsapp_display}). We'll confirm and share payment details (UPI / bank transfer) there.`
           : "Secure payment by Razorpay · UPI, cards, net banking & wallets"}
       </p>
     </div>

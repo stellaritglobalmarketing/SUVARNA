@@ -9,10 +9,13 @@ import { formatInr } from "@/lib/utils/format";
  */
 export const IS_WHATSAPP_CHECKOUT = (process.env.NEXT_PUBLIC_CHECKOUT_MODE ?? "razorpay").trim() === "whatsapp";
 
-/** Orders go to this number. Digits only, with country code (wa.me format). */
-export const WHATSAPP_ORDER_NUMBER = (process.env.NEXT_PUBLIC_WHATSAPP_ORDER_NUMBER ?? "919377716183").replace(/\D/g, "");
+/**
+ * Fallback store WhatsApp number (digits with country code, wa.me format). The live number comes from
+ * Admin → Settings through useStoreSettings() / getStoreSettings(); this is used only until it loads.
+ */
+export const WHATSAPP_ORDER_NUMBER = "916353684881";
 
-export const WHATSAPP_ORDER_NUMBER_DISPLAY = "+91 93777 16183";
+export const WHATSAPP_ORDER_NUMBER_DISPLAY = "+91 63536 84881";
 
 interface Customer {
   name?: string | null;
@@ -66,6 +69,6 @@ export function buildOrderMessage(order: OrderDetail, customer?: Customer, notes
   return lines.join("\n");
 }
 
-export function whatsappOrderUrl(message: string): string {
-  return `https://wa.me/${WHATSAPP_ORDER_NUMBER}?text=${encodeURIComponent(message)}`;
+export function whatsappOrderUrl(message: string, number: string = WHATSAPP_ORDER_NUMBER): string {
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }

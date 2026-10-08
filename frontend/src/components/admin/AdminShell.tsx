@@ -12,6 +12,7 @@ import {
   Menu,
   MessageSquareText,
   Package,
+  Settings,
   ShoppingCart,
   Truck,
   Users,
@@ -30,6 +31,7 @@ const NAV = [
   { href: "/admin/reviews", label: "Reviews", icon: MessageSquareText },
   { href: "/admin/shipments", label: "Shipments", icon: Truck },
   { href: "/admin/content", label: "Home Content", icon: LayoutTemplate },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 function isActive(pathname: string, href: string) {

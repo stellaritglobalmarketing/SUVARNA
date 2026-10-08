@@ -61,17 +61,16 @@ INVOICE_SELLER_ADDRESS=Shop 12, Market Road
 INVOICE_SELLER_CITY=Ahmedabad
 INVOICE_SELLER_STATE=Gujarat
 INVOICE_SELLER_PINCODE=380001
-INVOICE_SELLER_PHONE=+91 93777 16183
+INVOICE_SELLER_PHONE=+91 63536 84881
 INVOICE_SELLER_EMAIL=orders@example.com
 INVOICE_SELLER_GSTIN=
 ```
 
-When an order first becomes paid through Razorpay, the invoice PDF is sent to the **store's** WhatsApp through the Meta WhatsApp Cloud API, with the order number, amount, customer, items, delivery address and payment id. This is off (it only logs "WhatsApp invoice skipped") until all four of these are set:
+When an order first becomes paid through Razorpay, the invoice PDF is sent to the **store's** WhatsApp through the Meta WhatsApp Cloud API, with the order number, amount, customer, items, delivery address and payment id. This is off (it only logs "WhatsApp invoice skipped") until these are set. The recipient is the store's WhatsApp number from **Admin → Settings** (table `store_settings`, default 916353684881), so changing it needs no redeploy:
 
 ```
 WHATSAPP_ACCESS_TOKEN=EAAG...            # permanent System User token with whatsapp_business_messaging
 WHATSAPP_PHONE_NUMBER_ID=1234567890      # WhatsApp Manager → API Setup → Phone number ID (the sending number)
-WHATSAPP_STORE_NUMBER=919377716183       # who receives it: digits with country code
 WHATSAPP_INVOICE_TEMPLATE=new_order_invoice
 WHATSAPP_TEMPLATE_LANG=en                # optional, default en
 ```
@@ -88,6 +87,10 @@ Razorpay payment: {{6}}
 ```
 
 Sending never blocks or fails the customer's payment: errors are logged (`WhatsApp invoice failed for order id …`) and the invoice can still be downloaded from the admin order page.
+
+## Store settings — `GET /settings`, `GET|PUT /admin/settings`
+
+`GET /settings` (API key only) returns `{ "whatsapp_number": "916353684881", "whatsapp_display": "+91 63536 84881" }`; the storefront uses it for WhatsApp order messages and the Help / Exchange Policy contact buttons. Admins change it with `PUT /admin/settings` `{ "whatsapp_number": "6353684881" }` (any common Indian mobile format; `+91` is added), or from Admin → Settings.
 
 ## Shipping configuration (Ekart)
 

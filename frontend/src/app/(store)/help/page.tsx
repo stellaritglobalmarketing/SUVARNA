@@ -3,15 +3,13 @@ import Link from "next/link";
 import { ChevronRight, Clock, MessageCircle, PackageSearch, Phone, RefreshCcw, ShoppingBag, Truck } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { WHATSAPP_ORDER_NUMBER, WHATSAPP_ORDER_NUMBER_DISPLAY } from "@/lib/whatsapp";
+import { getStoreSettings } from "@/lib/api/settings";
 
 export const metadata: Metadata = {
   title: "Suvarna7 — Help & Support",
-  description: `Questions about an order, delivery or an exchange? Chat with Suvarna7 on WhatsApp or call ${WHATSAPP_ORDER_NUMBER_DISPLAY}.`,
+  description: "Questions about an order, delivery or an exchange? Chat with Suvarna7 on WhatsApp or give us a call.",
 };
 
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_ORDER_NUMBER}?text=${encodeURIComponent("Hi Suvarna7, I need help with ")}`;
-const CALL_URL = `tel:+${WHATSAPP_ORDER_NUMBER}`;
 
 const TOPICS = [
   {
@@ -63,7 +61,12 @@ const FAQS = [
   },
 ];
 
-export default function HelpPage() {
+export default async function HelpPage() {
+  // The number is set in Admin → Settings.
+  const { whatsapp_number, whatsapp_display } = await getStoreSettings();
+  const WHATSAPP_URL = `https://wa.me/${whatsapp_number}?text=${encodeURIComponent("Hi Suvarna7, I need help with ")}`;
+  const CALL_URL = `tel:+${whatsapp_number}`;
+
   return (
     <div>
       {/* Hero with the two ways to reach us */}
@@ -89,7 +92,7 @@ export default function HelpPage() {
               </span>
               <span className="flex-1">
                 <span className="block text-xs font-semibold uppercase tracking-wide text-brand-ink/55">Chat on WhatsApp</span>
-                <span className="block text-lg font-semibold">{WHATSAPP_ORDER_NUMBER_DISPLAY}</span>
+                <span className="block text-lg font-semibold">{whatsapp_display}</span>
                 <span className="block text-xs text-brand-ink/60">Fastest — send photos and your order number</span>
               </span>
               <ChevronRight size={18} className="text-brand-ink/40 transition-transform group-hover:translate-x-0.5" />
@@ -100,7 +103,7 @@ export default function HelpPage() {
               </span>
               <span className="flex-1">
                 <span className="block text-xs font-semibold uppercase tracking-wide text-brand-ink/55">Call us</span>
-                <span className="block text-lg font-semibold">{WHATSAPP_ORDER_NUMBER_DISPLAY}</span>
+                <span className="block text-lg font-semibold">{whatsapp_display}</span>
                 <span className="block text-xs text-brand-ink/60">Talk to our team directly</span>
               </span>
               <ChevronRight size={18} className="text-brand-ink/40 transition-transform group-hover:translate-x-0.5" />

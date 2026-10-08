@@ -1,12 +1,13 @@
 import db from "../../../config/db.js";
 import { invoiceFilename, loadInvoiceData, renderInvoicePdf } from "./invoice.js";
+import { getWhatsappNumber } from "./store-settings.js";
 
 // Sends a paid order's invoice PDF to the store's WhatsApp number through the Meta WhatsApp
-// Cloud API. Off until all WHATSAPP_* vars below are set; until then it only logs.
+// Cloud API. Off until the WHATSAPP_* vars below are set; until then it only logs.
 //
 //   WHATSAPP_ACCESS_TOKEN      permanent system-user token with whatsapp_business_messaging
 //   WHATSAPP_PHONE_NUMBER_ID   the sending number's id (WhatsApp Manager → API Setup)
-//   WHATSAPP_STORE_NUMBER      who receives it, digits with country code, e.g. 919377716183
+//   (recipient)                the store's WhatsApp number from Admin → Settings (store_settings)
 //   WHATSAPP_INVOICE_TEMPLATE  approved template name (see README: document header + 6 body params)
 //   WHATSAPP_TEMPLATE_LANG     template language code, default "en"
 //
@@ -14,16 +15,18 @@ import { invoiceFilename, loadInvoiceData, renderInvoicePdf } from "./invoice.js
 
 const GRAPH_URL = "https://graph.facebook.com/v21.0";
 
-function config() {
+async function config() {
     const env = process.env;
     const cfg = {
         token: env.WHATSAPP_ACCESS_TOKEN?.trim(),
         phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID?.trim(),
-        to: env.WHATSAPP_STORE_NUMBER?.replace(/\D/g, ""),
         template: env.WHATSAPP_INVOICE_TEMPLATE?.trim(),
         lang: env.WHATSAPP_TEMPLATE_LANG?.trim() || "en",
     };
-    return cfg.token && cfg.phoneNumberId && cfg.to && cfg.template ? cfg : null;
+    if (!(cfg.token && cfg.phoneNumberId && cfg.template)) return null;
+    // Admin → Settings decides who gets the invoice, so a number change needs no redeploy.
+    cfg.to = await getWhatsappNumber();
+    return cfg;
 }
 
 // Template parameters may not contain newlines, tabs or 4+ spaces in a row, and are capped in length.
@@ -104,7 +107,7 @@ async function sendTemplate(cfg, mediaId, filename, data) {
  */
 async function sendInvoiceToStore(orderId) {
     try {
-        const cfg = config();
+        const cfg = await config();
         if (!cfg) {
             console.log(`WhatsApp invoice skipped for order id ${orderId}: WHATSAPP_* env vars not set`);
             return;

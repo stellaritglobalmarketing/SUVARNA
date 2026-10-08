@@ -6,7 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, Clock, Download, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { downloadOrderInvoice, fetchOrderDetail, syncPayment } from "@/lib/api/checkout";
-import { IS_WHATSAPP_CHECKOUT, WHATSAPP_ORDER_NUMBER_DISPLAY, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
+import { IS_WHATSAPP_CHECKOUT, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { queryKeys } from "@/lib/query/keys";
 import { formatInr } from "@/lib/utils/format";
 import { Container } from "@/components/ui/Container";
@@ -20,6 +21,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 export function OrderSuccessClient() {
   const orderNumber = useSearchParams().get("order") ?? "";
   const { isAuthenticated, user } = useAuth();
+  const store = useStoreSettings();
 
   const { data: order, isLoading, isError } = useQuery({
     queryKey: queryKeys.orderDetail(orderNumber),
@@ -99,13 +101,13 @@ export function OrderSuccessClient() {
           {isPaid
             ? " — we'll start packing it right away."
             : awaitingWhatsapp
-              ? ` — please send your order details to us on WhatsApp (${WHATSAPP_ORDER_NUMBER_DISPLAY}) and we'll reply there with payment details to confirm it.`
+              ? ` — please send your order details to us on WhatsApp (${store.whatsapp_display}) and we'll reply there with payment details to confirm it.`
               : " — we're checking with Razorpay. If money was deducted, please don't pay again; this page updates on its own."}
         </p>
         {awaitingWhatsapp && (
           <>
             <Button
-              href={whatsappOrderUrl(buildOrderMessage(order, user ?? undefined))}
+              href={whatsappOrderUrl(buildOrderMessage(order, user ?? undefined), store.whatsapp_number)}
               external
               size="lg"
               className="mt-6"
