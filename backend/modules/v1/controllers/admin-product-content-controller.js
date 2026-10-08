@@ -2,6 +2,7 @@ import db from "../../../config/db.js";
 import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import { parseProductContent } from "../validators/admin-product-content-validation.js";
+import { loadInfoSections, replaceInfoSections } from "../services/product-info-sections.js";
 
 function isPositiveInt(value) {
     const parsed = Number(value);
@@ -30,12 +31,13 @@ async function getProductContent(conn, productId) {
         certifications,
         health_benefits: benefits.map((row) => row.benefit),
         related_products: related,
+        info_sections: await loadInfoSections(conn, productId),
     };
 }
 
 /**
  * PUT /admin/product/:id/content — replaces any of: certifications, health_benefits,
- * related_product_ids. Sections left out are untouched; an empty array clears that section.
+ * related_product_ids, info_sections. Sections left out are untouched; an empty array clears that section.
  * All changes apply together or not at all.
  */
 const updateProductContent = async (req, res) => {
@@ -104,6 +106,9 @@ const updateProductContent = async (req, res) => {
                 ["related_product_id", "sort_order"],
                 content.related_product_ids.map((relatedId, i) => [relatedId, i + 1])
             );
+        }
+        if (content.info_sections) {
+            await replaceInfoSections(conn, productId, content.info_sections);
         }
         const updated = await getProductContent(conn, productId);
         await conn.commit();

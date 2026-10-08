@@ -281,6 +281,7 @@ CREATE TABLE `product_images` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `product_id` int(10) unsigned NOT NULL,
   `variant_id` int(10) unsigned DEFAULT NULL,
+  `media_type` enum('image','video') NOT NULL DEFAULT 'image',
   `cloudinary_public_id` varchar(255) NOT NULL,
   `image_url` varchar(512) NOT NULL,
   `alt_text` varchar(160) DEFAULT NULL,
@@ -323,6 +324,20 @@ CREATE TABLE `product_nutrients` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_product_nutrients_label` (`product_id`,`label`),
   CONSTRAINT `fk_product_nutrients_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+CREATE TABLE `product_info_sections` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `product_id` int(10) unsigned NOT NULL,
+  `title` varchar(64) NOT NULL,
+  `body` text DEFAULT NULL,
+  `items` text DEFAULT NULL,
+  `sort_order` smallint(5) unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_product_info_sections_product` (`product_id`,`sort_order`),
+  CONSTRAINT `fk_product_info_sections_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -378,6 +393,7 @@ CREATE TABLE `product_variants` (
 CREATE TABLE `products` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
+  `tagline` varchar(160) DEFAULT NULL COMMENT 'Line under the product name, e.g. "The Crimson Gold of Kashmir"',
   `slug` varchar(160) NOT NULL,
   `short_description` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
@@ -579,5 +595,7 @@ INSERT INTO `schema_migrations` (`filename`) VALUES ('002_product_detail.sql');
 INSERT INTO `schema_migrations` (`filename`) VALUES ('003_wishlist_per_product.sql');
 INSERT INTO `schema_migrations` (`filename`) VALUES ('004_clean_schema.sql');
 INSERT INTO `schema_migrations` (`filename`) VALUES ('005_remove_categories.sql');
+INSERT INTO `schema_migrations` (`filename`) VALUES ('006_ekart_shipping.sql');
+INSERT INTO `schema_migrations` (`filename`) VALUES ('007_product_info_sections.sql');
 
 SET FOREIGN_KEY_CHECKS = 1;

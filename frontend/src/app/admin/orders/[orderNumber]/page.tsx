@@ -4,13 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink } from "lucide-react";
 import {
   FULFILLMENT_STATUSES,
   ORDER_TRANSITIONS,
   PAYMENT_STATUSES,
   SHIPMENT_STATUSES,
   createShipment,
+  downloadAdminInvoice,
   getOrder,
   updateOrderStatus,
   updateShipmentStatus,
@@ -49,6 +50,7 @@ export default function AdminOrderDetailPage() {
     ({ id, status }: { id: number; status: string }) => updateShipmentStatus(id, status),
     { success: "Shipment updated", ...refresh },
   );
+  const invoiceMutation = useAdminMutation(() => downloadAdminInvoice(orderNumber));
   const [shipment, setShipment] = useState<ShipmentInput>(EMPTY_SHIPMENT);
   const [shipmentForm, setShipmentForm] = useState<"ekart" | "manual" | null>(null);
   const isAddingShipment = shipmentForm === "manual";
@@ -90,6 +92,11 @@ export default function AdminOrderDetailPage() {
             <StatusPill status={order.payment_status} label={`Payment: ${humanize(order.payment_status)}`} />
             <StatusPill status={order.fulfillment_status} />
           </span>
+        }
+        actions={
+          <AdminButton variant="outline" onClick={() => invoiceMutation.mutate(undefined)} loading={invoiceMutation.isPending}>
+            {!invoiceMutation.isPending && <Download size={15} />} Download invoice
+          </AdminButton>
         }
       />
 

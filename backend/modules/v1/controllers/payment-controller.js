@@ -3,6 +3,7 @@ import razorpay from "../../../config/razorpay.js";
 import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import { isValidOrderNumber } from "../validators/order-validation.js";
+import { sendInvoiceToStore } from "../services/whatsapp-invoice.js";
 
 const STORE_NAME = "Suvarna7";
 const MIN_AMOUNT_PAISE = 100; // Razorpay's minimum charge is ₹1
@@ -46,8 +47,12 @@ async function confirmCapturedPayment(payment, paymentId) {
     return rzpPayment;
 }
 
-/** Records a confirmed payment on our payment row and its order, in one transaction. Idempotent. */
+/**
+ * Records a confirmed payment on our payment row and its order, in one transaction. Idempotent.
+ * The first time an order becomes paid, its invoice is sent to the store's WhatsApp in the background.
+ */
 async function markPaid(payment, rzpPayment, signature) {
+    let newlyPaid = false;
     const conn = await db.getConnection();
     try {
         await conn.beginTransaction();
@@ -60,7 +65,8 @@ async function markPaid(payment, rzpPayment, signature) {
         );
         // A pending order moves to confirmed. An order cancelled while the customer was paying
         // stays cancelled but is marked paid, so it shows up for a refund.
-        const [[order]] = await conn.query("SELECT order_status FROM orders WHERE id = ? FOR UPDATE", [payment.order_id]);
+        const [[order]] = await conn.query("SELECT order_status, payment_status FROM orders WHERE id = ? FOR UPDATE", [payment.order_id]);
+        newlyPaid = order.payment_status !== "paid";
         if (order.order_status === "cancelled") {
             console.warn(`Payment ${rzpPayment.id} captured for cancelled order id ${payment.order_id} — needs a refund`);
         }
@@ -76,6 +82,10 @@ async function markPaid(payment, rzpPayment, signature) {
         throw error;
     } finally {
         conn.release();
+    }
+    if (newlyPaid) {
+        // Not awaited: the customer's response shouldn't wait on WhatsApp. It never throws.
+        sendInvoiceToStore(payment.order_id);
     }
 }
 

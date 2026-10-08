@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Raw WhatsApp media the product videos were uploaded from; the site serves them from the backend uploads folder
+/public/video/

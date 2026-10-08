@@ -37,17 +37,17 @@ const VALUES = [
 const ORIGINS = [
   {
     place: "Kashmir",
-    products: "Mongra Saffron, Mamra Almonds, Walnuts",
+    products: "Saffron, Almonds, Walnut Kernels",
     image: "/images/products/kashmiri-mongra-saffron.webp",
   },
   {
-    place: "Afghanistan",
-    products: "Gurbandi Almonds",
-    image: "/images/products/afghani-gurbandi-almonds.webp",
+    place: "Kashmir Hills",
+    products: "Acacia Honey, Wild Dark Honey",
+    image: "/images/products/raw-forest-honey.webp",
   },
   {
     place: "Across India",
-    products: "Raw Forest Honey, Cow & Buffalo Ghee",
+    products: "Gir Cow & Buffalo Bilona Ghee",
     image: "/images/products/pure-cow-ghee.webp",
   },
 ];

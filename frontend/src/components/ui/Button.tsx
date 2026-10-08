@@ -37,6 +37,8 @@ interface ButtonAsButton
 interface ButtonAsLink extends CommonProps {
   href: string;
   onClick?: MouseEventHandler;
+  /** Opens in a new tab (e.g. a wa.me link) instead of client-side navigation. */
+  external?: boolean;
 }
 
 type ButtonProps = ButtonAsButton | ButtonAsLink;
@@ -44,6 +46,14 @@ type ButtonProps = ButtonAsButton | ButtonAsLink;
 export function Button(props: ButtonProps) {
   const { variant = "primary", size = "md", className, children } = props;
   const classes = cn(baseClasses, variantClasses[variant], sizeClasses[size], className);
+
+  if (props.href && props.external) {
+    return (
+      <a href={props.href} onClick={props.onClick} className={classes} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  }
 
   if (props.href) {
     return (

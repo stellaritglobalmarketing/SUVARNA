@@ -10,6 +10,7 @@ const PROCESSING = ["Raw", "Traditional", "Smoked", "Roasted & Salted"];
 function initialValues(product?: AdminProduct): ProductInput {
   return {
     name: product?.name ?? "",
+    tagline: product?.tagline ?? "",
     slug: product?.slug ?? "",
     short_description: product?.short_description ?? "",
     description: product?.description ?? "",
@@ -55,7 +56,10 @@ export function ProductDetailsForm({
       <Field label="Name *" className="md:col-span-2">
         <input required maxLength={128} value={values.name} onChange={(e) => set("name", e.target.value)} className={inputClass} />
       </Field>
-      <Field label="Tagline / short description" hint="Shown under the name on the product page." className="md:col-span-2">
+      <Field label="Tagline" hint='Shown under the name on the product page, e.g. "The Crimson Gold of Kashmir".' className="md:col-span-2">
+        <input maxLength={160} value={values.tagline} onChange={(e) => set("tagline", e.target.value)} className={inputClass} />
+      </Field>
+      <Field label="Short description" hint="One or two lines for product cards and search results." className="md:col-span-2">
         <input maxLength={255} value={values.short_description} onChange={(e) => set("short_description", e.target.value)} className={inputClass} />
       </Field>
       <Field label="Description" className="md:col-span-2">
@@ -88,7 +92,7 @@ export function ProductDetailsForm({
         <input maxLength={64} value={values.brand_name} onChange={(e) => set("brand_name", e.target.value)} className={inputClass} />
       </Field>
       <Field label="URL slug" hint="Leave empty to generate it from the name.">
-        <input maxLength={160} value={values.slug} onChange={(e) => set("slug", e.target.value)} className={inputClass} placeholder="kashmir-mamra-almonds" />
+        <input maxLength={160} value={values.slug} onChange={(e) => set("slug", e.target.value)} className={inputClass} placeholder="kashmiri-almonds" />
       </Field>
       <Field label="Display order" hint="Lower numbers show first on the home page.">
         <input type="number" min={0} value={values.sort_order} onChange={(e) => set("sort_order", Number(e.target.value))} className={inputClass} />

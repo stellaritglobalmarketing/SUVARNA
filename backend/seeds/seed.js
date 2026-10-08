@@ -12,101 +12,7 @@ import {
     TESTIMONIALS,
     FAQS,
 } from "./data/store-data.js";
-
-// Replaces one product's rows in a child table with `rows` (arrays of column values, in order).
-async function replaceProductRows(conn, table, productId, columns, rows) {
-    await conn.query(`DELETE FROM ${table} WHERE product_id = ?`, [productId]);
-    if (rows.length > 0) {
-        await conn.query(`INSERT INTO ${table} (product_id, ${columns.join(", ")}) VALUES ?`, [
-            rows.map((row) => [productId, ...row]),
-        ]);
-    }
-}
-
-async function upsertProducts(conn) {
-    const productIdBySlug = new Map();
-
-    for (const [index, p] of PRODUCTS.entries()) {
-        await conn.query(
-            `INSERT INTO products
-                (name, slug, short_description, description, brand_name, origin, processing,
-                 delivery_min_days, delivery_max_days, is_featured, is_bestseller, sort_order, is_active, is_delete)
-             VALUES (?, ?, ?, ?, 'Suvarna7', ?, ?, ?, ?, 1, ?, ?, 1, 0)
-             ON DUPLICATE KEY UPDATE
-                name = VALUES(name),
-                short_description = VALUES(short_description), description = VALUES(description),
-                brand_name = VALUES(brand_name), origin = VALUES(origin), processing = VALUES(processing),
-                delivery_min_days = VALUES(delivery_min_days), delivery_max_days = VALUES(delivery_max_days),
-                is_featured = VALUES(is_featured), is_bestseller = VALUES(is_bestseller),
-                sort_order = VALUES(sort_order), is_active = 1, is_delete = 0`,
-            [
-                p.name, p.slug, p.short_description, p.description, p.origin, p.processing,
-                p.delivery_days[0], p.delivery_days[1], p.is_bestseller ? 1 : 0, index + 1,
-            ]
-        );
-        const [[{ id: productId }]] = await conn.query("SELECT id FROM products WHERE slug = ?", [p.slug]);
-        productIdBySlug.set(p.slug, productId);
-
-        for (const [vIndex, v] of p.variants.entries()) {
-            await conn.query(
-                `INSERT INTO product_variants
-                    (product_id, variant_name, weight_value, weight_unit, sku, mrp, selling_price, is_default, is_active, is_delete)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0)
-                 ON DUPLICATE KEY UPDATE
-                    product_id = VALUES(product_id), variant_name = VALUES(variant_name),
-                    weight_value = VALUES(weight_value), weight_unit = VALUES(weight_unit),
-                    mrp = VALUES(mrp), selling_price = VALUES(selling_price),
-                    is_default = VALUES(is_default), is_active = 1, is_delete = 0`,
-                [productId, v.label, v.weight[0], v.weight[1], v.sku, v.mrp, v.price, vIndex === 0 ? 1 : 0]
-            );
-            const [[{ id: variantId }]] = await conn.query("SELECT id FROM product_variants WHERE sku = ?", [v.sku]);
-
-            await conn.query(
-                "INSERT IGNORE INTO inventory (variant_id, stock_quantity, reserved_quantity) VALUES (?, ?, 0)",
-                [variantId, v.stock]
-            );
-        }
-
-        const [existingImage] = await conn.query(
-            "SELECT id FROM product_images WHERE product_id = ? AND image_url = ? AND is_delete = 0 LIMIT 1",
-            [productId, p.image]
-        );
-        if (existingImage.length === 0) {
-            // Bundled static asset served by the frontend, not a Cloudinary upload — hence no public id.
-            await conn.query(
-                `INSERT INTO product_images (product_id, cloudinary_public_id, image_url, alt_text, sort_order, is_primary)
-                 VALUES (?, '', ?, ?, 0, 1)`,
-                [productId, p.image, p.name]
-            );
-        }
-
-        // Product-page content lives in its own tables, one row per item.
-        await replaceProductRows(
-            conn, "product_certifications", productId, ["label", "description", "sort_order"],
-            p.certifications.map((c, i) => [c.label, c.description, i + 1])
-        );
-        await replaceProductRows(conn, "product_health_benefits", productId, ["benefit"], p.health_benefits.map((b) => [b]));
-
-        console.log(`  product ${index + 1}/${PRODUCTS.length}: ${p.name} (${p.variants.length} variants)`);
-    }
-
-    return productIdBySlug;
-}
-
-// Second pass: "frequently bought with" can point at any product, so all ids must exist first.
-async function upsertRelatedProducts(conn, productIdBySlug) {
-    for (const p of PRODUCTS) {
-        const rows = p.frequently_bought_with.map((slug, i) => {
-            const relatedId = productIdBySlug.get(slug);
-            if (!relatedId) {
-                throw new Error(`${p.slug} lists unknown frequently-bought product ${slug}`);
-            }
-            return [relatedId, i + 1];
-        });
-        await replaceProductRows(conn, "product_related", productIdBySlug.get(p.slug), ["related_product_id", "sort_order"], rows);
-    }
-    console.log(`  related products for ${PRODUCTS.length} products`);
-}
+import { syncHampers, upsertProducts, upsertRelatedProducts } from "./products.js";
 
 async function upsertBanners(conn) {
     for (const [index, b] of BANNERS.entries()) {
@@ -150,32 +56,6 @@ async function upsertHighlights(conn) {
     console.log(`  ${HIGHLIGHTS.length} highlights`);
 }
 
-async function upsertHampers(conn, productIdBySlug) {
-    for (const [index, h] of HAMPERS.entries()) {
-        await conn.query(
-            `INSERT INTO hampers (name, slug, subtitle, image_url, sort_order)
-             VALUES (?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE name = VALUES(name), subtitle = VALUES(subtitle), image_url = VALUES(image_url),
-                sort_order = VALUES(sort_order), is_active = 1, is_delete = 0`,
-            [h.name, h.slug, h.subtitle, h.image_url, index + 1]
-        );
-        const [[{ id: hamperId }]] = await conn.query("SELECT id FROM hampers WHERE slug = ?", [h.slug]);
-
-        await conn.query("DELETE FROM hamper_products WHERE hamper_id = ?", [hamperId]);
-        for (const [pIndex, slug] of h.product_slugs.entries()) {
-            const productId = productIdBySlug.get(slug);
-            if (!productId) {
-                throw new Error(`Hamper ${h.slug} references unknown product ${slug}`);
-            }
-            await conn.query(
-                "INSERT INTO hamper_products (hamper_id, product_id, sort_order) VALUES (?, ?, ?)",
-                [hamperId, productId, pIndex + 1]
-            );
-        }
-    }
-    console.log(`  ${HAMPERS.length} hampers`);
-}
-
 async function upsertTestimonials(conn) {
     for (const [index, t] of TESTIMONIALS.entries()) {
         await conn.query(
@@ -206,11 +86,11 @@ async function seed() {
     try {
         await conn.beginTransaction();
 
-        const productIdBySlug = await upsertProducts(conn);
-        await upsertRelatedProducts(conn, productIdBySlug);
+        const productIdBySlug = await upsertProducts(conn, PRODUCTS);
+        await upsertRelatedProducts(conn, PRODUCTS, productIdBySlug);
         await upsertBanners(conn);
         await upsertHighlights(conn);
-        await upsertHampers(conn, productIdBySlug);
+        await syncHampers(conn, HAMPERS, productIdBySlug);
         await upsertTestimonials(conn);
         await upsertFaqs(conn);
 

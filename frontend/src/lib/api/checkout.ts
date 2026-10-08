@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "./http";
+import { apiGet, apiPost, downloadFile } from "./http";
 
 /**
  * Checkout = three calls (see backend/README.md — Order and Payment):
@@ -76,3 +76,7 @@ export async function verifyPayment(orderNumber: string, response: RazorpaySucce
 export async function fetchOrderDetail(orderNumber: string): Promise<OrderDetail> {
   return apiGet<OrderDetail>(`/order/${encodeURIComponent(orderNumber)}`);
 }
+
+/** Saves the PDF invoice for one of the customer's paid orders. */
+export const downloadOrderInvoice = (orderNumber: string) =>
+  downloadFile(`/order/${encodeURIComponent(orderNumber)}/invoice`, `Suvarna7-Invoice-${orderNumber}.pdf`);

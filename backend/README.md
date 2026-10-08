@@ -15,9 +15,12 @@ Replace the host with the deployed API domain in production.
 ```bash
 npm run db:migrate   # applies database/migrations/*.sql not yet applied (tracked in schema_migrations)
 npm run seed         # upserts the catalog, home and product page content from seeds/data/store-data.js
+npm run catalog:import   # updates an existing store's products to seeds/data/catalog.js (products only)
 ```
 
-Both are safe to re-run. The seed only creates inventory rows and never overwrites existing stock.
+All three are safe to re-run. They only create inventory rows and never overwrite existing stock.
+
+**Updating the product catalogue:** edit `seeds/data/catalog.js` (names, prices, sizes, product-page content), then run `npm run catalog:import`. A product whose slug changed lists its old slug in `replaces`, so it is renamed in place and keeps its images, reviews and order history. Sizes and products no longer in the file are hidden, not deleted. New sizes start with 0 stock — set stock in Admin → Inventory.
 
 **Fresh database:** create it, import `database/schema.sql` (the full current schema, with `schema_migrations` pre-filled), then run `npm run seed`. After adding a migration, regenerate `schema.sql` so it stays current.
 
@@ -39,6 +42,44 @@ RAZORPAY_KEY_SECRET=xxx
 ```
 
 The key id is sent to the checkout page by `POST /payment/razorpay/order`; the secret never leaves the server. Use **test** keys while developing — live keys charge real money.
+
+## Invoice & WhatsApp configuration
+
+Every paid order has a PDF invoice: customers download it from the order success page (`GET /order/:order_number/invoice`), admins from the order page (`GET /admin/order/:orderNumber/invoice`). The seller block on it comes from these optional vars (each falls back to the matching `EKART_PICKUP_*` value; GSTIN prints only when set):
+
+```
+INVOICE_SELLER_NAME=Suvarna7
+INVOICE_SELLER_ADDRESS=Shop 12, Market Road
+INVOICE_SELLER_CITY=Ahmedabad
+INVOICE_SELLER_STATE=Gujarat
+INVOICE_SELLER_PINCODE=380001
+INVOICE_SELLER_PHONE=+91 93777 16183
+INVOICE_SELLER_EMAIL=orders@example.com
+INVOICE_SELLER_GSTIN=
+```
+
+When an order first becomes paid through Razorpay, the invoice PDF is sent to the **store's** WhatsApp through the Meta WhatsApp Cloud API, with the order number, amount, customer, items, delivery address and payment id. This is off (it only logs "WhatsApp invoice skipped") until all four of these are set:
+
+```
+WHATSAPP_ACCESS_TOKEN=EAAG...            # permanent System User token with whatsapp_business_messaging
+WHATSAPP_PHONE_NUMBER_ID=1234567890      # WhatsApp Manager → API Setup → Phone number ID (the sending number)
+WHATSAPP_STORE_NUMBER=919377716183       # who receives it: digits with country code
+WHATSAPP_INVOICE_TEMPLATE=new_order_invoice
+WHATSAPP_TEMPLATE_LANG=en                # optional, default en
+```
+
+The sending number must be a number registered on the Cloud API (not the same number as the store's WhatsApp app). Create the template in WhatsApp Manager → Message templates, category **Utility**, with a **Document** header and this body — the six `{{n}}` must stay in this order:
+
+```
+New paid order {{1}}
+Amount: {{2}}
+Customer: {{3}}
+Items: {{4}}
+Deliver to: {{5}}
+Razorpay payment: {{6}}
+```
+
+Sending never blocks or fails the customer's payment: errors are logged (`WhatsApp invoice failed for order id …`) and the invoice can still be downloaded from the admin order page.
 
 ## Shipping configuration (Ekart)
 
@@ -681,6 +722,10 @@ Example: `GET /order/ORD-20260919-0001`
 
 Product name/variant name/price shown here are a **snapshot from when the order was placed** — they will not change even if the product is later renamed, repriced, or removed. `code: 3` if the order doesn't exist or isn't yours (an invalid-format order number also returns this).
 
+## `GET /order/:order_number/invoice` — invoice PDF
+
+Returns the order's invoice as `application/pdf` (download filename `Suvarna7-Invoice-<order_number>.pdf`). Only for your own **paid** orders: an unpaid one returns the JSON envelope with `code: 0`, `"The invoice is available once the order is paid"`; `code: 3` if not found/not yours.
+
 ## `PATCH /order/:order_number/cancel` — cancel order
 
 ```json
@@ -790,20 +835,21 @@ Revenue counts paid orders that weren't cancelled. `awaiting_payment` = pending 
 
 ### `PUT /admin/product/:id/content`
 
-Everything on the product page besides the basics. Send any of these sections; each one **replaces** that product's list (`[]` clears it, `storage_tips: null` removes the tips). Sections you leave out aren't touched, and all changes apply together or not at all.
+Everything on the product page besides the basics. Send any of these sections; each one **replaces** that product's list (`[]` clears it). Sections you leave out aren't touched, and all changes apply together or not at all.
 
 ```json
 {
-    "nutrients": [ { "label": "Protein", "value_per_100g": "21.2 g", "daily_value_percent": 42 } ],
-    "lipid_profile": [ { "label": "Monounsaturated", "percent": 62, "color": "#23412e" } ],
-    "certifications": [ { "label": "100% Chemical-Free", "description": "No fumigation or bleaching." } ],
+    "certifications": [ { "label": "GI-tagged Kashmir Saffron", "description": null } ],
     "health_benefits": [ "Heart Health", "High Protein" ],
-    "storage_tips": { "shelf_life": "…", "storage": "…", "usage": "…" },
-    "related_product_ids": [ 12, 15 ]
+    "related_product_ids": [ 12, 15 ],
+    "info_sections": [
+        { "title": "The Science Within", "body": null, "items": [ { "label": "Crocin", "text": "The natural carotenoid behind saffron's colour." } ] },
+        { "title": "How to Use", "body": "Soak 4-5 strands in warm milk…", "items": [] }
+    ]
 }
 ```
 
-Items keep the order you send them in. Labels must be unique within a list, `lipid_profile` percentages can't total more than 100, colours are `#rrggbb`, and a product can't be related to itself. The response is the product's updated content.
+Items keep the order you send them in. Certification labels must be unique, a product can't be related to itself, and each info section needs a title plus a `body`, `items`, or both. The response is the product's updated content. `GET /product/:slug` returns `tagline` and `info_sections` for the product page; `tagline` is set with the product's other basics (`PUT /admin/product/:id`).
 
 ## Variant — `/admin/product/:productId/variant`, `/admin/variant/:id`
 
@@ -822,7 +868,7 @@ Items keep the order you send them in. Labels must be unique within a list, `lip
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/admin/product/:productId/image` | `{ "cloudinary_public_id", "image_url", "alt_text"?, "sort_order"?, "is_primary"?, "variant_id"? }` |
+| POST | `/admin/product/:productId/image` | `{ "cloudinary_public_id", "image_url", "media_type"? ("image" default \| "video"), "alt_text"?, "sort_order"?, "is_primary"?, "variant_id"? }` — a video can't be primary |
 | GET | `/admin/product/:productId/image` | ordered by `sort_order` |
 | PUT | `/admin/image/:id` | update metadata (not `is_primary` — use the dedicated endpoint below) |
 | PATCH | `/admin/image/:id/primary` | marks this image primary, unsets any other primary image on the same product |
@@ -867,7 +913,7 @@ Removing more than what's currently unreserved returns `code: 0` with the exact 
 
 ## Image upload — `POST /admin/upload`
 
-Send the image file itself as the request body with its type as `Content-Type` (`image/jpeg`, `image/png`, `image/webp` or `image/avif`; max 5 MB). The file's bytes are checked, not just its type.
+Send the file itself as the request body with its type as `Content-Type`: an image (`image/jpeg`, `image/png`, `image/webp` or `image/avif`; max 5 MB) or a product video (`video/mp4`, `video/webm` or `video/quicktime`; max 50 MB, stored under `uploads/videos/`). The file's bytes are checked, not just its type. The response also has `media_type` (`"image"` or `"video"`).
 
 ```json
 { "code": 1, "message": "Image uploaded", "data": { "url": "http://localhost:5020/uploads/images/2026/09/<id>.png", "public_id": "local:images/2026/09/<id>.png", "bytes": 48213 } }
@@ -889,6 +935,7 @@ Use `url` as an `image_url`; for product images pass `public_id` as `cloudinary_
 |---|---|---|
 | GET | `/admin/order` | query: `page, limit, search` (order number/customer name/phone/email), `order_status, payment_status, fulfillment_status, date_from, date_to` (`YYYY-MM-DD`, on `created_at`) |
 | GET | `/admin/order/:orderNumber` | full detail incl. the shipping-address snapshot, line items and `shipments[]` |
+| GET | `/admin/order/:orderNumber/invoice` | invoice PDF for any order (paid or not) |
 | PATCH | `/admin/order/:orderNumber/status` | see below |
 
 **`PATCH /admin/order/:orderNumber/status`** accepts any of `order_status`, `payment_status`, `fulfillment_status` in the same body — only the fields you send are changed; they're never inferred from one another.

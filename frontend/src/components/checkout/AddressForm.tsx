@@ -23,7 +23,7 @@ function Field({ label, children, className }: { label: string; children: React.
   );
 }
 
-/** New-address form. The backend re-validates everything; its message is shown if it rejects the address. */
+/** Address form, blank or pre-filled from `defaults` for editing. The backend re-validates everything; its message is shown if it rejects the address. */
 export function AddressForm({
   defaults,
   isSaving,
@@ -40,13 +40,13 @@ export function AddressForm({
   const [form, setForm] = useState<AddressInput>({
     full_name: defaults.full_name ?? "",
     phone: defaults.phone ?? "",
-    address_line1: "",
-    address_line2: "",
-    landmark: "",
-    city: "",
-    state: "",
-    pincode: "",
-    address_type: "home",
+    address_line1: defaults.address_line1 ?? "",
+    address_line2: defaults.address_line2 ?? "",
+    landmark: defaults.landmark ?? "",
+    city: defaults.city ?? "",
+    state: defaults.state ?? "",
+    pincode: defaults.pincode ?? "",
+    address_type: defaults.address_type ?? "home",
     is_default: defaults.is_default ?? false,
   });
 

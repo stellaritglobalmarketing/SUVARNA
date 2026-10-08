@@ -12,7 +12,9 @@
   "scripts": {
     "db:migrate": "node scripts/migrate.js",
     "seed": "node seeds/seed.js",
+    "catalog:import": "node scripts/import-catalog.js",
     "admin:create": "node scripts/create-admin.js",
+    "store:reset": "node scripts/reset-store-data.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
     "start": "node server.js"
@@ -25,6 +27,7 @@
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.24.3",
     "nodemailer": "^10.0.0",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "pdfkit": "^0.20.2"
   }
 }

@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import {
-  Bell,
   ChevronRight,
-  CreditCard,
   Heart,
   HelpCircle,
   Info,
@@ -20,10 +18,8 @@ import { useAuth } from "@/hooks/useAuth";
 const MENU_ITEMS = [
   { icon: PackageSearch, label: "My Orders", href: "/orders" },
   { icon: Heart, label: "My Wishlist", href: "/wishlist" },
-  { icon: MapPin, label: "My Addresses", href: "/" },
-  { icon: CreditCard, label: "Payment Methods", href: "/" },
-  { icon: Bell, label: "Notifications", href: "/" },
-  { icon: HelpCircle, label: "Help & Support", href: "/" },
+  { icon: MapPin, label: "My Addresses", href: "/addresses" },
+  { icon: HelpCircle, label: "Help & Support", href: "/help" },
   { icon: Info, label: "About Suvarna7", href: "/our-story" },
 ];
 

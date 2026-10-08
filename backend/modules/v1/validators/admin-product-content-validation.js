@@ -71,6 +71,34 @@ function parseRelatedIds(value) {
     return { ids };
 }
 
+/** [{ title, body?, items?: [{ label?, text }] }] — each section needs a paragraph or at least one point. */
+function parseInfoSections(value) {
+    const listError = checkList(value, "info_sections", 15);
+    if (listError) return { error: listError };
+
+    const sections = [];
+    for (const [i, raw] of value.entries()) {
+        const title = text(raw?.title);
+        const body = text(raw?.body);
+        if (!title || title.length > 64) return { error: `info_sections[${i}].title is required (max 64 characters)` };
+        if (body.length > 5000) return { error: `info_sections[${i}].body must be 5000 characters or fewer` };
+        const rawItems = raw?.items ?? [];
+        if (!Array.isArray(rawItems) || rawItems.length > 20) return { error: `info_sections[${i}].items must be a list of at most 20 points` };
+        const items = [];
+        for (const [j, item] of rawItems.entries()) {
+            const label = text(item?.label);
+            const itemText = text(item?.text);
+            if (!itemText && !label) continue;
+            if (!itemText || itemText.length > 500) return { error: `info_sections[${i}].items[${j}].text is required (max 500 characters)` };
+            if (label.length > 80) return { error: `info_sections[${i}].items[${j}].label must be 80 characters or fewer` };
+            items.push({ label: label || null, text: itemText });
+        }
+        if (!body && items.length === 0) return { error: `"${title}" needs some text or at least one point` };
+        sections.push({ title, body: body || null, items });
+    }
+    return { sections };
+}
+
 /** Returns { error } or { content } holding only the sections present in the body. */
 function parseProductContent(body = {}) {
     const content = {};
@@ -78,6 +106,7 @@ function parseProductContent(body = {}) {
         ["certifications", parseCertifications, "items"],
         ["health_benefits", parseHealthBenefits, "items"],
         ["related_product_ids", parseRelatedIds, "ids"],
+        ["info_sections", parseInfoSections, "sections"],
     ];
 
     for (const [key, parse, field] of sections) {
@@ -93,4 +122,4 @@ function parseProductContent(body = {}) {
     return { content };
 }
 
-export { parseProductContent };
+export { parseProductContent, parseInfoSections };

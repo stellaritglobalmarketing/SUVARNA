@@ -1,6 +1,6 @@
 import { getToken } from "@/lib/auth/token";
 import { API_BASE_URL, API_KEY } from "./config";
-import { ApiError, apiDelete, apiGet, apiGetPaginated, apiPatch, apiPost, apiPut, type PaginationMeta } from "./http";
+import { ApiError, apiDelete, apiGet, downloadFile, apiGetPaginated, apiPatch, apiPost, apiPut, type PaginationMeta } from "./http";
 
 /**
  * Typed client for the admin API (backend/README.md — Admin). Every call needs an admin token,
@@ -161,6 +161,8 @@ export interface AdminOrder {
 
 export const getOrders = (query: Query) => paged<AdminOrderRow>("/admin/order", query);
 export const getOrder = (orderNumber: string) => apiGet<AdminOrder>(`/admin/order/${encodeURIComponent(orderNumber)}`);
+export const downloadAdminInvoice = (orderNumber: string) =>
+  downloadFile(`/admin/order/${encodeURIComponent(orderNumber)}/invoice`, `Suvarna7-Invoice-${orderNumber}.pdf`);
 export const updateOrderStatus = (
   orderNumber: string,
   body: Partial<{ order_status: string; payment_status: string; fulfillment_status: string }>,
@@ -323,6 +325,7 @@ export interface AdminVariant {
 export interface AdminImage {
   id: number;
   variant_id: number | null;
+  media_type: MediaType;
   image_url: string;
   alt_text: string | null;
   sort_order: number;
@@ -330,15 +333,23 @@ export interface AdminImage {
   is_active: boolean;
 }
 
+export interface InfoSection {
+  title: string;
+  body: string | null;
+  items: { label: string | null; text: string }[];
+}
+
 export interface ProductContent {
   certifications: { label: string; description: string | null }[];
   health_benefits: string[];
   related_products: { id: number; name: string; slug: string }[];
+  info_sections: InfoSection[];
 }
 
 export interface AdminProduct extends ProductContent {
   id: number;
   name: string;
+  tagline: string | null;
   slug: string;
   short_description: string | null;
   description: string | null;
@@ -359,6 +370,7 @@ export interface AdminProduct extends ProductContent {
 
 export interface ProductInput {
   name: string;
+  tagline?: string;
   slug?: string;
   short_description?: string;
   description?: string;
@@ -376,6 +388,7 @@ export interface ContentInput {
   certifications?: ProductContent["certifications"];
   health_benefits?: string[];
   related_product_ids?: number[];
+  info_sections?: InfoSection[];
 }
 
 export interface VariantInput {
@@ -403,7 +416,14 @@ export const deleteVariant = (id: number) => apiDelete<unknown>(`/admin/variant/
 
 export const createImage = (
   productId: number,
-  body: { cloudinary_public_id: string; image_url: string; alt_text?: string; is_primary?: number; sort_order?: number },
+  body: {
+    cloudinary_public_id: string;
+    image_url: string;
+    media_type?: MediaType;
+    alt_text?: string;
+    is_primary?: number;
+    sort_order?: number;
+  },
 ) => apiPost<unknown>(`/admin/product/${productId}/image`, body);
 export const updateImage = (id: number, body: { alt_text?: string; sort_order?: number }) => apiPut<unknown>(`/admin/image/${id}`, body);
 export const setPrimaryImage = (id: number) => apiPatch<unknown>(`/admin/image/${id}/primary`, {});
@@ -462,13 +482,34 @@ export const deleteContent = (resource: ContentResource, id: number) => apiDelet
 
 // ============================================================================ uploads
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
-const UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+export type MediaType = "image" | "video";
+
+export const IMAGE_UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+export const VIDEO_UPLOAD_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+
+export interface UploadResult {
+  url: string;
+  public_id: string;
+  media_type: MediaType;
+}
 
 /** Uploads an image file; returns its public URL and the id to store with it. */
-export async function uploadImage(file: File): Promise<{ url: string; public_id: string }> {
-  if (!UPLOAD_TYPES.includes(file.type)) throw new ApiError("Choose a JPEG, PNG, WebP or AVIF image.", 0, 2);
-  if (file.size > MAX_UPLOAD_BYTES) throw new ApiError("Image is larger than 5 MB.", 0, 2);
+export async function uploadImage(file: File): Promise<UploadResult> {
+  if (!IMAGE_UPLOAD_TYPES.includes(file.type)) throw new ApiError("Choose a JPEG, PNG, WebP or AVIF image.", 0, 2);
+  return uploadMedia(file);
+}
+
+/** Uploads an image (max 5 MB) or video (MP4/WebM/MOV, max 50 MB). */
+export async function uploadMedia(file: File): Promise<UploadResult> {
+  const isVideo = VIDEO_UPLOAD_TYPES.includes(file.type);
+  if (!isVideo && !IMAGE_UPLOAD_TYPES.includes(file.type)) {
+    throw new ApiError(`${file.name}: choose a JPEG, PNG, WebP or AVIF image, or an MP4, WebM or MOV video.`, 0, 2);
+  }
+  if (file.size > (isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES)) {
+    throw new ApiError(`${file.name} is larger than ${isVideo ? "50" : "5"} MB.`, 0, 2);
+  }
 
   const headers: Record<string, string> = { "Content-Type": file.type };
   if (API_KEY) headers["api-key"] = API_KEY;
@@ -481,7 +522,7 @@ export async function uploadImage(file: File): Promise<{ url: string; public_id:
   } catch {
     throw new ApiError("Unable to reach the server. Check your connection and try again.", 0, 0);
   }
-  const envelope = (await res.json().catch(() => null)) as { code: number; message?: string; data?: { url: string; public_id: string } } | null;
+  const envelope = (await res.json().catch(() => null)) as { code: number; message?: string; data?: UploadResult } | null;
   if (!res.ok || !envelope || envelope.code !== 1 || !envelope.data) {
     throw new ApiError(envelope?.message || "Upload failed.", res.status, envelope?.code ?? 0);
   }

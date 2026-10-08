@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils/cn";
 const TABS = [
   { key: "details", label: "Details" },
   { key: "variants", label: "Variants & Stock" },
-  { key: "images", label: "Images" },
+  { key: "images", label: "Photos & Videos" },
   { key: "content", label: "Page Content" },
 ] as const;
 

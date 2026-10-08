@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 import db from "../config/db.js";
 import Codes from "../config/status_codes.js";
+import { publicBaseUrl, withPublicUrls } from "../config/public-url.js";
+
 const sendResponse = (res, httpStatus = Codes.SUCCESS, resCode, message, data, pagination) => {
     const response = {
         code: resCode,
@@ -8,7 +10,8 @@ const sendResponse = (res, httpStatus = Codes.SUCCESS, resCode, message, data, p
     };
 
     if (data != null) {
-        response.data = data;
+        // Uploaded files are stored as "/uploads/…"; clients get absolute URLs on this backend's host.
+        response.data = withPublicUrls(data, publicBaseUrl(res.req));
     }
 
     if (pagination != null) {

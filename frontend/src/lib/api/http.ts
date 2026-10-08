@@ -128,6 +128,37 @@ export async function apiDelete<T>(path: string): Promise<T> {
   return envelope.data as T;
 }
 
+/**
+ * Downloads a file endpoint (e.g. a PDF invoice) with the API key and session token, then saves it
+ * through the browser. A JSON reply instead of the file is the backend's error envelope.
+ */
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (API_KEY) headers["api-key"] = API_KEY;
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(path), { headers });
+  } catch {
+    throw new ApiError("Unable to reach the server. Check your connection and try again.", 0, 0);
+  }
+  if (!res.ok || (res.headers.get("Content-Type") ?? "").includes("application/json")) {
+    const envelope = (await res.json().catch(() => null)) as ApiEnvelope<unknown> | null;
+    throw new ApiError(envelope?.message || "Download failed.", res.status, envelope?.code ?? 0);
+  }
+
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function toQueryString<T extends object>(params: T): string {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {

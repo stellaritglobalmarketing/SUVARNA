@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from "lucide-react";
-import { getProducts, updateProductContent, type AdminProduct, type ContentInput } from "@/lib/api/admin";
+import { getProducts, updateProductContent, type AdminProduct, type ContentInput, type InfoSection } from "@/lib/api/admin";
 import { AdminButton, Card, inputClass, useAdminMutation } from "@/components/admin/ui";
 import { cn } from "@/lib/utils/cn";
 
@@ -110,13 +110,88 @@ function useSectionSave(productId: number, label: string, refresh: Refresh) {
 }
 
 type CertRow = { label: string; description: string | null };
+type ItemRow = { label: string | null; text: string };
 
-/** Everything on the product page below the basics: badges, health benefits and related products. */
+const SECTION_SUGGESTIONS = ["The Science Within", "How to Use", "Storage", "What's Inside", "Perfect For"];
+
+/** Product information blocks: each has a title, an optional paragraph and optional points. */
+function InfoSectionsEditor({ sections, onChange }: { sections: InfoSection[]; onChange: (sections: InfoSection[]) => void }) {
+  const update = (index: number, patch: Partial<InfoSection>) => onChange(sections.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+  const move = (index: number, delta: number) => {
+    const next = [...sections];
+    [next[index], next[index + delta]] = [next[index + delta], next[index]];
+    onChange(next);
+  };
+  const add = (title = "") => onChange([...sections, { title, body: "", items: [] }]);
+  const unused = SECTION_SUGGESTIONS.filter((title) => !sections.some((s) => s.title.toLowerCase() === title.toLowerCase()));
+
+  return (
+    <div className="space-y-4">
+      {sections.map((section, index) => (
+        <div key={index} className="rounded-xl border border-brand-sand-dark p-3">
+          <div className="flex items-center gap-2">
+            <input
+              aria-label="Section title"
+              value={section.title}
+              maxLength={64}
+              placeholder="Section title, e.g. How to Use"
+              onChange={(e) => update(index, { title: e.target.value })}
+              className={cn(inputClass, "flex-1 font-semibold")}
+            />
+            <button type="button" aria-label="Move up" disabled={index === 0} onClick={() => move(index, -1)} className="rounded p-1.5 hover:bg-brand-sand disabled:opacity-30 cursor-pointer">
+              <ArrowUp size={14} />
+            </button>
+            <button type="button" aria-label="Move down" disabled={index === sections.length - 1} onClick={() => move(index, 1)} className="rounded p-1.5 hover:bg-brand-sand disabled:opacity-30 cursor-pointer">
+              <ArrowDown size={14} />
+            </button>
+            <button type="button" aria-label="Remove section" onClick={() => onChange(sections.filter((_, i) => i !== index))} className="rounded p-1.5 text-red-600 hover:bg-red-50 cursor-pointer">
+              <Trash2 size={14} />
+            </button>
+          </div>
+          <textarea
+            aria-label={`${section.title || "Section"} text`}
+            rows={3}
+            maxLength={5000}
+            value={section.body ?? ""}
+            placeholder="Paragraph (optional)"
+            onChange={(e) => update(index, { body: e.target.value })}
+            className={cn(inputClass, "mt-2")}
+          />
+          <div className="mt-2">
+            <RowsEditor<ItemRow>
+              rows={section.items}
+              onChange={(items) => update(index, { items })}
+              blank={{ label: "", text: "" }}
+              addLabel="Add point"
+              columns={[
+                { key: "label", label: "Bold label (optional)", placeholder: "Crocin", maxLength: 80, width: "w-48" },
+                { key: "text", label: "Point", placeholder: "The natural carotenoid behind saffron's colour.", maxLength: 500 },
+              ]}
+            />
+          </div>
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <AdminButton size="sm" variant="outline" onClick={() => add()}>
+          <Plus size={13} /> Add section
+        </AdminButton>
+        {unused.map((title) => (
+          <button key={title} type="button" onClick={() => add(title)} className="rounded-full border border-dashed border-brand-sand-dark px-2.5 py-0.5 text-xs text-brand-ink/60 hover:border-brand-forest cursor-pointer">
+            + {title}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Everything on the product page below the basics: badges, information sections, health benefits and related products. */
 export function ContentPanel({ product, refresh }: { product: AdminProduct; refresh: Refresh }) {
   const [certs, setCerts] = useState<CertRow[]>(product.certifications);
   const [benefits, setBenefits] = useState<string[]>(product.health_benefits);
   const [benefitDraft, setBenefitDraft] = useState("");
   const [related, setRelated] = useState<number[]>(product.related_products.map((p) => p.id));
+  const [sections, setSections] = useState<InfoSection[]>(product.info_sections ?? []);
 
   const { data: allProducts } = useQuery({ queryKey: ["admin", "products", "all"], queryFn: () => getProducts({ limit: 100, sort: "name_asc" }) });
 
@@ -124,6 +199,7 @@ export function ContentPanel({ product, refresh }: { product: AdminProduct; refr
   const saveCerts = useSectionSave(product.id, "Certifications", refresh);
   const saveBenefits = useSectionSave(product.id, "Health benefits", refresh);
   const saveRelated = useSectionSave(product.id, "Related products", refresh);
+  const saveSections = useSectionSave(product.id, "Product information", refresh);
 
   const addBenefit = (value: string) => {
     const benefit = value.trim();
@@ -149,6 +225,23 @@ export function ContentPanel({ product, refresh }: { product: AdminProduct; refr
             { key: "description", label: "Description", placeholder: "No fumigation or bleaching.", maxLength: 255 },
           ]}
         />
+      </Section>
+
+      <Section
+        title="Product information"
+        hint="Blocks on the product page such as The Science Within, How to Use and Storage. Each needs a title and a paragraph, points, or both."
+        isSaving={saveSections.isPending}
+        onSave={() =>
+          saveSections.mutate({
+            info_sections: sections.map((s) => ({
+              title: s.title.trim(),
+              body: s.body?.trim() || null,
+              items: s.items.filter((item) => item.text.trim()).map((item) => ({ label: item.label?.trim() || null, text: item.text.trim() })),
+            })),
+          })
+        }
+      >
+        <InfoSectionsEditor sections={sections} onChange={setSections} />
       </Section>
 
       <Section title="Health benefits" hint="Tags used for 'Shop by health goal'." isSaving={saveBenefits.isPending} onSave={() => saveBenefits.mutate({ health_benefits: benefits })}>

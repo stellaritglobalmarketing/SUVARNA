@@ -6,13 +6,14 @@ const FOOTER_COLUMNS = [
   {
     title: "Shop",
     links: [
-      { href: "/products/kashmiri-mongra-saffron", label: "Mongra Saffron" },
-      { href: "/products/raw-forest-honey", label: "Raw Forest Honey" },
-      { href: "/products/kashmir-mamra-almonds", label: "Mamra Almonds" },
-      { href: "/products/afghani-gurbandi-almonds", label: "Afghani Almonds" },
-      { href: "/products/pure-cow-ghee", label: "Cow Ghee" },
-      { href: "/products/pure-buffalo-ghee", label: "Buffalo Ghee" },
-      { href: "/products/kashmiri-walnut-kernels", label: "Walnuts" },
+      { href: "/products/kashmir-saffron", label: "Kashmir Saffron" },
+      { href: "/products/kashmir-acacia-honey", label: "Acacia Honey" },
+      { href: "/products/kashmir-wild-dark-honey", label: "Wild Dark Honey" },
+      { href: "/products/gir-cow-bilona-ghee", label: "Gir Cow Bilona Ghee" },
+      { href: "/products/buffalo-bilona-ghee", label: "Buffalo Bilona Ghee" },
+      { href: "/products/kashmiri-almonds", label: "Kashmiri Almonds" },
+      { href: "/products/kashmiri-walnut-kernels", label: "Walnut Kernels" },
+      { href: "/products/heritage-box", label: "Heritage Box" },
     ],
   },
   {
@@ -20,8 +21,8 @@ const FOOTER_COLUMNS = [
     links: [
       { href: "/track-order", label: "Track Order" },
       { href: "/", label: "Shipping Policy" },
-      { href: "/", label: "Returns & Refunds" },
-      { href: "/", label: "Contact Us" },
+      { href: "/return-policy", label: "Exchange & Return Policy" },
+      { href: "/help", label: "Help & Support" },
     ],
   },
   {
@@ -60,8 +61,11 @@ export function Footer() {
           </div>
         ))}
       </Container>
-      <div className="border-t border-brand-ink/10 py-4 text-center text-xs text-brand-ink/55">
-        © {new Date().getFullYear()} Suvarna7 — Pure Indian Goodness. All rights reserved.
+      <div className="flex flex-col items-center gap-2 border-t border-brand-ink/10 px-4 py-4 text-center text-xs text-brand-ink/55 sm:flex-row sm:justify-center sm:gap-4">
+        <span>© {new Date().getFullYear()} Suvarna7 — Pure Indian Goodness. All rights reserved.</span>
+        <Link href="/return-policy" className="font-medium text-brand-forest underline-offset-2 hover:underline">
+          Return &amp; Exchange Policy
+        </Link>
       </div>
     </footer>
   );

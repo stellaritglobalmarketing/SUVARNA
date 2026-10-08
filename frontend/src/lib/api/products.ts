@@ -31,6 +31,7 @@ interface BackendHomeProductCard {
   id: number;
   name: string;
   slug: string;
+  tagline?: string | null;
   short_description?: string | null;
   min_price: number;
   max_price: number;
@@ -63,11 +64,13 @@ interface BackendProductCard extends BackendHomeProductCard {
   discount_percent: number;
   delivery_estimate_days: [number, number];
   images: string[];
+  videos?: string[];
   variants: BackendCardVariant[];
 }
 
 /** GET /product/:slug — the full card plus product-page-only data. */
 interface BackendProductDetail extends BackendProductCard {
+  info_sections?: { title: string; body: string | null; items: { label: string | null; text: string }[] }[];
   frequently_bought_with: BackendProductCard[];
   similar_products: BackendProductCard[];
 }
@@ -179,6 +182,7 @@ export async function fetchProductBySlug(slug: string): Promise<ProductDetail> {
     if (!product) throw new Error(`Product not found: ${slug}`);
     return {
       ...product,
+      infoSections: [],
       frequentlyBoughtWithProducts: getMockProductsByIds(product.frequentlyBoughtWith),
       similarProducts: MOCK_PRODUCTS.filter((p) => p.slug !== product.slug).slice(0, 4),
     };
@@ -233,12 +237,14 @@ function mapCardToProduct(card: BackendProductCard): Product {
     id: String(card.id),
     slug: card.slug,
     name: card.name,
-    tagline: card.short_description || "",
+    tagline: card.tagline || card.short_description || "",
+    shortDescription: card.short_description || undefined,
     description: card.description || card.short_description || "",
     origin: (card.origin ?? "India") as ProductOrigin,
     processing: (card.processing ?? "Raw") as ProductProcessing,
     healthBenefits: card.health_benefits as HealthBenefit[],
     images: card.images.length ? card.images : card.image_url ? [card.image_url] : [],
+    videos: card.videos ?? [],
     // Placeholder colours behind a missing product photo — a storefront design choice, not product data.
     gradient: FALLBACK_GRADIENT,
     rating: card.rating,
@@ -255,6 +261,7 @@ function mapCardToProduct(card: BackendProductCard): Product {
 function mapDetailToProduct(detail: BackendProductDetail): ProductDetail {
   return {
     ...mapCardToProduct(detail),
+    infoSections: detail.info_sections ?? [],
     frequentlyBoughtWith: detail.frequently_bought_with.map((companion) => companion.slug),
     frequentlyBoughtWithProducts: detail.frequently_bought_with.map(mapCardToProduct),
     similarProducts: detail.similar_products.map(mapCardToProduct),

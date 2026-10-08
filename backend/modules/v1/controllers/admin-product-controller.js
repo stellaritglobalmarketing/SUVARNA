@@ -104,7 +104,7 @@ const getProducts = async (req, res) => {
         const [rows] = await db.query(
             `SELECT p.id, p.name, p.slug, p.short_description, p.brand_name, p.is_featured, p.is_bestseller, p.is_active, p.created_at,
                     (SELECT pi.image_url FROM product_images pi
-                     WHERE pi.product_id = p.id AND pi.is_delete = 0
+                     WHERE pi.product_id = p.id AND pi.is_delete = 0 AND pi.media_type = 'image'
                      ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_url,
                     (SELECT MIN(pv.selling_price) FROM product_variants pv WHERE pv.product_id = p.id AND pv.is_delete = 0) AS min_price,
                     (SELECT MAX(pv.selling_price) FROM product_variants pv WHERE pv.product_id = p.id AND pv.is_delete = 0) AS max_price,
@@ -155,7 +155,7 @@ const getProductById = async (req, res) => {
         }
 
         const [productRows] = await db.query(
-            `SELECT p.id, p.name, p.slug, p.short_description, p.description, p.brand_name, p.is_featured, p.is_active, p.created_at, p.updated_at,
+            `SELECT p.id, p.name, p.tagline, p.slug, p.short_description, p.description, p.brand_name, p.is_featured, p.is_active, p.created_at, p.updated_at,
                     p.origin, p.processing, p.delivery_min_days, p.delivery_max_days, p.is_bestseller, p.sort_order
              FROM products p
              WHERE p.id = ? AND p.is_delete = 0
@@ -180,7 +180,7 @@ const getProductById = async (req, res) => {
         );
 
         const [images] = await db.query(
-            `SELECT id, variant_id, image_url, alt_text, sort_order, is_primary, is_active
+            `SELECT id, variant_id, media_type, image_url, alt_text, sort_order, is_primary, is_active
              FROM product_images
              WHERE product_id = ? AND is_delete = 0
              ORDER BY sort_order ASC`,
@@ -192,6 +192,7 @@ const getProductById = async (req, res) => {
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Product fetched successfully", {
             id: product.id,
             name: product.name,
+            tagline: product.tagline,
             slug: product.slug,
             short_description: product.short_description,
             description: product.description,
@@ -222,7 +223,7 @@ const getProductById = async (req, res) => {
                 available_quantity: Math.max(toNumber(v.stock_quantity) - toNumber(v.reserved_quantity), 0),
             })),
             images: images.map((img) => ({ ...img, is_primary: !!img.is_primary, is_active: !!img.is_active })),
-            // certifications, health_benefits, related_products
+            // certifications, health_benefits, related_products, info_sections
             ...content,
         });
     } catch (error) {
@@ -601,17 +602,19 @@ const createImage = async (req, res) => {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Product not found", null);
         }
 
-        const is_primary = req.body.is_primary !== undefined ? toBool01(req.body.is_primary) : 0;
+        const media_type = req.body.media_type === "video" ? "video" : "image";
+        const is_primary = media_type === "image" && req.body.is_primary !== undefined ? toBool01(req.body.is_primary) : 0;
         if (is_primary) {
             await connection.query("UPDATE product_images SET is_primary = 0 WHERE product_id = ?", [productId]);
         }
 
         const [result] = await connection.query(
-            `INSERT INTO product_images (product_id, variant_id, cloudinary_public_id, image_url, alt_text, sort_order, is_primary)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO product_images (product_id, variant_id, media_type, cloudinary_public_id, image_url, alt_text, sort_order, is_primary)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 productId,
                 req.body.variant_id ? Number(req.body.variant_id) : null,
+                media_type,
                 String(req.body.cloudinary_public_id).trim(),
                 String(req.body.image_url).trim(),
                 req.body.alt_text ? String(req.body.alt_text).trim() : null,
@@ -622,7 +625,7 @@ const createImage = async (req, res) => {
 
         await connection.commit();
 
-        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Image added successfully", { id: result.insertId, product_id: Number(productId) });
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, media_type === "video" ? "Video added successfully" : "Image added successfully", { id: result.insertId, product_id: Number(productId) });
     } catch (error) {
         await connection.rollback();
         console.error("Admin create image error: ", error);
@@ -643,7 +646,7 @@ const getImagesByProduct = async (req, res) => {
         }
 
         const [rows] = await db.query(
-            `SELECT id, variant_id, cloudinary_public_id, image_url, alt_text, sort_order, is_primary, is_active
+            `SELECT id, variant_id, media_type, cloudinary_public_id, image_url, alt_text, sort_order, is_primary, is_active
              FROM product_images
              WHERE product_id = ? AND is_delete = 0
              ORDER BY sort_order ASC`,
@@ -705,10 +708,14 @@ const setPrimaryImage = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        const [rows] = await connection.query("SELECT id, product_id FROM product_images WHERE id = ? AND is_delete = 0 LIMIT 1 FOR UPDATE", [id]);
+        const [rows] = await connection.query("SELECT id, product_id, media_type FROM product_images WHERE id = ? AND is_delete = 0 LIMIT 1 FOR UPDATE", [id]);
         if (rows.length === 0) {
             await connection.rollback();
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Image not found", null);
+        }
+        if (rows[0].media_type === "video") {
+            await connection.rollback();
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, "A video can't be the primary image", null);
         }
 
         await connection.query("UPDATE product_images SET is_primary = 0 WHERE product_id = ?", [rows[0].product_id]);

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, MapPin, Plus, ShieldCheck } from "lucide-react";
+import { Check, MapPin, MessageCircle, Plus, ShieldCheck } from "lucide-react";
 import type { AddressInput } from "@/types/address";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -14,6 +14,7 @@ import { createAddress, fetchAddresses } from "@/lib/api/addresses";
 import { fetchServerCart } from "@/lib/api/cart";
 import { createPaymentOrder, fetchOrderDetail, placeOrder, verifyPayment } from "@/lib/api/checkout";
 import { openRazorpay } from "@/lib/razorpay";
+import { IS_WHATSAPP_CHECKOUT, WHATSAPP_ORDER_NUMBER_DISPLAY, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
 import { queryKeys } from "@/lib/query/keys";
 import { formatInr } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
@@ -27,7 +28,7 @@ import { AddressForm } from "./AddressForm";
 const BRAND_COLOR = "#3d2b1c";
 const PLACEHOLDER_GRADIENT: [string, string] = ["#8a6a4f", "#d4a373"];
 
-type Status = "idle" | "placing" | "opening" | "paying" | "verifying";
+type Status = "idle" | "placing" | "opening" | "paying" | "verifying" | "sending";
 
 function errorText(error: unknown): string {
   return error instanceof Error && error.message ? error.message : "Something went wrong. Please try again.";
@@ -106,6 +107,24 @@ export function CheckoutClient() {
     router.push(`/checkout/success?order=${encodeURIComponent(orderNumber)}`);
   };
 
+  /**
+   * WhatsApp mode: send the order (invoice, items, address) to our WhatsApp instead of opening Razorpay.
+   * `waWindow` is opened synchronously in the click handler so popup blockers allow it; if it was
+   * blocked, the success page still has a "Send on WhatsApp" button.
+   */
+  const sendOrderOnWhatsapp = async (orderNumber: string, waWindow: Window | null, orderNotes?: string) => {
+    setStatus("sending");
+    try {
+      const detail = await fetchOrderDetail(orderNumber);
+      const url = whatsappOrderUrl(buildOrderMessage(detail, user ?? undefined, orderNotes));
+      if (waWindow && !waWindow.closed) waWindow.location.href = url;
+      else window.open(url, "_blank", "noopener");
+    } catch {
+      waWindow?.close();
+    }
+    goToSuccess(orderNumber);
+  };
+
   const startPayment = async (orderNumber: string) => {
     setError(null);
     setNotice(null);
@@ -159,17 +178,20 @@ export function CheckoutClient() {
     }
     setError(null);
     setStatus("placing");
+    const waWindow = IS_WHATSAPP_CHECKOUT ? window.open("", "_blank") : null;
     try {
       // The order is built from the server's cart, so make sure the customer is looking at it.
       const serverCart = await fetchServerCart();
       dispatch(setCartItems(serverCart));
       const serverSubtotal = serverCart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
       if (serverCart.length === 0) {
+        waWindow?.close();
         setStatus("idle");
         setError("Your cart is empty.");
         return;
       }
       if (serverSubtotal !== cartSubtotal) {
+        waWindow?.close();
         setStatus("idle");
         setError("Your cart was updated with the latest prices and stock. Please review it and try again.");
         return;
@@ -177,9 +199,14 @@ export function CheckoutClient() {
 
       const order = await placeOrder(selectedAddressId, notes.trim());
       dispatch(setCartItems([])); // the server emptied the cart when it created the order
+      if (IS_WHATSAPP_CHECKOUT) {
+        await sendOrderOnWhatsapp(order.order_number, waWindow, notes);
+        return;
+      }
       router.replace(`/checkout?order=${encodeURIComponent(order.order_number)}`);
       await startPayment(order.order_number);
     } catch (placeError) {
+      waWindow?.close();
       setStatus("idle");
       setError(errorText(placeError));
     }
@@ -190,6 +217,7 @@ export function CheckoutClient() {
     opening: "Opening payment…",
     paying: "Complete payment in the popup…",
     verifying: "Confirming payment…",
+    sending: "Opening WhatsApp…",
   };
   const isBusy = status !== "idle";
 
@@ -215,7 +243,7 @@ export function CheckoutClient() {
     const order = orderQuery.data;
     return (
       <Container className="py-10">
-        <SectionHeading eyebrow="Checkout" title="Complete Your Payment" />
+        <SectionHeading eyebrow="Checkout" title={IS_WHATSAPP_CHECKOUT ? "Complete Your Order" : "Complete Your Payment"} />
         {orderQuery.isLoading && <Skeleton className="mt-8 h-64 w-full" />}
         {orderQuery.isError && (
           <p className="mt-8 text-sm text-red-600">We couldn&apos;t find that order. It may belong to another account.</p>
@@ -230,7 +258,9 @@ export function CheckoutClient() {
                   <p className="mt-2 text-sm text-red-600">This order was cancelled and can no longer be paid.</p>
                 ) : (
                   <p className="mt-2 text-sm text-brand-ink/70">
-                    Your items are reserved. Pay now to confirm the order and we&apos;ll start packing it.
+                    {IS_WHATSAPP_CHECKOUT
+                      ? "Your items are reserved. Send the order to us on WhatsApp and we’ll share payment details to confirm it."
+                      : "Your items are reserved. Pay now to confirm the order and we’ll start packing it."}
                   </p>
                 )}
               </div>
@@ -248,11 +278,21 @@ export function CheckoutClient() {
               subtotal={order.subtotal}
               total={order.total_amount}
             >
-              {order.order_status !== "cancelled" && (
-                <Button className="mt-5 w-full" size="lg" disabled={isBusy} onClick={() => startPayment(order.order_number)}>
-                  <ShieldCheck size={18} /> {busyLabel[status] ?? `Pay ${formatInr(order.total_amount)}`}
-                </Button>
-              )}
+              {order.order_status !== "cancelled" &&
+                (IS_WHATSAPP_CHECKOUT ? (
+                  <Button
+                    className="mt-5 w-full"
+                    size="lg"
+                    href={whatsappOrderUrl(buildOrderMessage(order, user ?? undefined))}
+                    external
+                  >
+                    <MessageCircle size={18} /> Send Order on WhatsApp
+                  </Button>
+                ) : (
+                  <Button className="mt-5 w-full" size="lg" disabled={isBusy} onClick={() => startPayment(order.order_number)}>
+                    <ShieldCheck size={18} /> {busyLabel[status] ?? `Pay ${formatInr(order.total_amount)}`}
+                  </Button>
+                ))}
               <Messages notice={notice} error={error} />
             </SummaryCard>
           </div>
@@ -383,7 +423,8 @@ export function CheckoutClient() {
             disabled={isBusy || showAddressForm || selectedAddressId == null}
             onClick={handlePlaceOrder}
           >
-            <ShieldCheck size={18} /> {busyLabel[status] ?? `Place Order & Pay ${formatInr(cartSubtotal)}`}
+            {IS_WHATSAPP_CHECKOUT ? <MessageCircle size={18} /> : <ShieldCheck size={18} />}{" "}
+            {busyLabel[status] ?? (IS_WHATSAPP_CHECKOUT ? `Place Order on WhatsApp · ${formatInr(cartSubtotal)}` : `Place Order & Pay ${formatInr(cartSubtotal)}`)}
           </Button>
           {showAddressForm && <p className="mt-2 text-center text-xs text-brand-ink/50">Save a delivery address to continue.</p>}
           <Messages notice={notice} error={error} />
@@ -476,7 +517,11 @@ function SummaryCard({
         </div>
       </div>
       {children}
-      <p className="mt-3 text-center text-xs text-brand-ink/50">Secure payment by Razorpay · UPI, cards, net banking &amp; wallets</p>
+      <p className="mt-3 text-center text-xs text-brand-ink/50">
+        {IS_WHATSAPP_CHECKOUT
+          ? `Your order details are sent to us on WhatsApp (${WHATSAPP_ORDER_NUMBER_DISPLAY}). We'll confirm and share payment details (UPI / bank transfer) there.`
+          : "Secure payment by Razorpay · UPI, cards, net banking & wallets"}
+      </p>
     </div>
   );
 }

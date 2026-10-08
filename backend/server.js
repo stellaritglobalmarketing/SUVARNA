@@ -22,6 +22,7 @@ import ekart from "./config/ekart.js";
 import { syncOpenShipments } from "./modules/v1/services/ekart-shipping.js";
 import cors from "cors";
 import { UPLOAD_ROOT } from "./config/uploads.js";
+import { storeUploadPaths } from "./config/public-url.js";
 
 dotenv.config();
 
@@ -58,6 +59,9 @@ app.use(cors({
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json());
+
+// Strips this backend's own host from uploaded-file URLs in request bodies, so only "/uploads/…" is stored.
+app.use(storeUploadPaths);
 
 app.use("/uploads", express.static(UPLOAD_ROOT, { maxAge: "30d", immutable: true }));
 
@@ -101,7 +105,9 @@ app.use((err, _req, res, _next) => {
     return middleware.sendResponse(res, 400, Codes.MISSING_FIELD, "Request body is not valid JSON", null);
   }
   if (err.type === "entity.too.large") {
-    return middleware.sendResponse(res, 413, Codes.MISSING_FIELD, "File is too large (max 5 MB)", null);
+    // Upload routes set limits in whole MB (5 for images, 50 for videos); express.json's default is 100 KB.
+    const message = err.limit >= 1024 * 1024 ? `File is too large (max ${Math.round(err.limit / (1024 * 1024))} MB)` : "Request is too large";
+    return middleware.sendResponse(res, 413, Codes.MISSING_FIELD, message, null);
   }
   console.error("Unhandled error:", err);
   return middleware.sendResponse(res, Codes.INTERNAL_ERROR, Codes.RESPONSE_ERROR, "Something went wrong. Please try again later", null);

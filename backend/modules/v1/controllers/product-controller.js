@@ -2,6 +2,7 @@ import db from "../../../config/db.js";
 import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import { parseListingQuery, parseReviewQuery, isValidSlug, validateReviewBody } from "../validators/product-validation.js";
+import { loadInfoSections } from "../services/product-info-sections.js";
 
 // mysql2 returns DECIMAL columns (and expressions derived from them) as strings
 // to avoid float precision loss — cast back to Number for the JSON response.
@@ -28,7 +29,7 @@ const SIMILAR_PRODUCT_LIMIT = 4;
 // Columns every product card needs (see buildProductCards). Only products with at least one
 // live variant come through the join.
 const PRODUCT_CARD_COLUMNS = `
-    p.id, p.name, p.slug, p.short_description, p.description, p.origin, p.processing,
+    p.id, p.name, p.tagline, p.slug, p.short_description, p.description, p.origin, p.processing,
     p.delivery_min_days, p.delivery_max_days, p.is_featured, p.is_bestseller,
     pr.min_price, pr.max_price`;
 
@@ -95,7 +96,7 @@ async function buildProductCards(rows) {
             ids
         ),
         db.query(
-            `SELECT product_id, image_url
+            `SELECT product_id, media_type, image_url
              FROM product_images
              WHERE product_id IN (${placeholders}) AND is_active = 1 AND is_delete = 0
              ORDER BY is_primary DESC, sort_order ASC, id ASC`,
@@ -136,7 +137,8 @@ async function buildProductCards(rows) {
             in_stock: available > 0,
         };
     });
-    const imagesByProduct = groupByProduct(imageRows, (img) => img.image_url);
+    const imagesByProduct = groupByProduct(imageRows.filter((m) => m.media_type === "image"), (img) => img.image_url);
+    const videosByProduct = groupByProduct(imageRows.filter((m) => m.media_type === "video"), (video) => video.image_url);
     const certificationsByProduct = groupByProduct(certificationRows, (c) => ({ label: c.label, description: c.description }));
     const benefitsByProduct = groupByProduct(benefitRows, (b) => b.benefit);
     const ratingByProduct = new Map(ratingRows.map((r) => [r.product_id, r]));
@@ -150,6 +152,7 @@ async function buildProductCards(rows) {
         return {
             id: r.id,
             name: r.name,
+            tagline: r.tagline,
             slug: r.slug,
             short_description: r.short_description,
             description: r.description,
@@ -165,6 +168,7 @@ async function buildProductCards(rows) {
             delivery_estimate_days: [r.delivery_min_days, r.delivery_max_days],
             image_url: images[0] || null,
             images,
+            videos: videosByProduct.get(r.id) || [],
             min_price: toNumber(r.min_price),
             max_price: toNumber(r.max_price),
             variants,
@@ -376,7 +380,7 @@ const getProductDetails = async (req, res) => {
 
         const product = productRows[0];
 
-        const [[card], [relatedRows], breakdown, similarRows] = await Promise.all([
+        const [[card], [relatedRows], breakdown, similarRows, infoSections] = await Promise.all([
             buildProductCards([product]),
             db.query(
                 "SELECT related_product_id FROM product_related WHERE product_id = ? ORDER BY sort_order ASC",
@@ -393,6 +397,7 @@ const getProductDetails = async (req, res) => {
                           p.sort_order ASC`,
                 limit: SIMILAR_PRODUCT_LIMIT,
             }),
+            loadInfoSections(db, product.id),
         ]);
 
         const relatedIds = relatedRows.map((row) => row.related_product_id);
@@ -415,6 +420,7 @@ const getProductDetails = async (req, res) => {
             ...card,
             brand_name: product.brand_name,
             rating_breakdown: breakdown,
+            info_sections: infoSections,
             frequently_bought_with: companionCards,
             similar_products: similarCards,
         });

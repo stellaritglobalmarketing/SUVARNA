@@ -32,11 +32,15 @@ export interface Product {
   slug: string;
   name: string;
   tagline: string;
+  /** The short product-card text; falls back to the tagline where missing. */
+  shortDescription?: string;
   description: string;
   origin: ProductOrigin;
   processing: ProductProcessing;
   healthBenefits: HealthBenefit[];
   images: string[];
+  /** Product videos, shown in the gallery after the photos. */
+  videos?: string[];
   gradient: [string, string];
   rating: number;
   reviewCount: number;
@@ -49,7 +53,16 @@ export interface Product {
 }
 
 /** Everything the product page renders, from the single GET /product/:slug call. */
+/** A block of product-page information: a paragraph, a list of points, or both. */
+export interface ProductInfoSection {
+  title: string;
+  body: string | null;
+  /** `label` is the bold lead-in of a point, e.g. "Crocin". */
+  items: { label: string | null; text: string }[];
+}
+
 export interface ProductDetail extends Product {
+  infoSections: ProductInfoSection[];
   frequentlyBoughtWithProducts: Product[];
   similarProducts: Product[];
 }

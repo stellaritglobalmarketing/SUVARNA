@@ -23,10 +23,12 @@ import { ProductGallery } from "./ProductGallery";
 import { CertificationBadges } from "./CertificationBadges";
 import { PincodeChecker } from "./PincodeChecker";
 import { FrequentlyBoughtTogether } from "./FrequentlyBoughtTogether";
-import { QualityProcess } from "./QualityProcess";
+import { ProductDetailsTabs } from "./ProductDetailsTabs";
+import { ProductDescription, ProductTagline } from "./ProductDescription";
 import { SimilarProducts } from "./SimilarProducts";
 import { ReviewSummary } from "./ReviewSummary";
 import { ReviewList } from "./ReviewList";
+import { WriteReview } from "./WriteReview";
 
 export function ProductDetailClient({ slug }: { slug: string }) {
   const { data: product, isLoading, isError } = useProduct(slug);
@@ -93,7 +95,7 @@ export function ProductDetailClient({ slug }: { slug: string }) {
     <div className="pb-32 lg:pb-0">
       <Container className="py-6 sm:py-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-          <ProductGallery images={product.images} gradient={product.gradient} name={product.name} />
+          <ProductGallery images={product.images} videos={product.videos} gradient={product.gradient} name={product.name} />
 
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
@@ -103,8 +105,9 @@ export function ProductDetailClient({ slug }: { slug: string }) {
             </div>
 
             <h1 className="font-serif text-3xl font-bold text-brand-forest sm:text-4xl">{product.name}</h1>
-            <p className="text-brand-ink/70">{product.tagline}</p>
+            <ProductTagline text={product.tagline} />
             <RatingStars rating={product.rating} reviewCount={product.reviewCount} />
+            <ProductDescription text={product.description} />
 
             <CertificationBadges certifications={product.certifications} />
 
@@ -135,7 +138,6 @@ export function ProductDetailClient({ slug }: { slug: string }) {
 
             <PincodeChecker />
 
-            <p className="text-sm leading-relaxed text-brand-ink/70">{product.description}</p>
           </div>
         </div>
       </Container>
@@ -144,12 +146,15 @@ export function ProductDetailClient({ slug }: { slug: string }) {
         <FrequentlyBoughtTogether mainProduct={product} companions={product.frequentlyBoughtWithProducts} />
       </Container>
 
-      <Container className="py-10">
-        <QualityProcess origin={product.origin} processing={product.processing} />
+      <Container className="pt-10">
+        <ProductDetailsTabs sections={product.infoSections} name={product.name} origin={product.origin} processing={product.processing} />
       </Container>
 
       <Container className="py-10">
-        <h2 className="font-serif text-xl font-semibold text-brand-forest">Verified Buyer Reviews</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-serif text-xl font-semibold text-brand-forest">Verified Buyer Reviews</h2>
+          <WriteReview slug={product.slug} productName={product.name} />
+        </div>
         <div className="mt-4 space-y-6">
           {reviewsData && (
             <>

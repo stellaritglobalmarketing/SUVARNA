@@ -8,7 +8,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const product = await fetchProductBySlug(slug);
     return {
       title: `Suvarna7 — ${product.name} Product Details`,
-      description: product.tagline,
+      description: product.shortDescription || product.tagline,
     };
   } catch {
     return { title: "Suvarna7 — Product Details" };

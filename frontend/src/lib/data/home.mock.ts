@@ -140,8 +140,8 @@ export const MOCK_FAQS: HomeFaq[] = [
     answer: "Yes, COD is available on most pincodes across India. You'll see the option at checkout once your pincode is verified.",
   },
   {
-    question: "What is your return & refund policy?",
-    answer: "If a pouch arrives damaged or doesn't match the listing, we offer a free replacement or full refund within 7 days of delivery.",
+    question: "What is your return & exchange policy?",
+    answer: "We don't accept returns or offer refunds, as our products are food items. If your order arrives damaged, wrong or defective, message us on WhatsApp with photos within 36 hours of delivery and we'll send a free replacement. Requests after 36 hours can't be accepted.",
   },
   {
     question: "How do you ensure freshness?",

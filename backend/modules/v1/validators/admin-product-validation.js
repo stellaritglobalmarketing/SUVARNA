@@ -80,6 +80,9 @@ function validateProductBody(body, { requireName }) {
     if (slug !== undefined && slug !== null && slug !== "" && String(slug).trim().length > 160) {
         return "slug must be 160 characters or fewer";
     }
+    if (body?.tagline !== undefined && body.tagline !== null && String(body.tagline).trim().length > 160) {
+        return "tagline must be 160 characters or fewer";
+    }
     if (short_description !== undefined && short_description !== null && String(short_description).length > 255) {
         return "short_description must be 255 characters or fewer";
     }
@@ -121,6 +124,7 @@ function validateProductBody(body, { requireName }) {
  */
 function pickStorefrontFields(body = {}) {
     const fields = {};
+    if (body.tagline !== undefined) fields.tagline = body.tagline ? String(body.tagline).trim() : null;
     if (body.origin !== undefined) fields.origin = body.origin ? String(body.origin).trim() : null;
     if (body.processing !== undefined) fields.processing = body.processing ? String(body.processing).trim() : null;
     if (body.delivery_min_days !== undefined) fields.delivery_min_days = Number(body.delivery_min_days);
@@ -174,7 +178,7 @@ function validateVariantBody(body, { requireAll }) {
 }
 
 function validateImageBody(body, { requireAll }) {
-    const { cloudinary_public_id, image_url, alt_text, sort_order, is_primary, variant_id } = body || {};
+    const { cloudinary_public_id, image_url, alt_text, sort_order, is_primary, variant_id, media_type } = body || {};
 
     if (requireAll && (!cloudinary_public_id || !String(cloudinary_public_id).trim())) {
         return "cloudinary_public_id is required";
@@ -196,6 +200,12 @@ function validateImageBody(body, { requireAll }) {
     }
     if (variant_id !== undefined && variant_id !== null && variant_id !== "" && !isPositiveInt(variant_id)) {
         return "variant_id must be a valid positive integer";
+    }
+    if (media_type !== undefined && !["image", "video"].includes(media_type)) {
+        return "media_type must be image or video";
+    }
+    if (media_type === "video" && Number(is_primary) === 1) {
+        return "A video can't be the primary image";
     }
 
     return null;

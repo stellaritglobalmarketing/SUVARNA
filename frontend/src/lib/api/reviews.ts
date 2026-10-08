@@ -2,7 +2,7 @@ import type { Review, ReviewBreakdown } from "@/types/review";
 import { MOCK_REVIEW_BREAKDOWN, getMockReviewsBySlug } from "@/lib/data/reviews.mock";
 import { USE_MOCK_API } from "./config";
 import { mockDelay } from "./delay";
-import { apiGet } from "./http";
+import { apiGet, apiPost } from "./http";
 
 export interface ReviewsResponse {
   reviews: Review[];
@@ -50,4 +50,18 @@ export async function fetchReviewsBySlug(slug: string): Promise<ReviewsResponse>
       helpfulCount: 0,
     })),
   };
+}
+
+export interface ReviewInput {
+  rating: number;
+  title?: string;
+  review_text?: string;
+}
+
+/**
+ * Writes (or replaces) the signed-in customer's review of a product. It shows on the site only
+ * after an admin approves it.
+ */
+export async function submitReview(slug: string, input: ReviewInput): Promise<{ is_verified_purchase: boolean }> {
+  return apiPost<{ is_verified_purchase: boolean }>(`/product/${encodeURIComponent(slug)}/reviews`, input);
 }

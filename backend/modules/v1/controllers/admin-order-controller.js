@@ -18,7 +18,7 @@ async function batchImagesByProduct(productIds) {
             SELECT product_id, image_url,
                    ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY is_primary DESC, sort_order ASC) AS rn
             FROM product_images
-            WHERE product_id IN (${placeholders}) AND is_active = 1 AND is_delete = 0
+            WHERE product_id IN (${placeholders}) AND is_active = 1 AND is_delete = 0 AND media_type = 'image'
         ) ranked
         WHERE rn = 1`,
         uniqueIds
