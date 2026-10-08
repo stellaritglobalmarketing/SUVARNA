@@ -332,7 +332,7 @@ function renderInvoicePdf({ order, items, payment }) {
         const contact = [seller.phone && `WhatsApp / Call: ${seller.phone}`, seller.email, "Pure Indian Goodness"].filter(Boolean).join("   |   ");
         doc.font("Helvetica-Bold").fontSize(8.5).fillColor("#ffffff").text(contact, left, footerTop + 18, { width, align: "center", lineBreak: false });
         doc.font("Helvetica").fontSize(7.5).fillColor("#d9c7a8")
-            .text("No returns. Damaged, wrong or defective items can be exchanged if reported within 36 hours of delivery.", left, footerTop + 34, { width, align: "center", lineBreak: false })
+            .text("No refunds. Sealed products can be returned within 36 hours of delivery for a replacement; damaged or wrong items are replaced.", left, footerTop + 34, { width, align: "center", lineBreak: false })
             .text("This is a computer-generated invoice and does not require a physical signature.", left, footerTop + 46, { width, align: "center", lineBreak: false });
 
         doc.end();

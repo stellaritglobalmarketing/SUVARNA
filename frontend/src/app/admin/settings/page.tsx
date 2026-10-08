@@ -42,8 +42,7 @@ export default function AdminSettingsPage() {
 
       <Card title="WhatsApp number">
         <p className="mb-5 max-w-2xl text-sm text-brand-ink/65">
-          Order messages, the &ldquo;Chat on WhatsApp&rdquo; and &ldquo;Call us&rdquo; buttons on Help &amp; Support and the Exchange &amp;
-          Return Policy, and the paid-order invoice (once the WhatsApp Business API is connected) all use this number. Changes apply
+          Order messages, the &ldquo;Chat on WhatsApp&rdquo; and &ldquo;Call us&rdquo; buttons on Help &amp; Support and the policy pages, and the paid-order invoice (once the WhatsApp Business API is connected) all use this number. Changes apply
           right away — no redeploy needed. Static pages pick it up within a minute.
         </p>
 

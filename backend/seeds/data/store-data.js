@@ -117,23 +117,23 @@ export const TESTIMONIALS = [
 
 export const FAQS = [
     {
-        question: "Is Cash on Delivery (COD) available?",
-        answer: "Yes, COD is available on most pincodes across India. You'll see the option at checkout once your pincode is verified.",
+        question: "Which payment methods do you accept?",
+        answer: "We accept UPI (Google Pay, PhonePe, Paytm and more), debit and credit cards, net banking and wallets, all processed securely by Razorpay. We don't offer Cash on Delivery.",
     },
     {
-        question: "What is your return & exchange policy?",
-        answer: "We don't accept returns or offer refunds, as our products are food items. If your order arrives damaged, wrong or defective, message us on WhatsApp with photos within 36 hours of delivery and we'll send a free replacement. Requests after 36 hours can't be accepted.",
+        question: "Can I return or cancel my order?",
+        answer: "We don't offer refunds. You can return a sealed, unopened product within 36 hours of delivery for a replacement or exchange, and damaged, wrong or missing items are replaced if you message us within 36 hours with photos. Unpaid orders can be cancelled from My Orders; paid orders can't be cancelled.",
     },
     {
-        question: "How do you ensure freshness?",
-        answer: "Every pouch is nitrogen-flushed at the time of packing and shipped within 48 hours of your order to lock in freshness.",
+        question: "How long does delivery take?",
+        answer: "We deliver across India, usually in 2–4 days. Enter your pincode on any product page to see the estimate for your area, and follow your parcel any time from Track Order.",
     },
     {
-        question: "Do you deliver across India?",
-        answer: "Yes, we ship pan-India via Ekart, Delhivery, BlueDart, DTDC and Shiprocket, with delivery in 2–5 days depending on your pincode.",
+        question: "How do I know your products are pure?",
+        answer: "We buy directly from farmers and beekeepers — saffron and honey from Kashmir, bilona ghee from Gujarat — and every batch is checked and lab tested for quality before it's sealed. Nothing is added: no preservatives, no colours, no blending.",
     },
     {
-        question: "Are your products lab tested?",
-        answer: "Every batch is graded and lab-tested for oil content, moisture and purity before it's approved for packing.",
+        question: "My honey has crystallised. Is that normal?",
+        answer: "Yes. Crystallisation is a sign of pure, raw honey and doesn't affect its quality. Warm the jar gently in a bowl of warm water to make it liquid again. Keep honey and ghee at room temperature and use a dry spoon; store saffron airtight and away from light.",
     },
 ];

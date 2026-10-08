@@ -7,7 +7,7 @@ import { getStoreSettings } from "@/lib/api/settings";
 
 export const metadata: Metadata = {
   title: "Suvarna7 — Help & Support",
-  description: "Questions about an order, delivery or an exchange? Chat with Suvarna7 on WhatsApp or give us a call.",
+  description: "Questions about an order, delivery or a return? Chat with Suvarna7 on WhatsApp or give us a call.",
 };
 
 
@@ -21,10 +21,10 @@ const TOPICS = [
   },
   {
     icon: RefreshCcw,
-    title: "Damaged or wrong item",
-    text: "Message us within 36 hours of delivery with photos and your order number, and we'll send a replacement.",
-    href: "/return-policy",
-    cta: "Exchange policy",
+    title: "Return or replace an item",
+    text: "Sealed products can be returned within 36 hours of delivery, and damaged or wrong items are replaced. Message us with photos and your order number.",
+    href: "/refund-policy",
+    cta: "Return & cancellation policy",
   },
   {
     icon: ShoppingBag,
@@ -48,8 +48,8 @@ const FAQS = [
     a: "Your order number (it starts with ORD-), the phone number you ordered with, and photos if something arrived damaged.",
   },
   {
-    q: "Can I return a product?",
-    a: "Our products are food items, so we don't accept returns or give refunds. Damaged, wrong or defective items are exchanged if you tell us within 36 hours of delivery.",
+    q: "Can I return a product or get a refund?",
+    a: "We don't offer refunds. You can return a sealed, unopened product within 36 hours of delivery for a replacement or exchange, and damaged, wrong or missing items are replaced if you tell us within 36 hours with photos. Paid orders can't be cancelled.",
   },
   {
     q: "Can I change my delivery address after ordering?",
@@ -116,7 +116,8 @@ export default async function HelpPage() {
         </Container>
       </section>
 
-      <Container className="max-w-5xl space-y-14 py-14 sm:py-16">
+      <Container className="py-14 sm:py-16">
+        <div className="mx-auto max-w-5xl space-y-14">
         {/* Common topics */}
         <section>
           <h2 className="font-serif text-2xl font-bold text-brand-forest sm:text-3xl">Common questions, quick answers</h2>
@@ -165,6 +166,7 @@ export default async function HelpPage() {
             <MessageCircle size={18} /> Chat on WhatsApp
           </Button>
         </section>
+        </div>
       </Container>
     </div>
   );

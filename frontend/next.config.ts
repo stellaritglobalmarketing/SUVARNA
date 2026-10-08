@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
         destination: "https://suvarna7.com/:path*",
         permanent: true,
       },
+      // The old exchange page was replaced by the Refund, Return & Cancellation Policy.
+      { source: "/return-policy", destination: "/refund-policy", permanent: true },
     ];
   },
 };

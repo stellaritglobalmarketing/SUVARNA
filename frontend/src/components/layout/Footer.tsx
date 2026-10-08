@@ -20,9 +20,10 @@ const FOOTER_COLUMNS = [
     title: "Support",
     links: [
       { href: "/track-order", label: "Track Order" },
-      { href: "/", label: "Shipping Policy" },
-      { href: "/return-policy", label: "Exchange & Return Policy" },
+      { href: "/privacy", label: "Privacy Policy" },
+      { href: "/refund-policy", label: "Refund & Cancellation" },
       { href: "/help", label: "Help & Support" },
+      { href: "/contact", label: "Contact Us" },
     ],
   },
   {
@@ -34,6 +35,12 @@ const FOOTER_COLUMNS = [
       { href: "/", label: "Bulk & Corporate Gifting" },
     ],
   },
+];
+
+const LEGAL_LINKS = [
+  { href: "/terms", label: "Terms & Conditions" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/refund-policy", label: "Refund & Cancellation Policy" },
 ];
 
 export function Footer() {
@@ -63,9 +70,13 @@ export function Footer() {
       </Container>
       <div className="flex flex-col items-center gap-2 border-t border-brand-ink/10 px-4 py-4 text-center text-xs text-brand-ink/55 sm:flex-row sm:justify-center sm:gap-4">
         <span>© {new Date().getFullYear()} Suvarna7 — Pure Indian Goodness. All rights reserved.</span>
-        <Link href="/return-policy" className="font-medium text-brand-forest underline-offset-2 hover:underline">
-          Return &amp; Exchange Policy
-        </Link>
+        <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+          {LEGAL_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className="font-medium text-brand-forest underline-offset-2 hover:underline">
+              {link.label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </footer>
   );

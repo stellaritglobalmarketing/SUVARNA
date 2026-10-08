@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 export const metadata: Metadata = {
   title: "Suvarna7 — Our Story",
   description:
-    "How Suvarna7 sources Mongra saffron, Mamra almonds, raw honey and A2 ghee directly from farmers across Kashmir, Afghanistan and India.",
+    "The story behind Suvarna7 and the farms where our saffron, almonds, honey, ghee and walnuts are grown and made.",
 };
 
 const VALUES = [
@@ -19,8 +19,8 @@ const VALUES = [
   },
   {
     icon: Gem,
-    title: "Direct Farmer Trade",
-    description: "We buy straight from orchard families and gaushalas instead of going through traders.",
+    title: "From Our Own Farms",
+    description: "Our products come from our own farms, with care from cultivation through harvest.",
   },
   {
     icon: Wheat,
@@ -36,17 +36,17 @@ const VALUES = [
 
 const ORIGINS = [
   {
-    place: "Kashmir",
+    place: "Our Farms",
     products: "Saffron, Almonds, Walnut Kernels",
     image: "/images/products/kashmiri-mongra-saffron.webp",
   },
   {
-    place: "Kashmir Hills",
+    place: "Our Farms",
     products: "Acacia Honey, Wild Dark Honey",
     image: "/images/products/raw-forest-honey.webp",
   },
   {
-    place: "Across India",
+    place: "From Gujarat",
     products: "Gir Cow & Buffalo Bilona Ghee",
     image: "/images/products/pure-cow-ghee.webp",
   },
@@ -74,8 +74,8 @@ export default function OurStoryPage() {
           </span>
           <h1 className="mt-5 max-w-2xl font-serif text-4xl font-bold leading-tight sm:text-5xl">About Suvarna7</h1>
           <p className="mt-5 max-w-xl text-brand-sand/80">
-            Suvarna7 sources saffron, almonds, honey, ghee and walnuts directly from farmers in Kashmir,
-            Afghanistan and across India, rather than buying through traders and distributors.
+            Our saffron, almonds, honey, ghee and walnuts come from our own farms—not from independent
+            farmers or through traders and distributors.
           </p>
         </Container>
       </section>
@@ -105,17 +105,15 @@ export default function OurStoryPage() {
           </div>
           <div className="order-1 lg:order-2">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-gold">How It Started</p>
-            <h2 className="mt-3 font-serif text-3xl font-bold text-brand-forest sm:text-4xl">Why We Buy Direct</h2>
+            <h2 className="mt-3 font-serif text-3xl font-bold text-brand-forest sm:text-4xl">Grown and Made on Our Farms</h2>
             <p className="mt-5 text-brand-ink/75 leading-relaxed">
-              Most dry fruits sold as &ldquo;premium&rdquo; in shops pass through several traders before they
-              reach a shelf. Each step adds margin and makes it harder to know where the product actually came
-              from, or how it was graded.
+              We grow and make our products on our own farms, so we can stay close to every step—from the
+              way ingredients are raised to how each batch is prepared and graded.
             </p>
             <p className="mt-4 text-brand-ink/75 leading-relaxed">
-              We work directly with orchard families in Kashmir, saffron growers in Pampore, almond farmers in
-              the Gurbandi valley, and small gaushalas that still churn ghee using the bilona method. That
-              means fewer people between the farm and your home, and a clearer answer to where each product
-              comes from.
+              Saffron, almonds, honey, ghee and walnuts come from our own farms. We oversee their journey from
+              cultivation and harvest through preparation and packing, rather than sourcing them from
+              independent farmers, traders or distributors.
             </p>
             <p className="mt-6 text-sm font-semibold uppercase tracking-[0.15em] text-brand-forest">
               Good Food. Brighter Tomorrows.

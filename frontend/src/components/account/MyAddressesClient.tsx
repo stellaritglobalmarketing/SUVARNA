@@ -99,7 +99,8 @@ export function MyAddressesClient() {
     ) : null;
 
   return (
-    <Container className="max-w-4xl py-10">
+    <Container className="py-10">
+        <div className="mx-auto max-w-4xl">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionHeading eyebrow="Your Account" title="My Addresses" subtitle="Saved addresses show up at checkout, so you don't have to type them again." />
         {isSuccess && addresses.length > 0 && editing !== "new" && (
@@ -207,6 +208,7 @@ export function MyAddressesClient() {
       {(remove.isError || makeDefault.isError) && (
         <p className="mt-4 text-sm text-red-600">{errorMessage(remove.error ?? makeDefault.error)}</p>
       )}
-    </Container>
+        </div>
+      </Container>
   );
 }
