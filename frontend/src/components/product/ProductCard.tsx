@@ -45,7 +45,9 @@ export function ProductCard({ product }: { product: Product }) {
 
   const toggleHeart = () => dispatch(toggleWishlist(product.slug));
 
-  const purityLabel = product.certifications.find((cert) => cert.label.startsWith("100%"))?.label;
+  // One-line promise under the name: a "100% …" purity claim when the product has one, otherwise its
+  // first certification (admins order these so the strongest claim comes first).
+  const purityLabel = (product.certifications.find((cert) => cert.label.startsWith("100%")) ?? product.certifications[0])?.label;
 
   return (
     <div className="product-card flex flex-col overflow-hidden rounded-md border border-brand-sand-dark bg-white">

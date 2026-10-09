@@ -30,9 +30,10 @@ const FOOTER_COLUMNS = [
     title: "Suvarna7",
     links: [
       { href: "/our-story", label: "Our Story" },
-      { href: "/", label: "Farm Partners" },
-      { href: "/", label: "Quality Promise" },
-      { href: "/", label: "Bulk & Corporate Gifting" },
+      { href: "/#quality", label: "Quality Promise" },
+      { href: "/#hampers", label: "Gift Hampers" },
+      // The contact page's WhatsApp form covers gifting and bulk enquiries.
+      { href: "/contact", label: "Bulk & Corporate Gifting" },
     ],
   },
 ];

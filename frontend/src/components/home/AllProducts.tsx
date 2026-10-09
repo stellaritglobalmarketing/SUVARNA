@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import type { Product } from "@/types/product";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -26,8 +27,19 @@ export function AllProducts({ products }: { products: Product[] }) {
   );
   const results = isSearching ? data?.items : products;
 
+  // A search submitted from another page lands on "/#products", but this section mounts only after
+  // the home data loads, so the browser's own hash jump misses it. Scroll here once it exists.
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (search && window.location.hash === "#products") {
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    // Only on mount: searches made while this section is on screen are scrolled by the header.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <section id="products" tabIndex={-1} className="scroll-mt-52 py-10 sm:py-16">
+    <section ref={sectionRef} id="products" tabIndex={-1} className="scroll-mt-52 py-10 sm:py-16">
       <Container>
         {isSearching ? (
           <div className="flex flex-wrap items-end justify-between gap-3">

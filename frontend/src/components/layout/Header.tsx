@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   ChevronDown,
   Heart,
@@ -37,6 +37,7 @@ const NAV_LINKS = [
 export function Header() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const cartCount = useAppSelector(selectCartCount);
   const wishlistCount = useAppSelector(selectWishlistCount);
   const deliveryPincode = useAppSelector(selectDeliveryPincode);
@@ -45,17 +46,50 @@ export function Header() {
   const activeSearch = useAppSelector(selectFilters).search;
   const [searchValue, setSearchValue] = useState(activeSearch);
   const [syncedSearch, setSyncedSearch] = useState(activeSearch);
-  // Mirror searches changed elsewhere (e.g. "Clear search" on the home grid) into the input.
+  // Mirror searches changed elsewhere (e.g. "Clear search" on the home grid) into the input. Skipped
+  // when the input already matches, so the live search below never eats a space mid-typing.
   if (activeSearch !== syncedSearch) {
     setSyncedSearch(activeSearch);
-    setSearchValue(activeSearch);
+    if (searchValue.trim() !== activeSearch) setSearchValue(activeSearch);
   }
   const [isMenuOpen, setMenuOpen] = useState(false);
 
-  const handleSearch = (event: FormEvent) => {
+  // Bring the results grid into view. Already on home: scroll there (a same-hash push wouldn't), unless
+  // the grid is already on screen, so typing doesn't keep yanking the page. From any other page, go home;
+  // AllProducts scrolls itself once it mounts (see its effect).
+  const showResults = (force: boolean) => {
+    if (pathname !== "/") {
+      router.push("/#products");
+      return;
+    }
+    const section = document.getElementById("products");
+    if (!section) return;
+    const { top, bottom } = section.getBoundingClientRect();
+    if (force || top > window.innerHeight * 0.5 || bottom < 0) section.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Live search: run the query once typing pauses. Emptying the box (backspace or the input's own
+  // clear button) brings the full collection back.
+  useEffect(() => {
+    const query = searchValue.trim();
+    if (query === activeSearch) return;
+    const timer = setTimeout(() => {
+      dispatch(setSearch(query));
+      if (query) showResults(false);
+    }, 300);
+    return () => clearTimeout(timer);
+    // showResults only reads the current route; re-running on it would re-fire the search after navigating.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchValue, activeSearch, dispatch]);
+
+  // Enter or the search icon: search right away and close the on-screen keyboard so results aren't hidden.
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    dispatch(setSearch(searchValue.trim()));
-    router.push("/#products");
+    const query = searchValue.trim();
+    if (!query) return;
+    dispatch(setSearch(query));
+    (event.currentTarget.querySelector("input") as HTMLInputElement | null)?.blur();
+    showResults(true);
   };
 
   return (
@@ -109,7 +143,9 @@ export function Header() {
         <Container className="pb-3">
           <form onSubmit={handleSearch}>
             <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 shadow-sm">
-              <Search size={16} className="shrink-0 text-brand-ink/40" aria-hidden="true" />
+              <button type="submit" aria-label="Search" className="shrink-0 text-brand-ink/40 hover:text-brand-forest cursor-pointer">
+                <Search size={16} aria-hidden="true" />
+              </button>
               <input
                 type="search"
                 value={searchValue}
@@ -244,7 +280,9 @@ export function Header() {
             <div className="flex min-w-0 items-center justify-end gap-2 xl:gap-4">
               <form onSubmit={handleSearch} className="min-w-0 max-w-sm flex-1">
                 <div className="flex items-center gap-2 rounded-md border border-brand-sand-dark bg-brand-sand px-4 py-2">
-                  <Search size={16} className="shrink-0 text-brand-ink/50" aria-hidden="true" />
+                  <button type="submit" aria-label="Search" className="shrink-0 text-brand-ink/50 hover:text-brand-forest cursor-pointer">
+                    <Search size={16} aria-hidden="true" />
+                  </button>
                   <input
                     type="search"
                     value={searchValue}

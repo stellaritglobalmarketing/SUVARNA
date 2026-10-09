@@ -100,8 +100,8 @@ export const PRODUCTS = [
         image: "/images/products/kashmir-acacia-honey.png",
         is_bestseller: false,
         certifications: [
-            { label: "Sourced from the Kashmir hills", description: null },
             { label: "Single-flower acacia honey", description: null },
+            { label: "Sourced from the Kashmir hills", description: null },
             { label: "Light, clear and naturally slow to crystallise", description: null },
             LAB_TESTED,
         ],

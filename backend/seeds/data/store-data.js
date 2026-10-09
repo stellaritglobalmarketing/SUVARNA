@@ -48,12 +48,6 @@ export const HIGHLIGHTS = [
 
     {
         placement: "trust_point",
-        icon: "leaf",
-        title: "Direct Farmer Sourcing",
-        description: "We buy directly from orchard families in Kashmir, Afghanistan, Iran and California — no middlemen.",
-    },
-    {
-        placement: "trust_point",
         icon: "badge-check",
         title: "Lab-Tested Quality",
         description: "Every batch is graded for oil content, moisture and purity before it reaches your pouch.",
