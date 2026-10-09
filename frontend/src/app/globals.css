@@ -178,9 +178,15 @@ button {
    inline in SVG user units; parts that turn about their own box use fill-box. */
 .craft-band {
   --craft-bg: var(--background);
+  /* Depth tones, far → near, plus the light fold lines drawn over the silhouettes. */
+  --craft-c1: #f3ebde;
+  --craft-c2: #e8d9c2;
+  --craft-c3: #dcc5a4;
+  --craft-c4: #cdb18a;
+  --craft-fold: #f6eee2;
   overflow: hidden;
   background: var(--craft-bg);
-  color: #dcc6a8;
+  color: var(--craft-c3);
   padding: 24px 0 8px;
   -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
   mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
@@ -202,6 +208,7 @@ button {
 .craft-orbit { animation: craft-orbit 4s linear infinite; }
 .craft-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: craft-swing 3s ease-in-out infinite; --swing-from: -6deg; --swing-to: 6deg; }
 .craft-fall { animation: craft-fall 2.6s ease-in infinite; }
+.craft-flap { animation: craft-flap .9s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 
 /* Off screen nothing moves. */
 .craft-band:not([data-active]) * { animation-play-state: paused !important; }
@@ -215,6 +222,7 @@ button {
 @keyframes craft-flame { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.72) scaleX(1.08); } }
 @keyframes craft-steam { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-22px); opacity: 0; } }
 @keyframes craft-orbit { to { transform: rotate(360deg); } }
+@keyframes craft-flap { 0%, 100% { transform: scaleY(1) translateY(0); } 50% { transform: scaleY(-.6) translateY(-2px); } }
 @keyframes craft-fall { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(74px); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
