@@ -172,3 +172,51 @@ button {
   .hero-dot::after { width: 6px; height: 6px; }
   .hero-dot.is-active::after { width: 12px; height: 12px; }}
 @media (prefers-reduced-motion: reduce) { .hero-slide { transition: none; } }
+
+/* ---- Home craft frieze under the hero (components/home/CraftStory.tsx) ----
+   A faint single-tone band that drifts sideways; each figure loops on its own. Pivots are set
+   inline in SVG user units; parts that turn about their own box use fill-box. */
+.craft-band {
+  --craft-bg: var(--background);
+  overflow: hidden;
+  background: var(--craft-bg);
+  color: #dcc6a8;
+  padding: 24px 0 8px;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+.craft-track { display: flex; width: max-content; animation: craft-marquee 70s linear infinite; }
+.craft-frieze { display: block; flex: none; height: 170px; width: auto; }
+@media (min-width: 640px) { .craft-frieze { height: 230px; } .craft-track { animation-duration: 90s; } }
+@media (min-width: 1024px) { .craft-frieze { height: 280px; } }
+
+.craft-swing { animation: craft-swing 2.2s ease-in-out infinite; }
+.craft-slow { animation-duration: 4s; }
+.craft-quick { animation-duration: 1.6s; }
+.craft-milk { animation: craft-milk .8s ease-in-out infinite; }
+.craft-pull { animation: craft-pull 1.2s ease-in-out infinite; }
+.craft-twist { animation: craft-twist .6s linear infinite; }
+.craft-bob { animation: craft-bob 1.1s ease-in-out infinite; }
+.craft-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: craft-flame .5s ease-in-out infinite; }
+.craft-steam { animation: craft-steam 3.6s ease-out infinite; }
+.craft-orbit { animation: craft-orbit 4s linear infinite; }
+.craft-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: craft-swing 3s ease-in-out infinite; --swing-from: -6deg; --swing-to: 6deg; }
+.craft-fall { animation: craft-fall 2.6s ease-in infinite; }
+
+/* Off screen nothing moves. */
+.craft-band:not([data-active]) * { animation-play-state: paused !important; }
+
+@keyframes craft-marquee { to { transform: translateX(-50%); } }
+@keyframes craft-swing { 0%, 100% { transform: rotate(var(--swing-from)); } 50% { transform: rotate(var(--swing-to)); } }
+@keyframes craft-milk { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+@keyframes craft-pull { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+@keyframes craft-twist { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(-1); } }
+@keyframes craft-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes craft-flame { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.72) scaleX(1.08); } }
+@keyframes craft-steam { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-22px); opacity: 0; } }
+@keyframes craft-orbit { to { transform: rotate(360deg); } }
+@keyframes craft-fall { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(74px); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .craft-band * { animation: none !important; }
+}

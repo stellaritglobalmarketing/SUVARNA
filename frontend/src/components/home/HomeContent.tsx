@@ -8,6 +8,7 @@ import { ProductGridSkeleton } from "@/components/product/ProductGrid";
 import { Hero } from "./Hero";
 import { PromoBanner } from "./PromoBanner";
 import { AllProducts } from "./AllProducts";
+import { CraftStory } from "./CraftStory";
 import { CustomHampers } from "./CustomHampers";
 import { TrustSection } from "./TrustSection";
 import { Testimonials } from "./Testimonials";
@@ -34,6 +35,7 @@ export function HomeContent() {
   return (
     <>
       {data.hero && <Hero banner={data.hero} hasHampers={data.products.length > 0} />}
+      <CraftStory />
       <AllProducts products={data.products} />
       {data.promo && <PromoBanner banner={data.promo} />}
       <CustomHampers hampers={data.hampers} products={data.products} />
