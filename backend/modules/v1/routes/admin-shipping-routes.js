@@ -11,6 +11,11 @@ import {
     ekartNdrAction,
     getEkartStatus,
     registerEkartWebhook,
+    listEkartAddresses,
+    addEkartAddress,
+    setEkartPickup,
+    getEkartSettingsHandler,
+    updateEkartSettingsHandler,
 } from "../controllers/ekart-controller.js";
 
 const router = express.Router();
@@ -31,5 +36,10 @@ router.post("/shipment/:id/cancel", ...requireAdmin, cancelEkartShipment);
 router.post("/shipment/:id/ndr", ...requireAdmin, ekartNdrAction);
 router.get("/shipping/ekart/status", ...requireAdmin, getEkartStatus);
 router.post("/shipping/ekart/webhook", ...requireAdmin, registerEkartWebhook);
+router.get("/shipping/ekart/addresses", ...requireAdmin, listEkartAddresses);
+router.post("/shipping/ekart/addresses", ...requireAdmin, addEkartAddress);
+router.put("/shipping/ekart/pickup", ...requireAdmin, setEkartPickup);
+router.get("/shipping/ekart/settings", ...requireAdmin, getEkartSettingsHandler);
+router.put("/shipping/ekart/settings", ...requireAdmin, updateEkartSettingsHandler);
 
 export default router;

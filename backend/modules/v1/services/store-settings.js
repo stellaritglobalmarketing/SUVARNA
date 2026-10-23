@@ -59,4 +59,19 @@ async function setWhatsappNumber(number) {
     cache = null;
 }
 
-export { normalizeWhatsappNumber, getWhatsappNumber, getPublicSettings, setWhatsappNumber };
+/** Raw value of any setting, or null. Throws if the table can't be read. */
+async function getSetting(key) {
+    const values = await readAll();
+    return values[key] ?? null;
+}
+
+async function setSetting(key, value) {
+    await db.query(
+        `INSERT INTO store_settings (setting_key, setting_value) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+        [key, value]
+    );
+    cache = null;
+}
+
+export { normalizeWhatsappNumber, getWhatsappNumber, getPublicSettings, setWhatsappNumber, getSetting, setSetting };

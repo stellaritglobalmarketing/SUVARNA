@@ -62,4 +62,41 @@ function parseIdList(value, max = 100) {
     return { ids };
 }
 
-export { isPincode, parsePackage, validatePreferredDispatchDate, parseNdrBody, parseIdList };
+/**
+ * Body for Ekart's POST /api/v2/address. Returns { error } or { address } with Ekart's field names
+ * (phone and pincode as numbers, geo only when both coordinates are given).
+ */
+function parseAddressBody(body = {}) {
+    const text = (value, max) => String(value ?? "").trim().replace(/\s+/g, " ").slice(0, max);
+    const alias = text(body.alias, 60);
+    const address_line1 = text(body.address_line1, 200);
+    const address_line2 = text(body.address_line2, 200);
+    const city = text(body.city, 60);
+    const state = text(body.state, 60);
+    const country = text(body.country, 60) || "India";
+    let phone = String(body.phone ?? "").replace(/\D/g, "");
+    if (phone.length === 12 && phone.startsWith("91")) phone = phone.slice(2);
+    const pincode = String(body.pincode ?? "").trim();
+
+    if (!alias) return { error: "Alias (a short name for this address) is required" };
+    if (!/^[6-9]\d{9}$/.test(phone)) return { error: "Phone must be a 10-digit mobile number" };
+    if (!address_line1) return { error: "Address line 1 is required" };
+    if (!isPincode(pincode)) return { error: "Pincode must be 6 digits" };
+    if (!city) return { error: "City is required" };
+    if (!state) return { error: "State is required" };
+
+    const address = { alias, phone: Number(phone), address_line1, address_line2, pincode: Number(pincode), city, state, country };
+    const lat = body.geo?.lat;
+    const lon = body.geo?.lon;
+    if (lat !== undefined && lat !== null && lat !== "" && lon !== undefined && lon !== null && lon !== "") {
+        const latNum = Number(lat);
+        const lonNum = Number(lon);
+        if (!Number.isFinite(latNum) || !Number.isFinite(lonNum) || Math.abs(latNum) > 90 || Math.abs(lonNum) > 180) {
+            return { error: "Latitude/longitude are not valid coordinates" };
+        }
+        address.geo = { lat: latNum, lon: lonNum };
+    }
+    return { address };
+}
+
+export { isPincode, parsePackage, validatePreferredDispatchDate, parseNdrBody, parseIdList, parseAddressBody };

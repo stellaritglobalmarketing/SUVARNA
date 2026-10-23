@@ -136,7 +136,7 @@ export function EkartBookingForm({ orderNumber, refresh, onDone }: { orderNumber
                 {estimate.zone && ` · zone ${estimate.zone}`}
               </p>
             ) : (
-              <p className="text-brand-ink/50">Set EKART_PICKUP_PINCODE to see Ekart&apos;s rate here.</p>
+              <p className="text-brand-ink/50">Choose a pickup address in Settings → Pickup address to see Ekart&apos;s rate here.</p>
             )}
           </div>
         )}

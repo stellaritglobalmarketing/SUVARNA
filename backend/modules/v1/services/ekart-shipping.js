@@ -1,5 +1,7 @@
 import db from "../../../config/db.js";
 import ekart from "../../../config/ekart.js";
+import { getSetting, setSetting } from "./store-settings.js";
+import { getEkartSettings } from "./ekart-settings.js";
 
 // Everything Ekart-specific that isn't a raw HTTP call: building the create-shipment payload from
 // our order, turning Ekart's tracking into our shipment/order statuses, and keeping them in sync
@@ -45,24 +47,21 @@ export function mapStatus(ekartStatus) {
     return STATUS_MAP[ekartStatus] ?? null;
 }
 
-// ------------------------------------------------------------------ settings from .env
+// ------------------------------------------------------------------ settings
 
 function env(name, fallback = "") {
     const value = process.env[name];
     return value === undefined || value === null || String(value).trim() === "" ? fallback : String(value).trim();
 }
 
-function envInt(name, fallback) {
-    const value = parseInt(env(name), 10);
-    return Number.isInteger(value) && value > 0 ? value : fallback;
-}
-
-export function defaultPackage() {
+/** Default box and packaging weight, from Admin → Settings → Ekart shipping. */
+export async function defaultPackage() {
+    const settings = await getEkartSettings();
     return {
-        length_cm: envInt("EKART_DEFAULT_LENGTH_CM", 20),
-        width_cm: envInt("EKART_DEFAULT_WIDTH_CM", 15),
-        height_cm: envInt("EKART_DEFAULT_HEIGHT_CM", 10),
-        packaging_weight_g: envInt("EKART_PACKAGING_WEIGHT_G", 150),
+        length_cm: settings.box_length_cm,
+        width_cm: settings.box_width_cm,
+        height_cm: settings.box_height_cm,
+        packaging_weight_g: settings.packaging_weight_g,
     };
 }
 
@@ -87,30 +86,40 @@ function sameState(a, b) {
     return clean(a) !== "" && clean(a) === clean(b);
 }
 
-function pickupLocation() {
-    const address = env("EKART_PICKUP_ADDRESS");
-    if (address) {
-        const phone = normalizePhone(env("EKART_PICKUP_PHONE"));
-        return {
-            location_type: "Office",
-            name: env("EKART_PICKUP_NAME", env("EKART_SELLER_NAME")),
-            address,
-            city: env("EKART_PICKUP_CITY") || null,
-            state: env("EKART_PICKUP_STATE"),
-            country: "India",
-            phone: phone ? Number(phone) : undefined,
-            pin: Number(env("EKART_PICKUP_PINCODE")) || undefined,
-        };
+// ------------------------------------------------------------------ pickup address
+
+const PICKUP_SETTING = "ekart_pickup";
+const NO_PICKUP = { alias: null, pincode: null, state: null, city: null, address_line1: null, address_line2: null, phone: null };
+
+/**
+ * Where parcels are picked up from: the Ekart address chosen in Admin → Settings → Pickup address
+ * (stored in store_settings). All fields are null until one is chosen.
+ */
+export async function getPickup() {
+    try {
+        const saved = JSON.parse((await getSetting(PICKUP_SETTING)) || "null");
+        if (saved?.alias) return { ...NO_PICKUP, ...saved };
+    } catch (error) {
+        console.warn(`Reading the Ekart pickup setting failed: ${error.message}`);
     }
-    const alias = env("EKART_PICKUP_ALIAS");
-    // With a single pickup address registered on the Ekart account, Ekart fills it in itself.
-    return alias ? { name: alias } : undefined;
+    return { ...NO_PICKUP };
 }
 
-function returnLocation() {
-    const alias = env("EKART_RETURN_ALIAS");
-    // Left out, Ekart returns RTO parcels to the pickup address.
-    return alias ? { name: alias } : undefined;
+/** Makes one of the account's Ekart addresses (from listAddresses) the pickup address. */
+export async function setPickup(address) {
+    const text = (value, max) => (value ? String(value).slice(0, max) : null);
+    const value = {
+        alias: String(address.alias),
+        pincode: address.pincode ? String(address.pincode) : null,
+        state: text(address.state, 60),
+        city: text(address.city, 60),
+        address_line1: text(address.address_line1, 150),
+        address_line2: text(address.address_line2, 100),
+        phone: address.phone ? String(address.phone) : null,
+    };
+    await setSetting(PICKUP_SETTING, JSON.stringify(value));
+    serviceabilityCache.clear(); // delivery days depend on the pickup pincode
+    return value;
 }
 
 // ------------------------------------------------------------------ package weight
@@ -139,7 +148,7 @@ export async function suggestPackage(orderId) {
          WHERE oi.order_id = ?`,
         [orderId]
     );
-    const box = defaultPackage();
+    const box = await defaultPackage();
     const productGrams = rows.reduce((sum, row) => sum + variantGrams(row.weight_value, row.weight_unit) * row.quantity, 0);
     return {
         weight_g: Math.max(Math.ceil(productGrams + box.packaging_weight_g), 100),
@@ -175,10 +184,10 @@ export async function checkServiceability(pincode) {
         estimated_days: null,
     };
 
-    const pickupPincode = env("EKART_PICKUP_PINCODE");
+    const pickupPincode = (await getPickup()).pincode;
     if (value.serviceable && pickupPincode) {
         try {
-            const box = defaultPackage();
+            const box = await defaultPackage();
             const lanes = await ekart.laneServiceability({
                 pickupPincode,
                 dropPincode: pincode,
@@ -210,7 +219,7 @@ export async function checkServiceability(pincode) {
 
 /** Ekart's estimated charge to ship this order's package (what Ekart bills us, not the customer). */
 export async function estimateCharge({ dropPincode, pkg, invoiceAmount }) {
-    const pickupPincode = Number(env("EKART_PICKUP_PINCODE"));
+    const pickupPincode = Number((await getPickup()).pincode);
     if (!pickupPincode) return null;
     const estimate = await ekart.estimate({
         pickupPincode,
@@ -275,10 +284,10 @@ export async function createShipmentForOrder(orderNumber, pkg, { preferredDispat
     if (!phone) throw fail("The delivery phone number isn't a valid 10-digit mobile number");
     if (!/^\d{6}$/.test(String(order.shipping_pincode).trim())) throw fail("The delivery pincode isn't a valid 6-digit pincode");
 
-    const sellerName = env("EKART_SELLER_NAME");
-    const sellerAddress = env("EKART_SELLER_ADDRESS");
-    const sellerGstin = env("EKART_SELLER_GSTIN");
-    if (!sellerName || !sellerAddress) throw fail("Set EKART_SELLER_NAME and EKART_SELLER_ADDRESS in the backend .env");
+    const settings = await getEkartSettings();
+    const sellerName = settings.seller_name;
+    const sellerAddress = settings.seller_address;
+    if (!sellerName || !sellerAddress) throw fail("Add the seller name and address in Admin → Settings → Ekart shipping");
 
     const [items] = await db.query("SELECT product_name, variant_name, quantity FROM order_items WHERE order_id = ?", [order.id]);
     const quantity = items.reduce((sum, item) => sum + item.quantity, 0) || 1;
@@ -286,15 +295,17 @@ export async function createShipmentForOrder(orderNumber, pkg, { preferredDispat
 
     // Our prices include GST, so split the order total into taxable value + tax at the configured rate.
     const total = round2(order.total_amount);
-    const gstRate = Math.max(Number(env("EKART_GST_RATE", "0")) || 0, 0);
+    const gstRate = Math.max(Number(settings.gst_rate) || 0, 0);
     const taxable = round2(total / (1 + gstRate / 100));
     const tax = round2(total - taxable);
-    const intraState = sameState(env("EKART_PICKUP_STATE"), order.shipping_state);
+    const pickup = await getPickup();
+    if (!pickup.alias) throw fail("Choose a pickup address in Admin → Settings → Pickup address");
+    const intraState = sameState(pickup.state, order.shipping_state);
 
     const payload = {
         seller_name: sellerName,
         seller_address: sellerAddress,
-        seller_gst_tin: sellerGstin,
+        seller_gst_tin: settings.seller_gstin,
         seller_gst_amount: intraState ? round2(tax / 2) : 0,
         consignee_gst_amount: intraState ? round2(tax - round2(tax / 2)) : 0,
         integrated_gst_amount: intraState ? 0 : tax,
@@ -305,8 +316,8 @@ export async function createShipmentForOrder(orderNumber, pkg, { preferredDispat
         consignee_alternate_phone: phone,
         products_desc: productsDesc,
         payment_mode: "Prepaid",
-        category_of_goods: env("EKART_CATEGORY_OF_GOODS", "Food Products"),
-        ...(env("EKART_HSN_CODE") ? { hsn_code: env("EKART_HSN_CODE") } : {}),
+        category_of_goods: settings.category_of_goods,
+        ...(settings.hsn_code ? { hsn_code: settings.hsn_code } : {}),
         total_amount: total,
         tax_value: tax,
         taxable_amount: taxable,
@@ -327,8 +338,9 @@ export async function createShipmentForOrder(orderNumber, pkg, { preferredDispat
             phone: Number(phone),
             pin: Number(order.shipping_pincode),
         },
-        ...(pickupLocation() ? { pickup_location: pickupLocation() } : {}),
-        ...(returnLocation() ? { return_location: returnLocation() } : {}),
+        pickup_location: { name: pickup.alias },
+        // Left out, Ekart returns RTO parcels to the pickup address.
+        ...(settings.return_alias ? { return_location: { name: settings.return_alias } } : {}),
         ...(preferredDispatchDate ? { preferred_dispatch_date: preferredDispatchDate } : {}),
     };
 

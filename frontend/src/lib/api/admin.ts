@@ -170,7 +170,7 @@ export interface AdminStoreSettings {
 export const getAdminSettings = () => apiGet<AdminStoreSettings>("/admin/settings");
 export const updateAdminSettings = (body: { whatsapp_number: string }) => apiPut<AdminStoreSettings>("/admin/settings", body);
 
-/** Asks Razorpay whether an unpaid order was in fact paid, and marks it paid if so. */
+/** Asks Cashfree whether an unpaid order was in fact paid, and marks it paid if so. */
 export const syncAdminPayment = (orderNumber: string) =>
   apiPost<{ paid: boolean }>(`/admin/order/${encodeURIComponent(orderNumber)}/payment-sync`, {});
 export const downloadAdminInvoice = (orderNumber: string) =>
@@ -226,10 +226,11 @@ export interface EkartQuote {
 
 export interface EkartStatus {
   configured: boolean;
+  mock: boolean;
   pickup_pincode: string | null;
+  pickup_alias: string | null;
   seller_details: boolean;
   webhook_url: string | null;
-  webhook_secret_valid: boolean;
   webhook_registered: boolean;
   error: string | null;
 }
@@ -252,6 +253,60 @@ export const generateManifest = (ids: number[]) =>
   apiPost<{ manifest_number: number | null; manifest_url: string | null; shipment_ids: number[] }>("/admin/shipment/manifest", { ids });
 export const getEkartStatus = () => apiGet<EkartStatus>("/admin/shipping/ekart/status");
 export const registerEkartWebhook = () => apiPost<unknown>("/admin/shipping/ekart/webhook");
+
+/** One address on the Ekart account (field names as in Ekart's /api/v2/address). */
+export interface EkartAddress {
+  alias: string;
+  phone: number;
+  address_line1: string;
+  address_line2?: string;
+  pincode: number;
+  city: string;
+  state: string;
+  country: string;
+  geo?: { lat: number; lon: number };
+}
+
+/** The Ekart address chosen on Admin → Settings → Pickup address; all null until one is chosen. */
+export interface EkartPickup {
+  alias: string | null;
+  pincode: string | null;
+  state: string | null;
+  city: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  phone: string | null;
+}
+
+/** Admin → Settings → Ekart shipping (stored in store_settings on the backend). */
+export interface EkartSettings {
+  seller_name: string;
+  seller_address: string;
+  seller_gstin: string;
+  category_of_goods: string;
+  hsn_code: string;
+  gst_rate: number;
+  box_length_cm: number;
+  box_width_cm: number;
+  box_height_cm: number;
+  packaging_weight_g: number;
+  return_alias: string;
+  public_url: string;
+}
+
+export type EkartAddressInput = Omit<EkartAddress, "phone" | "pincode" | "geo"> & {
+  phone: string;
+  pincode: string;
+  geo?: { lat: string; lon: string };
+  make_pickup?: boolean;
+};
+
+export const getEkartAddresses = () => apiGet<{ addresses: EkartAddress[]; pickup: EkartPickup }>("/admin/shipping/ekart/addresses");
+export const addEkartAddress = (body: EkartAddressInput) => apiPost<{ address: EkartAddress; pickup: EkartPickup | null }>("/admin/shipping/ekart/addresses", body);
+export const setEkartPickup = (alias: string) => apiPut<EkartPickup>("/admin/shipping/ekart/pickup", { alias });
+export const getEkartSettings = () => apiGet<EkartSettings>("/admin/shipping/ekart/settings");
+export const updateEkartSettings = (body: Partial<Record<keyof EkartSettings, string | number>>) =>
+  apiPut<EkartSettings>("/admin/shipping/ekart/settings", body);
 
 /** Opens the shipment's courier label PDF in a new tab (fetched with the admin token, so not a plain link). */
 export async function openShipmentLabel(id: number): Promise<void> {

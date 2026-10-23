@@ -5,7 +5,7 @@ import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import { isValidOrderNumber } from "../validators/admin-order-validation.js";
 import { isPositiveInt } from "../validators/admin-shipping-validation.js";
-import { isPincode, parseIdList, parseNdrBody, parsePackage, validatePreferredDispatchDate } from "../validators/ekart-validation.js";
+import { isPincode, parseAddressBody, parseIdList, parseNdrBody, parsePackage, validatePreferredDispatchDate } from "../validators/ekart-validation.js";
 import {
     FINAL_STATUSES,
     PROVIDER,
@@ -13,10 +13,13 @@ import {
     checkServiceability,
     createShipmentForOrder,
     estimateCharge,
+    getPickup,
     mapStatus,
+    setPickup,
     suggestPackage,
     syncShipment,
 } from "../services/ekart-shipping.js";
+import { getEkartSettings, getWebhookSecret, getWebhookUrl, saveEkartSettings, validateEkartSettings } from "../services/ekart-settings.js";
 
 const NOT_CONFIGURED = "Ekart isn't set up yet — add the EKART_* credentials to the backend .env";
 const WEBHOOK_TOPICS = ["track_updated", "shipment_created", "shipment_recreated"];
@@ -269,32 +272,26 @@ const ekartNdrAction = async (req, res) => {
 
 // ------------------------------------------------------------------ admin: account setup
 
-function webhookUrl() {
-    const base = (process.env.BACKEND_PUBLIC_URL || "").trim().replace(/\/$/, "");
-    const secret = (process.env.EKART_WEBHOOK_SECRET || "").trim();
-    return base && secret ? `${base}/api/v1/webhooks/ekart/${encodeURIComponent(secret)}` : null;
-}
-
 function maskUrl(url) {
     return url ? url.replace(/\/webhooks\/ekart\/.+$/, "/webhooks/ekart/••••••") : null;
 }
 
 /** GET /admin/shipping/ekart/status — is Ekart configured, and is our webhook registered with it? */
 const getEkartStatus = async (_req, res) => {
-    const secret = (process.env.EKART_WEBHOOK_SECRET || "").trim();
+    const [settings, url, pickup] = await Promise.all([getEkartSettings(), getWebhookUrl(), getPickup()]);
     const status = {
         configured: ekart.isConfigured(),
-        pickup_pincode: process.env.EKART_PICKUP_PINCODE || null,
-        seller_details: Boolean(process.env.EKART_SELLER_NAME && process.env.EKART_SELLER_ADDRESS),
-        webhook_url: maskUrl(webhookUrl()),
-        webhook_secret_valid: secret.length >= 6 && secret.length <= 30,
+        mock: ekart.isMock(),
+        pickup_pincode: pickup.pincode,
+        pickup_alias: pickup.alias,
+        seller_details: Boolean(settings.seller_name && settings.seller_address),
+        webhook_url: maskUrl(url),
         webhook_registered: false,
         error: null,
     };
     if (status.configured) {
         try {
             const hooks = await ekart.listWebhooks();
-            const url = webhookUrl();
             status.webhook_registered = Boolean(url) && Array.isArray(hooks) && hooks.some((hook) => hook.url === url && hook.active !== false);
         } catch (error) {
             status.error = error.message;
@@ -303,20 +300,100 @@ const getEkartStatus = async (_req, res) => {
     return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Ekart status", status);
 };
 
+// ------------------------------------------------------------------ admin: pickup addresses
+
+/** GET /admin/shipping/ekart/addresses — the Ekart account's addresses, and which one is our pickup. */
+const listEkartAddresses = async (_req, res) => {
+    if (!ekart.isConfigured()) {
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, NOT_CONFIGURED, null);
+    }
+    try {
+        const [addresses, pickup] = await Promise.all([ekart.listAddresses(), getPickup()]);
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Ekart addresses", {
+            addresses: Array.isArray(addresses) ? addresses : [],
+            pickup,
+        });
+    } catch (error) {
+        return sendError(res, error, "Ekart address list error");
+    }
+};
+
+/** POST /admin/shipping/ekart/addresses — registers a new address with Ekart; `make_pickup: true` also selects it. */
+const addEkartAddress = async (req, res) => {
+    if (!ekart.isConfigured()) {
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, NOT_CONFIGURED, null);
+    }
+    const { error, address } = parseAddressBody(req.body);
+    if (error) {
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, error, null);
+    }
+    try {
+        const created = await ekart.addAddress(address);
+        const pickup = req.body?.make_pickup === true ? await setPickup(address) : null;
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Address added to Ekart", { address: created ?? address, pickup });
+    } catch (err) {
+        return sendError(res, err, "Ekart add address error");
+    }
+};
+
+/** PUT /admin/shipping/ekart/pickup { alias } — uses that Ekart address for pickups, rates and delivery days. */
+const setEkartPickup = async (req, res) => {
+    const alias = String(req.body?.alias ?? "").trim();
+    if (!alias) {
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, "alias is required", null);
+    }
+    if (!ekart.isConfigured()) {
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, NOT_CONFIGURED, null);
+    }
+    try {
+        const addresses = await ekart.listAddresses();
+        const address = Array.isArray(addresses) ? addresses.find((a) => a?.alias === alias) : null;
+        if (!address) {
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, `No Ekart address named "${alias}"`, null);
+        }
+        const pickup = await setPickup(address);
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Pickup address updated", pickup);
+    } catch (error) {
+        return sendError(res, error, "Ekart set pickup error");
+    }
+};
+
+// ------------------------------------------------------------------ admin: Ekart settings
+
+/** GET /admin/shipping/ekart/settings — seller, GST, default box, return address and public URL. */
+const getEkartSettingsHandler = async (_req, res) => {
+    try {
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Ekart settings", await getEkartSettings());
+    } catch (error) {
+        return sendError(res, error, "Ekart settings read error");
+    }
+};
+
+/** PUT /admin/shipping/ekart/settings — saves the fields sent (partial update). */
+const updateEkartSettingsHandler = async (req, res) => {
+    const { error, values } = validateEkartSettings(req.body);
+    if (error) {
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, error, null);
+    }
+    try {
+        const settings = await saveEkartSettings(values);
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Ekart settings saved", settings);
+    } catch (err) {
+        return sendError(res, err, "Ekart settings save error");
+    }
+};
+
 /** POST /admin/shipping/ekart/webhook — registers (or re-activates) our tracking webhook with Ekart. */
 const registerEkartWebhook = async (_req, res) => {
     if (!ekart.isConfigured()) {
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, NOT_CONFIGURED, null);
     }
-    const url = webhookUrl();
-    const secret = (process.env.EKART_WEBHOOK_SECRET || "").trim();
-    if (!url) {
-        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, "Set BACKEND_PUBLIC_URL and EKART_WEBHOOK_SECRET in the backend .env", null);
-    }
-    if (secret.length < 6 || secret.length > 30 || !/^[A-Za-z0-9_-]+$/.test(secret)) {
-        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, "EKART_WEBHOOK_SECRET must be 6–30 letters, digits, - or _", null);
-    }
     try {
+        const url = await getWebhookUrl();
+        if (!url) {
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, "Add the backend public URL in Admin → Settings → Ekart shipping first", null);
+        }
+        const secret = await getWebhookSecret();
         const hooks = await ekart.listWebhooks();
         const existing = Array.isArray(hooks) ? hooks.find((hook) => hook.url === url) : null;
         const body = { url, secret, topics: WEBHOOK_TOPICS, active: true };
@@ -333,8 +410,13 @@ const registerEkartWebhook = async (_req, res) => {
 
 // ------------------------------------------------------------------ webhook (called by Ekart)
 
-function secretMatches(given) {
-    const expected = (process.env.EKART_WEBHOOK_SECRET || "").trim();
+async function secretMatches(given) {
+    let expected = "";
+    try {
+        expected = await getWebhookSecret();
+    } catch (error) {
+        console.error(`Ekart webhook secret unavailable: ${error.message}`);
+    }
     if (!expected || typeof given !== "string") return false;
     const a = Buffer.from(given);
     const b = Buffer.from(expected);
@@ -417,12 +499,12 @@ async function processWebhook(body) {
 }
 
 /**
- * POST /webhooks/ekart/:secret — Ekart's tracking webhook. The secret in the URL (EKART_WEBHOOK_SECRET)
+ * POST /webhooks/ekart/:secret — Ekart's tracking webhook. The secret in the URL (generated, in store_settings)
  * proves the call comes from the URL we registered. Answers 200 at once so Ekart doesn't retry, then
  * processes the event.
  */
 const handleEkartWebhook = async (req, res) => {
-    if (!secretMatches(req.params.secret)) {
+    if (!(await secretMatches(req.params.secret))) {
         return res.status(401).json({ ok: false });
     }
     const body = req.body && typeof req.body === "object" ? req.body : {};
@@ -450,5 +532,10 @@ export {
     ekartNdrAction,
     getEkartStatus,
     registerEkartWebhook,
+    listEkartAddresses,
+    addEkartAddress,
+    setEkartPickup,
     handleEkartWebhook,
+    getEkartSettingsHandler,
+    updateEkartSettingsHandler,
 };

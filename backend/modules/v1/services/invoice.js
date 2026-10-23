@@ -1,9 +1,11 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import PDFDocument from "pdfkit";
+import { getEkartSettings } from "./ekart-settings.js";
+import { getPickup } from "./ekart-shipping.js";
 
-// Order invoice as a PDF (A4). The seller block comes from INVOICE_SELLER_* env vars, falling
-// back to the Ekart pickup address, so it matches where parcels ship from. GSTIN prints only when set.
+// Order invoice as a PDF (A4). The seller block comes from INVOICE_SELLER_* env vars if set, else the Ekart
+// seller details and pickup address from Admin → Settings, so it matches where parcels ship from. GSTIN prints only when set.
 
 const BRAND = "#3d2b1c";
 const GOLD = "#c8922a";
@@ -27,17 +29,26 @@ const formatDate = (value) =>
         ? new Date(value).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })
         : "-";
 
-function sellerDetails() {
+/** INVOICE_SELLER_* from .env win; otherwise the Ekart seller details and pickup address from Admin → Settings. */
+async function sellerDetails() {
     const env = process.env;
-    const cityState = [env.INVOICE_SELLER_CITY || env.EKART_PICKUP_CITY, env.INVOICE_SELLER_STATE || env.EKART_PICKUP_STATE].filter(Boolean).join(", ");
-    const pincode = env.INVOICE_SELLER_PINCODE || env.EKART_PICKUP_PINCODE;
-    const address = [env.INVOICE_SELLER_ADDRESS || env.EKART_PICKUP_ADDRESS, [cityState, pincode].filter(Boolean).join(" - ")].filter(Boolean);
+    let settings = {};
+    let pickup = {};
+    try {
+        [settings, pickup] = await Promise.all([getEkartSettings(), getPickup()]);
+    } catch (error) {
+        console.warn(`Invoice seller details from settings unavailable: ${error.message}`);
+    }
+    const cityState = [env.INVOICE_SELLER_CITY || pickup.city, env.INVOICE_SELLER_STATE || pickup.state].filter(Boolean).join(", ");
+    const pincode = env.INVOICE_SELLER_PINCODE || pickup.pincode;
+    const street = env.INVOICE_SELLER_ADDRESS || [pickup.address_line1, pickup.address_line2].filter(Boolean).join(", ") || settings.seller_address;
+    const address = [street, [cityState, pincode].filter(Boolean).join(" - ")].filter(Boolean);
     return {
-        name: env.INVOICE_SELLER_NAME || "Suvarna7",
+        name: env.INVOICE_SELLER_NAME || settings.seller_name || "Suvarna7",
         address,
-        phone: env.INVOICE_SELLER_PHONE || env.EKART_PICKUP_PHONE || null,
+        phone: env.INVOICE_SELLER_PHONE || pickup.phone || null,
         email: env.INVOICE_SELLER_EMAIL || null,
-        gstin: env.INVOICE_SELLER_GSTIN || null,
+        gstin: env.INVOICE_SELLER_GSTIN || settings.seller_gstin || null,
     };
 }
 
@@ -69,7 +80,7 @@ async function loadInvoiceData(conn, orderId) {
          ORDER BY paid_at DESC, id DESC LIMIT 1`,
         [orderId]
     );
-    return { order, items, payment: payment || null };
+    return { order, items, payment: payment || null, seller: await sellerDetails() };
 }
 
 /** Order id for an order number, or null. */
@@ -117,7 +128,7 @@ function amountInWords(amount) {
 }
 
 /** Renders the invoice and resolves with the PDF bytes. */
-function renderInvoicePdf({ order, items, payment }) {
+function renderInvoicePdf({ order, items, payment, seller }) {
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({ size: "A4", margin: 40, info: { Title: `Invoice ${invoiceNumber(order.order_number)}`, Author: "Suvarna7" } });
         const chunks = [];
@@ -125,7 +136,6 @@ function renderInvoicePdf({ order, items, payment }) {
         doc.on("end", () => resolve(Buffer.concat(chunks)));
         doc.on("error", reject);
 
-        const seller = sellerDetails();
         const pageW = doc.page.width;
         const pageH = doc.page.height;
         const left = 40;

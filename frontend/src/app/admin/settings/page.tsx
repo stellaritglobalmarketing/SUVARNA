@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle } from "lucide-react";
+import Link from "next/link";
+import { MapPin, MessageCircle, Truck } from "lucide-react";
 import { getAdminSettings, updateAdminSettings } from "@/lib/api/admin";
 import { queryKeys } from "@/lib/query/keys";
 import { AdminButton, Card, Field, FormError, PageHeader, inputClass, useAdminMutation } from "@/components/admin/ui";
@@ -86,6 +87,20 @@ export default function AdminSettingsPage() {
             </div>
           </form>
         )}
+      </Card>
+
+      <Card title="Ekart shipping">
+        <p className="mb-4 max-w-2xl text-sm text-brand-ink/65">
+          Pickup address, seller and GST details, default box size and the tracking webhook URL used for Ekart shipments.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/settings/pickup" className="inline-flex items-center gap-1.5 rounded-lg bg-brand-forest px-4 py-2 text-sm font-medium text-brand-sand hover:bg-brand-forest-light">
+            <MapPin size={14} /> Manage pickup address
+          </Link>
+          <Link href="/admin/settings/ekart" className="inline-flex items-center gap-1.5 rounded-lg border border-brand-sand-dark bg-white px-4 py-2 text-sm font-medium text-brand-forest hover:border-brand-forest">
+            <Truck size={14} /> Ekart shipping settings
+          </Link>
+        </div>
       </Card>
     </div>
   );

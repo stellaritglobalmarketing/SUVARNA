@@ -1,4 +1,5 @@
 import "dotenv/config";
+import ekartMock from "./ekart-mock.js";
 
 // Thin client for the Ekart Elite API (https://app.elite.ekartlogistics.in — OpenAPI "Ekart API Docs" v3.8).
 // Credentials come only from the environment: EKART_CLIENT_ID, EKART_USERNAME, EKART_PASSWORD.
@@ -25,7 +26,13 @@ function credentials() {
     return { clientId, username, password };
 }
 
+/** EKART_MOCK=true: no real API calls; config/ekart-mock.js answers instead (for testing before go-live). */
+function isMock() {
+    return process.env.EKART_ENABLED !== "false" && process.env.EKART_MOCK === "true";
+}
+
 function isConfigured() {
+    if (isMock()) return true;
     return process.env.EKART_ENABLED !== "false" && Boolean(process.env.EKART_CLIENT_ID && process.env.EKART_USERNAME && process.env.EKART_PASSWORD);
 }
 
@@ -122,8 +129,7 @@ function assertAcknowledged(ack, fallback) {
     return ack;
 }
 
-const ekart = {
-    isConfigured,
+const real = {
 
     /** Public tracking page for an Ekart tracking id. */
     trackingUrl: (trackingId) => `${baseUrl()}/track/${encodeURIComponent(trackingId)}`,
@@ -159,9 +165,24 @@ const ekart = {
     /** POST /api/v2/package/ndr — action "Re-Attempt" (with `date` in ms) or "RTO". */
     ndrAction: async (body) => assertAcknowledged(await request("POST", "/api/v2/package/ndr", { body }), "NDR action was not accepted"),
 
+    /** GET /api/v2/addresses (plural; GET on /address is 404) — the account's addresses: [{ alias, phone, address_line1, address_line2, pincode, city, state, country, geo, alternatePhone, gstNumber, … }]. */
+    listAddresses: () => request("GET", "/api/v2/addresses"),
+    /** POST /api/v2/address — registers an address; body has the same fields as one item of listAddresses. */
+    addAddress: (body) => request("POST", "/api/v2/address", { body }),
+
     listWebhooks: () => request("GET", "/api/v2/webhook"),
     addWebhook: (body) => request("POST", "/api/v2/webhook", { body }),
     updateWebhook: (id, body) => request("PUT", `/api/v2/webhook/${encodeURIComponent(id)}`, { body }),
 };
+
+// Every API call goes to the mock instead when EKART_MOCK=true (checked per call, so a restart isn't the only switch).
+const ekart = {
+    isConfigured,
+    isMock,
+    trackingUrl: real.trackingUrl,
+};
+for (const [name, fn] of Object.entries(real)) {
+    if (name !== "trackingUrl") ekart[name] = (...args) => (isMock() ? ekartMock[name](...args) : fn(...args));
+}
 
 export default ekart;
