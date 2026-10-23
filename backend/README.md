@@ -34,26 +34,27 @@ Then sign in at the storefront's `/login` — admins land on the admin panel at 
 
 ## Payment configuration
 
-Online payment uses Razorpay. Set both keys in `.env` (never in the frontend, never in git):
+Online payment goes through **Cashfree**. Keys stay in `.env` only (never in the frontend, never in git):
 
 ```
-RAZORPAY_KEY_ID=rzp_test_xxx       # rzp_live_xxx in production
-RAZORPAY_KEY_SECRET=xxx
+CASHFREE_APP_ID=xxx                # Cashfree Dashboard → Developers → API Keys
+CASHFREE_SECRET_KEY=cfsk_xxx
+CASHFREE_ENV=sandbox               # production once KYC is done and live keys are issued
 ```
 
-The key id is sent to the checkout page by `POST /payment/razorpay/order`; the secret never leaves the server. Use **test** keys while developing — live keys charge real money.
+Sandbox (test) keys work before KYC. Switch to the live keys **and** `CASHFREE_ENV=production` together, then restart. The checkout page opens Cashfree's SDK in the mode the backend reports, so nothing changes in the frontend. Until the keys are set, "Pay" shows "Couldn't start the payment".
 
-**Webhook (recommended in production).** On phones, UPI is often paid in the GPay/PhonePe app and the checkout tab never gets Razorpay's success callback, so the order would stay unpaid although the money was taken. Razorpay's webhook records the payment on the server regardless. In Razorpay Dashboard → Settings → Webhooks add:
+**Live checklist** (Cashfree Dashboard):
 
-- URL: `https://api.suvarna7.com/api/v1/webhooks/razorpay`
-- Events: `payment.captured` and `order.paid`
-- Secret: any long random string, also set on the server as `RAZORPAY_WEBHOOK_SECRET=...`
+- **Whitelist the website domain** (Developers → Whitelisting → Payment Gateway): `https://suvarna7.com` and `https://www.suvarna7.com`. Production checkout is refused on domains that aren't whitelisted.
+- **Webhook**: every order is created with `notify_url = <PUBLIC_URL>/api/v1/webhooks/cashfree`, so set `PUBLIC_URL=https://api.suvarna7.com` on the server (Cashfree only calls https). Optionally also add the same URL under Developers → Webhooks (payment events). Calls are signed with the secret key; no extra secret is needed.
+- `CORS_ORIGIN` must include the storefront domain: after an in-app-browser redirect, Cashfree returns the customer to `<that origin>/checkout/success?order=…`.
 
-Without the webhook, a lost callback is still picked up when the customer reopens the order (checkout and success pages call `POST /payment/razorpay/sync`, which asks Razorpay), when they press Pay again, or from the admin order page ("Check payment with Razorpay", `POST /admin/order/:orderNumber/payment-sync`).
+On phones, UPI is often paid in the GPay/PhonePe app and the checkout tab never hears back. The webhook records such payments on the server; without it, they are still picked up when the customer reopens the order (checkout and success pages call `POST /payment/sync`), when they press Pay again, or from the admin order page ("Check payment with Cashfree", `POST /admin/order/:orderNumber/payment-sync`).
 
 ## Invoice & WhatsApp configuration
 
-Every paid order has a PDF invoice: customers download it from the order success page (`GET /order/:order_number/invoice`), admins from the order page (`GET /admin/order/:orderNumber/invoice`). The seller block on it comes from these optional vars (each falls back to the matching `EKART_PICKUP_*` value; GSTIN prints only when set):
+Every paid order has a PDF invoice: customers download it from the order success page (`GET /order/:order_number/invoice`), admins from the order page (`GET /admin/order/:orderNumber/invoice`). The seller block on it comes from these optional vars; each one left unset falls back to Admin → Settings → Ekart shipping (seller name, GSTIN) and the chosen Ekart pickup address. GSTIN prints only when set:
 
 ```
 INVOICE_SELLER_NAME=Suvarna7
@@ -66,7 +67,7 @@ INVOICE_SELLER_EMAIL=orders@example.com
 INVOICE_SELLER_GSTIN=
 ```
 
-When an order first becomes paid through Razorpay, the invoice PDF is sent to the **store's** WhatsApp through the Meta WhatsApp Cloud API, with the order number, amount, customer, items, delivery address and payment id. This is off (it only logs "WhatsApp invoice skipped") until these are set. The recipient is the store's WhatsApp number from **Admin → Settings** (table `store_settings`, default 916353684881), so changing it needs no redeploy:
+When an order first becomes paid, the invoice PDF is sent to the **store's** WhatsApp through the Meta WhatsApp Cloud API, with the order number, amount, customer, items, delivery address and payment id. This is off (it only logs "WhatsApp invoice skipped") until these are set. The recipient is the store's WhatsApp number from **Admin → Settings** (table `store_settings`, default 916353684881), so changing it needs no redeploy:
 
 ```
 WHATSAPP_ACCESS_TOKEN=EAAG...            # permanent System User token with whatsapp_business_messaging
@@ -83,7 +84,7 @@ Amount: {{2}}
 Customer: {{3}}
 Items: {{4}}
 Deliver to: {{5}}
-Razorpay payment: {{6}}
+Payment ID: {{6}}
 ```
 
 Sending never blocks or fails the customer's payment: errors are logged (`WhatsApp invoice failed for order id …`) and the invoice can still be downloaded from the admin order page.
@@ -94,11 +95,15 @@ Sending never blocks or fails the customer's payment: errors are logged (`WhatsA
 
 ## Shipping configuration (Ekart)
 
-Shipping is booked through the Ekart Elite API (`config/ekart.js`, `modules/v1/services/ekart-shipping.js`). All settings are the `EKART_*` block in `.env`; with `EKART_CLIENT_ID` empty, Ekart is off and shipments can still be added by hand.
+Shipping is booked through the Ekart Elite API (`config/ekart.js`, `modules/v1/services/ekart-shipping.js`). The `.env` holds only the credentials and switches (`EKART_ENABLED`, `EKART_MOCK`, `EKART_SERVICE_TYPE`, `EKART_SYNC_INTERVAL_MINUTES`, `EKART_BLOCK_UNSERVICEABLE`); with `EKART_CLIENT_ID` empty, Ekart is off and shipments can still be added by hand. Everything else is set in the admin panel and stored in `store_settings` (`ekart_*` keys, `services/ekart-settings.js`).
 
-1. Run `npm run db:migrate` (adds migration `006_ekart_shipping.sql`).
-2. Fill `EKART_CLIENT_ID`, `EKART_USERNAME`, `EKART_PASSWORD` (from Ekart onboarding), the seller details, and the pickup address (`EKART_PICKUP_ALIAS` if it is registered with Ekart; `EKART_PICKUP_PINCODE` + `EKART_PICKUP_STATE` always).
-3. Set `BACKEND_PUBLIC_URL` (e.g. `https://api.example.com`) and a made-up `EKART_WEBHOOK_SECRET` (6–30 letters/digits), restart, then click **Register webhook** in Admin → Shipments.
+1. Run `npm run db:migrate` (adds migrations `006_ekart_shipping.sql` and `011_store_settings.sql`).
+2. Fill `EKART_CLIENT_ID`, `EKART_USERNAME`, `EKART_PASSWORD` (Ekart panel → Settings → API Settings; the username/password are the panel login) and restart.
+3. Admin → Settings → **Pickup address**: choose (or add) the Ekart address parcels are picked up from (`GET /api/v2/addresses`, `POST /api/v2/address`).
+4. Admin → Settings → **Ekart shipping**: seller name/address (required to book), GSTIN, HSN, GST rate, default box and packaging weight, return address, and the backend public URL (e.g. `https://api.example.com`). The webhook secret is generated automatically.
+5. Click **Register webhook** in Admin → Shipments.
+
+Set `EKART_MOCK=true` to simulate bookings, rates, labels and tracking without calling Ekart (`config/ekart-mock.js`).
 
 Tracking reaches us by webhook (`POST /api/v1/webhooks/ekart/:secret`, no API key — the secret authenticates it); the server also re-syncs open shipments every `EKART_SYNC_INTERVAL_MINUTES` in case a webhook is missed. Only prepaid (paid) orders can be booked — there is no COD checkout.
 
@@ -747,11 +752,11 @@ Only allowed while `order_status` is still `"pending"`. Once it's moved past tha
 
 ---
 
-# Payment — Razorpay (requires token, customer only)
+# Payment — Cashfree (requires token, customer only)
 
-Checkout flow: `POST /order` → `POST /payment/razorpay/order` → open Razorpay Checkout in the browser → `POST /payment/razorpay/verify`.
+Checkout flow: `POST /order` → `POST /payment/order` → open the Cashfree popup in the browser → `POST /payment/verify`.
 
-## `POST /payment/razorpay/order`
+## `POST /payment/order`
 
 **Request:** `{ "order_number": "ORD-20260924-0005" }` — one of the customer's own `pending` orders.
 
@@ -762,43 +767,36 @@ Checkout flow: `POST /order` → `POST /payment/razorpay/order` → open Razorpa
     "data": {
         "order_number": "ORD-20260924-0005",
         "already_paid": false,
-        "key_id": "rzp_test_xxx",
-        "razorpay_order_id": "order_Tfmqr...",
-        "amount": 32900,
-        "currency": "INR",
-        "name": "Suvarna7",
-        "description": "Order ORD-20260924-0005",
-        "prefill": { "name": "Ritika Sharma", "email": "ritika@example.com", "contact": "9876543210" }
+        "cashfree_mode": "sandbox",
+        "cashfree_order_id": "ORD-20260924-0005-mh3k2x1a",
+        "payment_session_id": "session_..."
     }
 }
 ```
 
-Pass these straight into Razorpay Checkout (`key`, `order_id`, `amount` in **paise**, …). The amount always comes from the order in the database.
+Open it with Cashfree's JS SDK: `Cashfree({ mode: cashfree_mode }).checkout({ paymentSessionId, redirectTarget: "_modal" })`. The amount always comes from the order in the database.
 
-- Calling it again for the same order reuses the same Razorpay order instead of creating a new one.
-- Before that, it asks Razorpay whether the earlier attempt was actually paid (e.g. the customer paid, then closed the tab before `verify` ran). If so it records the payment and returns `{ "already_paid": true }` — go to the success screen, don't open Checkout.
+- Calling it again for the same order reuses the Cashfree order while it is still `ACTIVE`; an expired one is closed (`failed`) and a new one created.
+- Before that, it asks Cashfree whether an earlier attempt was actually paid (e.g. the customer paid, then closed the tab before `verify` ran). If so it records the payment and returns `{ "already_paid": true }` — go to the success screen, don't open the popup.
 - `code: 0` if the order is not `pending` (e.g. cancelled).
 
-## `POST /payment/razorpay/verify`
+## `POST /payment/verify`
 
-Send Razorpay Checkout's success response, plus the order number:
+**Request:** `{ "order_number": "ORD-20260924-0005" }`, sent when the Cashfree popup closes. Cashfree's SDK gives no signature, so the server asks Cashfree for the order (`PAID`, matching amount) and only then marks it `payment_status: "paid"`, `order_status: "confirmed"`. Safe to call twice. `data.gateway_status` tells the page what to do:
 
-```json
-{
-    "order_number": "ORD-20260924-0005",
-    "razorpay_order_id": "order_Tfmqr...",
-    "razorpay_payment_id": "pay_...",
-    "razorpay_signature": "..."
-}
-```
-
-The server checks the signature (HMAC-SHA256 with the key secret), then fetches the payment from Razorpay to confirm it belongs to this Razorpay order, matches the amount, and is captured (capturing it if it was only authorized). Only then is the order marked `payment_status: "paid"`, `order_status: "confirmed"`.
+- `PAID` — order is paid.
+- `PENDING` — the bank hasn't confirmed yet; show the success page, which keeps re-checking.
+- `FAILED` / `USER_DROPPED` / `NOT_ATTEMPTED` — not paid; `data.message` is Cashfree's reason.
 
 ```json
-{ "code": 1, "message": "Payment successful", "data": { "order_number": "ORD-20260924-0005", "order_status": "confirmed", "payment_status": "paid" } }
+{ "code": 1, "message": "Payment successful", "data": { "order_number": "ORD-20260924-0005", "order_status": "confirmed", "payment_status": "paid", "gateway_status": "PAID", "message": "Payment successful" } }
 ```
 
-Safe to call twice. `code: 0` `"Payment verification failed"` for a bad signature; `code: 0` with Razorpay's reason if the payment isn't captured or doesn't match. If Razorpay can't be reached, the response asks the customer not to pay again — calling `POST /payment/razorpay/order` later re-checks and records the payment.
+If Cashfree can't be reached, the response asks the customer not to pay again — calling `POST /payment/order` later re-checks and records the payment.
+
+## `POST /payment/sync`
+
+`{ "order_number": "..." }` — re-checks an unpaid order with Cashfree and records a payment whose callback was lost. Returns `{ order_number, order_status, payment_status }`.
 
 ---
 
@@ -1008,4 +1006,4 @@ Ekart statuses map to ours: picked up / in transit / out for delivery / undelive
 5. `POST /order` with a saved `address_id` to place the order.
 6. `GET /order/my-orders` / `GET /order/:order_number` to show order history and status; `PATCH /order/:order_number/cancel` while still `pending`.
 
-**Not implemented yet** (later phases): OTP/forgot-password, profile editing, Razorpay webhooks and refunds, COD, shipping charges to customers, returns/restocking after RTO, coupons, tax, review photos.
+**Not implemented yet** (later phases): OTP/forgot-password, profile editing, refunds through the API, COD, shipping charges to customers, returns/restocking after RTO, coupons, tax, review photos.

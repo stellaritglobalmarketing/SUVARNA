@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 /**
- * Shown after Razorpay payment is verified — or, in WhatsApp checkout mode, right after the order is placed.
+ * Shown after online payment is verified — or, in WhatsApp checkout mode, right after the order is placed.
  * Reads the order back from the server rather than trusting the URL.
  */
 export function OrderSuccessClient() {
@@ -31,11 +31,11 @@ export function OrderSuccessClient() {
   const invoice = useMutation({ mutationFn: () => downloadOrderInvoice(orderNumber) });
   const queryClient = useQueryClient();
 
-  // Still unpaid after Razorpay: re-check with Razorpay every few seconds for about a minute, so a
+  // Still unpaid after the payment window: re-check with Cashfree every few seconds for about a minute, so a
   // payment whose browser callback was lost (UPI in another app) still lands on "confirmed".
-  const awaitingRazorpay = Boolean(order) && !IS_WHATSAPP_CHECKOUT && order?.payment_status !== "paid" && order?.order_status !== "cancelled";
+  const awaitingGateway = Boolean(order) && !IS_WHATSAPP_CHECKOUT && order?.payment_status !== "paid" && order?.order_status !== "cancelled";
   useEffect(() => {
-    if (!awaitingRazorpay) return;
+    if (!awaitingGateway) return;
     let attempts = 0;
     const check = async () => {
       attempts += 1;
@@ -54,7 +54,7 @@ export function OrderSuccessClient() {
     const timer = window.setInterval(check, 5000);
     check();
     return () => window.clearInterval(timer);
-  }, [awaitingRazorpay, orderNumber, queryClient]);
+  }, [awaitingGateway, orderNumber, queryClient]);
 
   if (!orderNumber || isError) {
     return (
@@ -102,7 +102,7 @@ export function OrderSuccessClient() {
             ? " — we'll start packing it right away."
             : awaitingWhatsapp
               ? ` — please send your order details to us on WhatsApp (${store.whatsapp_display}) and we'll reply there with payment details to confirm it.`
-              : " — we're checking with Razorpay. If money was deducted, please don't pay again; this page updates on its own."}
+              : " — we're checking with Cashfree. If money was deducted, please don't pay again; this page updates on its own."}
         </p>
         {awaitingWhatsapp && (
           <>

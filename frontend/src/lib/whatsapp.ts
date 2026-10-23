@@ -2,12 +2,12 @@ import type { OrderDetail } from "@/lib/api/checkout";
 import { formatInr } from "@/lib/utils/format";
 
 /**
- * Checkout pays online with Razorpay by default; after payment the backend sends the invoice PDF to the
+ * Checkout pays online with Cashfree by default; after payment the backend sends the invoice PDF to the
  * store's WhatsApp. Set NEXT_PUBLIC_CHECKOUT_MODE=whatsapp for the fallback mode: the order is still
- * created on the server (stock held, visible in admin), but instead of opening Razorpay the customer
+ * created on the server (stock held, visible in admin), but instead of opening the payment window the customer
  * sends the order to our WhatsApp and we collect payment there. Admin marks it paid from the order page.
  */
-export const IS_WHATSAPP_CHECKOUT = (process.env.NEXT_PUBLIC_CHECKOUT_MODE ?? "razorpay").trim() === "whatsapp";
+export const IS_WHATSAPP_CHECKOUT = (process.env.NEXT_PUBLIC_CHECKOUT_MODE ?? "online").trim() === "whatsapp";
 
 /**
  * Fallback store WhatsApp number (digits with country code, wa.me format). The live number comes from

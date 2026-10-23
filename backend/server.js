@@ -59,7 +59,7 @@ app.use(cors({
 
 app.use(express.urlencoded({ extended: true }));
 
-// The raw bytes are kept for webhook signature checks (Razorpay signs the body exactly as sent).
+// The raw bytes are kept for webhook signature checks (Cashfree signs the body exactly as sent).
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // Strips this backend's own host from uploaded-file URLs in request bodies, so only "/uploads/…" is stored.
@@ -156,7 +156,6 @@ async function startServer() {
     if (!isConnected) {
       process.exit(1);
     }
-    
     // startCronJobs();
     startEkartSync();
     app.listen(PORT, () => {
@@ -169,5 +168,3 @@ async function startServer() {
 }
 
 startServer();
-
- 

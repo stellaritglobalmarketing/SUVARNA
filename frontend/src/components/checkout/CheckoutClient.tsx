@@ -8,12 +8,11 @@ import type { AddressInput } from "@/types/address";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { selectCartItems, selectCartMrpTotal, selectCartSubtotal, setCartItems } from "@/lib/redux/slices/cartSlice";
-import { pushToast } from "@/lib/redux/slices/uiSlice";
 import { getToken } from "@/lib/auth/token";
 import { createAddress, fetchAddresses } from "@/lib/api/addresses";
 import { fetchServerCart } from "@/lib/api/cart";
 import { createPaymentOrder, fetchOrderDetail, placeOrder, syncPayment, verifyPayment } from "@/lib/api/checkout";
-import { openRazorpay } from "@/lib/razorpay";
+import { openCashfree } from "@/lib/cashfree";
 import { IS_WHATSAPP_CHECKOUT, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { queryKeys } from "@/lib/query/keys";
@@ -26,7 +25,6 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ProductImagePlaceholder } from "@/components/ui/ProductImagePlaceholder";
 import { AddressForm } from "./AddressForm";
 
-const BRAND_COLOR = "#3d2b1c";
 const PLACEHOLDER_GRADIENT: [string, string] = ["#8a6a4f", "#d4a373"];
 
 type Status = "idle" | "placing" | "opening" | "paying" | "verifying" | "sending";
@@ -38,7 +36,7 @@ function errorText(error: unknown): string {
 /**
  * Two stages on one page:
  *  - no `?order=`: review the cart, pick/add an address, then "Place Order & Pay" creates the order
- *  - `?order=ORD-…`: an order that's waiting for payment — pay (or retry) with Razorpay
+ *  - `?order=ORD-…`: an order that's waiting for payment — pay (or retry) with Cashfree
  * Keeping the pending order in the URL means a closed payment window or a page refresh never
  * loses it, and the customer can't accidentally place the same order twice.
  */
@@ -94,9 +92,9 @@ export function CheckoutClient() {
     }
   }, [orderQuery.data, pendingOrder, router]);
 
-  // A paid order can still read "pending" here when Razorpay's success callback never ran — usually
+  // A paid order can still read "pending" here when the gateway's success callback never ran — usually
   // UPI on a phone, where the customer pays in the GPay/PhonePe app and comes back to a reloaded tab.
-  // So on arrival, and whenever the tab becomes visible again, ask the backend to check with Razorpay.
+  // So on arrival, and whenever the tab becomes visible again, ask the backend to check with the gateway.
   const orderIsUnpaid = Boolean(pendingOrder) && orderQuery.data != null && orderQuery.data.payment_status !== "paid";
   useEffect(() => {
     if (!isCustomer || !pendingOrder || !orderIsUnpaid) return;
@@ -140,7 +138,7 @@ export function CheckoutClient() {
   };
 
   /**
-   * WhatsApp mode: send the order (invoice, items, address) to our WhatsApp instead of opening Razorpay.
+   * WhatsApp mode: send the order (invoice, items, address) to our WhatsApp instead of opening the payment window.
    * `waWindow` is opened synchronously in the click handler so popup blockers allow it; if it was
    * blocked, the success page still has a "Send on WhatsApp" button.
    */
@@ -167,36 +165,19 @@ export function CheckoutClient() {
         goToSuccess(orderNumber);
         return;
       }
-      await openRazorpay(
-        {
-          key: paymentOrder.key_id,
-          amount: paymentOrder.amount,
-          currency: paymentOrder.currency,
-          name: paymentOrder.name,
-          description: paymentOrder.description,
-          order_id: paymentOrder.razorpay_order_id,
-          prefill: paymentOrder.prefill,
-          theme: { color: BRAND_COLOR },
-          handler: async (response) => {
-            setStatus("verifying");
-            try {
-              await verifyPayment(orderNumber, response);
-              goToSuccess(orderNumber);
-            } catch (verifyError) {
-              setStatus("idle");
-              setError(errorText(verifyError));
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              setStatus("idle");
-              setNotice("Payment wasn't completed. Your order is saved — you can pay whenever you're ready.");
-            },
-          },
-        },
-        (message) => dispatch(pushToast(message, "error")),
-      );
       setStatus("paying");
+      const result = await openCashfree(paymentOrder.payment_session_id, paymentOrder.cashfree_mode);
+      if (result.redirect) return; // Cashfree sends the customer to the success page itself
+      setStatus("verifying");
+      const outcome = await verifyPayment(orderNumber);
+      // PENDING: the bank hasn't confirmed yet — the success page keeps checking.
+      if (outcome.payment_status === "paid" || outcome.gateway_status === "PENDING") {
+        goToSuccess(orderNumber);
+        return;
+      }
+      setStatus("idle");
+      if (outcome.gateway_status === "FAILED") setError(outcome.message);
+      else setNotice("Payment wasn't completed. Your order is saved — you can pay whenever you're ready.");
     } catch (paymentError) {
       setStatus("idle");
       setError(errorText(paymentError));
@@ -553,7 +534,7 @@ function SummaryCard({
       <p className="mt-3 text-center text-xs text-brand-ink/50">
         {IS_WHATSAPP_CHECKOUT
           ? `Your order details are sent to us on WhatsApp (${store.whatsapp_display}). We'll confirm and share payment details (UPI / bank transfer) there.`
-          : "Secure payment by Razorpay · UPI, cards, net banking & wallets"}
+          : "Secure payment by Cashfree Payments · UPI, cards, net banking & wallets"}
       </p>
     </div>
   );
