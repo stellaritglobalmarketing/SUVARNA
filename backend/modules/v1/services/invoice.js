@@ -47,7 +47,7 @@ async function sellerDetails() {
         name: env.INVOICE_SELLER_NAME || settings.seller_name || "Suvarna7",
         address,
         phone: env.INVOICE_SELLER_PHONE || pickup.phone || null,
-        email: env.INVOICE_SELLER_EMAIL || null,
+        email: env.INVOICE_SELLER_EMAIL || "suvarnaorganic07@gmail.com",
         gstin: env.INVOICE_SELLER_GSTIN || settings.seller_gstin || null,
     };
 }

@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, Clock, MessageCircle, Phone } from "lucide-react";
+import { ArrowUpRight, Clock, Mail, MessageCircle, Phone } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { ContactForm } from "@/components/contact/ContactForm";
+import { FounderBio } from "@/components/contact/FounderBio";
 import { getStoreSettings } from "@/lib/api/settings";
+import { STORE_EMAIL, STORE_EMAIL_HREF } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Suvarna7 — Contact Us",
-  description: "Talk to the Suvarna7 team on WhatsApp or by phone about an order, a product, returns or gifting.",
+  description: "Talk to the Suvarna7 team on WhatsApp, by phone or by email about an order, a product, returns or gifting.",
 };
 
 export default async function ContactPage() {
@@ -30,6 +32,14 @@ export default async function ContactPage() {
       href: `tel:+${whatsapp_number}`,
       external: false,
     },
+    {
+      icon: Mail,
+      label: "Email",
+      value: STORE_EMAIL,
+      note: "For detailed queries, bulk orders and gifting.",
+      href: STORE_EMAIL_HREF,
+      external: false,
+    },
   ];
 
   return (
@@ -40,7 +50,7 @@ export default async function ContactPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-brand-gold">Contact Us</p>
           <h1 className="mt-3 font-serif text-3xl font-bold leading-tight text-brand-forest sm:text-4xl">Talk to a real person.</h1>
           <p className="mt-4 text-[15px] leading-7 text-brand-ink/75">
-            Questions about an order, a product, a return or a gift box — our team answers on WhatsApp and phone.
+            Questions about an order, a product, a return or a gift box — our team answers on WhatsApp, phone and email.
           </p>
         </header>
 
@@ -58,10 +68,10 @@ export default async function ContactPage() {
                 </span>
                 <span className="text-sm font-semibold uppercase tracking-wider text-brand-ink/55 sm:text-base">
                   {label}
-                  <span className="mt-1 block font-serif text-xl font-bold normal-case tracking-normal text-brand-forest sm:hidden">{value}</span>
+                  <span className="mt-1 block font-serif text-xl font-bold normal-case tracking-normal text-brand-forest [overflow-wrap:anywhere] sm:hidden">{value}</span>
                 </span>
                 <span className="hidden sm:block">
-                  <span className="block font-serif text-2xl font-bold text-brand-forest">{value}</span>
+                  <span className="block font-serif text-2xl font-bold text-brand-forest [overflow-wrap:anywhere]">{value}</span>
                   <span className="text-sm text-brand-ink/60">{note}</span>
                 </span>
                 <ArrowUpRight size={22} className="text-brand-ink/35 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-brand-forest" />
@@ -78,6 +88,8 @@ export default async function ContactPage() {
             </span>
           </li>
         </ul>
+
+        <FounderBio className="mt-14" />
 
         {/* Form */}
         <section className="mt-14 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">

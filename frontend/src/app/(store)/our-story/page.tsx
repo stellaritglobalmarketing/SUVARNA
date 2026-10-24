@@ -4,6 +4,7 @@ import { Award, Gem, Leaf, Wheat } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
+import { FounderBio } from "@/components/contact/FounderBio";
 
 export const metadata: Metadata = {
   title: "Suvarna7 — Our Story",
@@ -162,6 +163,13 @@ export default function OurStoryPage() {
               </div>
             ))}
           </div>
+        </Container>
+      </section>
+
+      {/* Founder */}
+      <section className="bg-brand-sand-dark/40 py-16 sm:py-20">
+        <Container>
+          <FounderBio className="mx-auto max-w-4xl" />
         </Container>
       </section>
 

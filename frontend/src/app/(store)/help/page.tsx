@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Clock, MessageCircle, PackageSearch, Phone, RefreshCcw, ShoppingBag, Truck } from "lucide-react";
+import { ChevronRight, Clock, Mail, MessageCircle, PackageSearch, Phone, RefreshCcw, ShoppingBag, Truck } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { getStoreSettings } from "@/lib/api/settings";
+import { STORE_EMAIL, STORE_EMAIL_HREF } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Suvarna7 — Help & Support",
@@ -112,6 +113,12 @@ export default async function HelpPage() {
 
           <p className="mt-5 flex items-center gap-2 text-sm text-brand-sand/75">
             <Clock size={15} /> Monday to Saturday, 10:00 AM – 7:00 PM. WhatsApp messages sent later are answered the next working day.
+          </p>
+          <p className="mt-2 flex items-center gap-2 text-sm text-brand-sand/75">
+            <Mail size={15} /> Prefer email? Write to{" "}
+            <a href={STORE_EMAIL_HREF} className="break-all font-semibold text-brand-sand underline underline-offset-4">
+              {STORE_EMAIL}
+            </a>
           </p>
         </Container>
       </section>

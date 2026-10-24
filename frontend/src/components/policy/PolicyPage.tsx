@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { MessageCircle } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { STORE_EMAIL, STORE_EMAIL_HREF } from "@/lib/contact";
 import { cn } from "@/lib/utils/cn";
 
 /** One row of the "At a glance" table, e.g. { label: "Refunds", text: "Not offered" }. */
@@ -133,6 +134,12 @@ export function PolicyPage({
                 >
                   <MessageCircle size={18} /> WhatsApp {store.whatsapp_display}
                 </a>
+                <p className="mt-4 text-sm text-brand-sand/80">
+                  Or email{" "}
+                  <a href={STORE_EMAIL_HREF} className="break-all font-semibold text-brand-sand underline underline-offset-4">
+                    {STORE_EMAIL}
+                  </a>
+                </p>
               </section>
             </div>
           </div>

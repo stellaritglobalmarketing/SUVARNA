@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { STORE_EMAIL, STORE_EMAIL_HREF } from "@/lib/contact";
 
 const FOOTER_COLUMNS = [
   {
@@ -53,6 +54,9 @@ export function Footer() {
           <p className="mt-3 text-sm text-brand-ink/60">
             Pure Indian honey, ghee, saffron and dry fruits — sourced responsibly, delivered fresh across India.
           </p>
+          <a href={STORE_EMAIL_HREF} className="mt-3 inline-block break-all text-sm font-medium text-brand-forest hover:underline">
+            {STORE_EMAIL}
+          </a>
         </div>
         {FOOTER_COLUMNS.map((column) => (
           <div key={column.title}>
