@@ -75,7 +75,7 @@ export const HAMPERS = [
         name: "Heritage Box",
         subtitle: "Saffron, wild dark honey, almonds & walnuts",
         image_url: "/images/hampers/heritage-box.png",
-        product_slugs: ["kashmir-saffron", "kashmir-wild-dark-honey", "kashmiri-almonds", "kashmiri-walnut-kernels"],
+        product_slugs: ["kashmiri-kesar-saffron", "kashmir-wild-forest-honey", "kashmiri-almonds-badam", "kashmiri-walnut-kernels-akhrot"],
     },
 ];
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 import { useProduct } from "@/hooks/useProduct";
+import type { ProductDetail } from "@/types/product";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { addToCart } from "@/lib/redux/slices/cartSlice";
 import { pushToast } from "@/lib/redux/slices/uiSlice";
@@ -18,15 +19,17 @@ import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 import { ProductGallery } from "./ProductGallery";
-import { CertificationBadges } from "./CertificationBadges";
+import { TrustPoints } from "./TrustPoints";
 import { PincodeChecker } from "./PincodeChecker";
 import { FrequentlyBoughtTogether } from "./FrequentlyBoughtTogether";
 import { ProductDetailsTabs } from "./ProductDetailsTabs";
-import { ProductDescription, ProductTagline } from "./ProductDescription";
+import { ProductTagline } from "./ProductTagline";
+import { ProductStory } from "./ProductStory";
 import { SimilarProducts } from "./SimilarProducts";
 
-export function ProductDetailClient({ slug }: { slug: string }) {
-  const { data: product, isLoading, isError } = useProduct(slug);
+/** `initialProduct` comes from the server render, so the page's content is in the HTML search engines read. */
+export function ProductDetailClient({ slug, initialProduct }: { slug: string; initialProduct?: ProductDetail }) {
+  const { data: product, isLoading, isError } = useProduct(slug, initialProduct);
   const dispatch = useAppDispatch();
 
   const [selectedVariantLabel, setSelectedVariantLabel] = useState<string | null>(null);
@@ -89,7 +92,13 @@ export function ProductDetailClient({ slug }: { slug: string }) {
     <div className="pb-32 lg:pb-0">
       <Container className="py-6 sm:py-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-          <ProductGallery images={product.images} videos={product.videos} gradient={product.gradient} name={product.name} />
+          <ProductGallery
+            images={product.images}
+            videos={product.videos}
+            gradient={product.gradient}
+            name={product.name}
+            imageAlt={product.imageAlt}
+          />
 
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
@@ -98,11 +107,7 @@ export function ProductDetailClient({ slug }: { slug: string }) {
               <Badge tone="neutral">{product.processing}</Badge>
             </div>
 
-            <h1 className="font-serif text-3xl font-bold text-brand-forest sm:text-4xl">{product.name}</h1>
-            <ProductTagline text={product.tagline} />
-            <ProductDescription text={product.description} />
-
-            <CertificationBadges certifications={product.certifications} />
+            <h1 className="font-serif text-2xl font-bold leading-tight text-brand-forest sm:text-3xl">{product.heading || product.name}</h1>
 
             <div className="mt-2">
               <p className="mb-2 text-sm font-semibold text-brand-ink">Select Weight</p>
@@ -113,7 +118,10 @@ export function ProductDetailClient({ slug }: { slug: string }) {
               />
             </div>
 
-            <PriceTag price={selectedVariant.price} mrp={selectedVariant.mrp} size="lg" />
+            <div className="space-y-1">
+              <PriceTag price={selectedVariant.price} mrp={selectedVariant.mrp} size="lg" />
+              <ProductTagline text={product.tagline} />
+            </div>
 
             {lowStock && (
               <p className="text-sm font-medium text-red-600">Only {selectedVariant.stock} packs left in fresh batch</p>
@@ -129,18 +137,24 @@ export function ProductDetailClient({ slug }: { slug: string }) {
               </Button>
             </div>
 
+            <TrustPoints points={product.certifications} />
+
             <PincodeChecker />
 
           </div>
         </div>
       </Container>
 
-      <Container className="py-6">
+      <Container className="pt-4">
+        <ProductStory story={product.description} sections={product.infoSections} />
+      </Container>
+
+      <Container className="py-10">
         <FrequentlyBoughtTogether mainProduct={product} companions={product.frequentlyBoughtWithProducts} />
       </Container>
 
-      <Container className="pt-10">
-        <ProductDetailsTabs sections={product.infoSections} name={product.name} origin={product.origin} processing={product.processing} />
+      <Container>
+        <ProductDetailsTabs name={product.name} origin={product.origin} processing={product.processing} />
       </Container>
 
       <Container className="py-10">

@@ -155,7 +155,7 @@ const getProductById = async (req, res) => {
         }
 
         const [productRows] = await db.query(
-            `SELECT p.id, p.name, p.tagline, p.slug, p.short_description, p.description, p.brand_name, p.is_featured, p.is_active, p.created_at, p.updated_at,
+            `SELECT p.id, p.name, p.tagline, p.heading, p.meta_title, p.meta_description, p.slug, p.short_description, p.description, p.brand_name, p.is_featured, p.is_active, p.created_at, p.updated_at,
                     p.origin, p.processing, p.delivery_min_days, p.delivery_max_days, p.is_bestseller, p.sort_order
              FROM products p
              WHERE p.id = ? AND p.is_delete = 0
@@ -193,6 +193,9 @@ const getProductById = async (req, res) => {
             id: product.id,
             name: product.name,
             tagline: product.tagline,
+            heading: product.heading,
+            meta_title: product.meta_title,
+            meta_description: product.meta_description,
             slug: product.slug,
             short_description: product.short_description,
             description: product.description,

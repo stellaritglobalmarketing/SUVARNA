@@ -1,5 +1,17 @@
 import type { NextConfig } from "next";
 
+// Product URLs that changed (newest catalogue: backend/seeds/data/catalog.js `replaces`). Permanent, so old
+// links, bookmarks and Google results land on the new page and pass on their ranking.
+const RENAMED_PRODUCTS: Record<string, string[]> = {
+  "kashmiri-kesar-saffron": ["kashmir-saffron", "kashmiri-mongra-saffron"],
+  "kashmir-wild-forest-honey": ["kashmir-wild-dark-honey", "raw-forest-honey"],
+  "buffalo-bilona-ghee": ["pure-buffalo-ghee"],
+  "gir-cow-bilona-ghee": ["pure-cow-ghee"],
+  "kashmiri-almonds-badam": ["kashmiri-almonds", "kashmir-mamra-almonds"],
+  "kashmiri-walnut-kernels-akhrot": ["kashmiri-walnut-kernels"],
+  "diwali-dry-fruit-gift-box-kashmir": ["heritage-box"],
+};
+
 const nextConfig: NextConfig = {
   // The floating dev-tools indicator (bottom-left "N" badge) has a known pointer-capture
   // bug under touch/mobile-emulation input and visually collides with our own bottom
@@ -26,6 +38,9 @@ const nextConfig: NextConfig = {
       },
       // The old exchange page was replaced by the Refund, Return & Cancellation Policy.
       { source: "/return-policy", destination: "/refund-policy", permanent: true },
+      ...Object.entries(RENAMED_PRODUCTS).flatMap(([slug, oldSlugs]) =>
+        oldSlugs.map((oldSlug) => ({ source: `/products/${oldSlug}`, destination: `/products/${slug}`, permanent: true })),
+      ),
     ];
   },
 };

@@ -3,6 +3,7 @@ import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ToastViewport } from "@/components/layout/ToastViewport";
+import { SITE_URL } from "@/lib/seo";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -16,6 +17,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // Resolves relative canonical and Open Graph URLs set by pages.
+  metadataBase: new URL(SITE_URL),
   title: "Suvarna7 — Pure Indian Goodness",
   description:
     "Pure Indian honey, ghee, saffron and dry fruits — sourced responsibly, delivered fresh across India.",

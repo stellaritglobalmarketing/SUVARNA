@@ -7,14 +7,14 @@ const FOOTER_COLUMNS = [
   {
     title: "Shop",
     links: [
-      { href: "/products/kashmir-saffron", label: "Kashmir Saffron" },
+      { href: "/products/kashmiri-kesar-saffron", label: "Kashmir Saffron" },
       { href: "/products/kashmir-acacia-honey", label: "Acacia Honey" },
-      { href: "/products/kashmir-wild-dark-honey", label: "Wild Dark Honey" },
+      { href: "/products/kashmir-wild-forest-honey", label: "Wild Dark Honey" },
       { href: "/products/gir-cow-bilona-ghee", label: "Gir Cow Bilona Ghee" },
       { href: "/products/buffalo-bilona-ghee", label: "Buffalo Bilona Ghee" },
-      { href: "/products/kashmiri-almonds", label: "Kashmiri Almonds" },
-      { href: "/products/kashmiri-walnut-kernels", label: "Walnut Kernels" },
-      { href: "/products/heritage-box", label: "Heritage Box" },
+      { href: "/products/kashmiri-almonds-badam", label: "Kashmiri Almonds" },
+      { href: "/products/kashmiri-walnut-kernels-akhrot", label: "Walnut Kernels" },
+      { href: "/products/diwali-dry-fruit-gift-box-kashmir", label: "Heritage Box" },
     ],
   },
   {

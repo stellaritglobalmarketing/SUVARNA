@@ -6,25 +6,16 @@ import {
   selectActiveFilterCount,
   selectFilters,
   setPriceRange,
-  toggleHealthBenefit,
   toggleOrigin,
   toggleProcessing,
   toggleWeight,
 } from "@/lib/redux/slices/filtersSlice";
-import type { HealthBenefit, ProductOrigin, ProductProcessing } from "@/types/product";
+import type { ProductOrigin, ProductProcessing } from "@/types/product";
 import { formatInr } from "@/lib/utils/format";
 
 const WEIGHTS = ["0.5g", "1g", "2g", "5g", "100g", "200g", "250g", "500g", "1kg", "2kg", "5kg"];
 const ORIGINS: ProductOrigin[] = ["Kashmir", "California", "Afghanistan", "Iran", "India"];
 const PROCESSING: ProductProcessing[] = ["Raw", "Smoked", "Roasted & Salted", "Traditional"];
-const HEALTH_BENEFITS: HealthBenefit[] = [
-  "Heart Health",
-  "Keto Friendly",
-  "Diabetic Friendly",
-  "High Protein",
-  "Weight Management",
-  "Immunity Boost",
-];
 const MAX_PRICE = 3000;
 
 /** The actual filter form — shared by the desktop static sidebar and the mobile bottom-sheet. */
@@ -102,19 +93,6 @@ export function FilterControls({ onClearAll }: { onClearAll?: () => void }) {
               label={option}
               checked={filters.processing.includes(option)}
               onChange={() => dispatch(toggleProcessing(option))}
-            />
-          ))}
-        </div>
-      </FilterGroup>
-
-      <FilterGroup title="Health Benefits">
-        <div className="flex flex-col gap-2">
-          {HEALTH_BENEFITS.map((benefit) => (
-            <Checkbox
-              key={benefit}
-              label={benefit}
-              checked={filters.healthBenefits.includes(benefit)}
-              onChange={() => dispatch(toggleHealthBenefit(benefit))}
             />
           ))}
         </div>

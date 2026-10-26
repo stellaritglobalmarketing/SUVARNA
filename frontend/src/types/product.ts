@@ -39,6 +39,8 @@ export interface Product {
   processing: ProductProcessing;
   healthBenefits: HealthBenefit[];
   images: string[];
+  /** Alt text for the main photo; the name is used when it's missing. */
+  imageAlt?: string;
   /** Product videos, shown in the gallery after the photos. */
   videos?: string[];
   gradient: [string, string];
@@ -52,8 +54,8 @@ export interface Product {
   frequentlyBoughtWith: string[];
 }
 
-/** Everything the product page renders, from the single GET /product/:slug call. */
-/** A block of product-page information: a paragraph, a list of points, or both. */
+/** A block of product-page information: a paragraph, a list of points, or both. A block titled "FAQs" is
+ * questions (`label`) and answers (`text`). */
 export interface ProductInfoSection {
   title: string;
   body: string | null;
@@ -61,7 +63,13 @@ export interface ProductInfoSection {
   items: { label: string | null; text: string }[];
 }
 
+/** Everything the product page renders, from the single GET /product/:slug call. */
 export interface ProductDetail extends Product {
+  /** The page's H1; falls back to the name. */
+  heading?: string;
+  /** Google result title and description; fall back to the name and short description. */
+  metaTitle?: string;
+  metaDescription?: string;
   infoSections: ProductInfoSection[];
   frequentlyBoughtWithProducts: Product[];
   similarProducts: Product[];

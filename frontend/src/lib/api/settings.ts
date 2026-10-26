@@ -8,11 +8,14 @@ export interface StoreSettings {
   whatsapp_number: string;
   /** For display — e.g. "+91 63536 84881". */
   whatsapp_display: string;
+  /** The site-wide top banner line; empty hides the banner. */
+  announcement_text: string;
 }
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   whatsapp_number: WHATSAPP_ORDER_NUMBER,
   whatsapp_display: WHATSAPP_ORDER_NUMBER_DISPLAY,
+  announcement_text: "",
 };
 
 /** Client-side read (through useStoreSettings). */

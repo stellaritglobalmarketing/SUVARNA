@@ -185,7 +185,7 @@ function InfoSectionsEditor({ sections, onChange }: { sections: InfoSection[]; o
   );
 }
 
-/** Everything on the product page below the basics: badges, information sections, health benefits and related products. */
+/** Everything on the product page below the basics: trust points, information sections, health benefits and related products. */
 export function ContentPanel({ product, refresh }: { product: AdminProduct; refresh: Refresh }) {
   const [certs, setCerts] = useState<CertRow[]>(product.certifications);
   const [benefits, setBenefits] = useState<string[]>(product.health_benefits);
@@ -210,8 +210,8 @@ export function ContentPanel({ product, refresh }: { product: AdminProduct; refr
   return (
     <div className="space-y-6">
       <Section
-        title="Certifications & quality badges"
-        hint='Shown as badges on the product page. A label starting with "100%" also appears on product cards.'
+        title="Trust points"
+        hint='Ticks shown just under Add to Cart, e.g. "Grown on our own farm". A label starting with "100%" also appears on product cards.'
         isSaving={saveCerts.isPending}
         onSave={() => saveCerts.mutate({ certifications: certs.map((c) => ({ label: c.label, description: c.description || null })) })}
       >
@@ -219,17 +219,17 @@ export function ContentPanel({ product, refresh }: { product: AdminProduct; refr
           rows={certs}
           onChange={setCerts}
           blank={{ label: "", description: "" }}
-          addLabel="Add badge"
+          addLabel="Add trust point"
           columns={[
-            { key: "label", label: "Badge", placeholder: "100% Chemical-Free", maxLength: 64, width: "w-56" },
-            { key: "description", label: "Description", placeholder: "No fumigation or bleaching.", maxLength: 255 },
+            { key: "label", label: "Trust point", placeholder: "Grown on our own farm", maxLength: 64, width: "w-56" },
+            { key: "description", label: "Hover note (optional)", placeholder: "Shown when the tick is hovered.", maxLength: 255 },
           ]}
         />
       </Section>
 
       <Section
         title="Product information"
-        hint="Blocks on the product page such as The Science Within, How to Use and Storage. Each needs a title and a paragraph, points, or both."
+        hint="Blocks below The Story, in this order: the first (e.g. Highlights) on the left, the rest on the right. A block titled “FAQs” shows as questions (bold part) and answers, and is sent to Google as FAQ schema."
         isSaving={saveSections.isPending}
         onSave={() =>
           saveSections.mutate({
@@ -244,7 +244,7 @@ export function ContentPanel({ product, refresh }: { product: AdminProduct; refr
         <InfoSectionsEditor sections={sections} onChange={setSections} />
       </Section>
 
-      <Section title="Health benefits" hint="Tags used for 'Shop by health goal'." isSaving={saveBenefits.isPending} onSave={() => saveBenefits.mutate({ health_benefits: benefits })}>
+      <Section title="Health benefits" hint="Not shown on the store. Avoid health claims (FSSAI) such as “Immunity Boost”." isSaving={saveBenefits.isPending} onSave={() => saveBenefits.mutate({ health_benefits: benefits })}>
         <div className="flex flex-wrap gap-2">
           {benefits.map((b) => (
             <span key={b} className="flex items-center gap-1 rounded-full bg-brand-sand px-3 py-1 text-sm">

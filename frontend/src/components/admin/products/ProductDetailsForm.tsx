@@ -11,6 +11,9 @@ function initialValues(product?: AdminProduct): ProductInput {
   return {
     name: product?.name ?? "",
     tagline: product?.tagline ?? "",
+    heading: product?.heading ?? "",
+    meta_title: product?.meta_title ?? "",
+    meta_description: product?.meta_description ?? "",
     slug: product?.slug ?? "",
     short_description: product?.short_description ?? "",
     description: product?.description ?? "",
@@ -53,16 +56,25 @@ export function ProductDetailsForm({
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <Field label="Name *" className="md:col-span-2">
+      <Field label="Name *" hint="Short name for product cards, the cart and invoices." className="md:col-span-2">
         <input required maxLength={128} value={values.name} onChange={(e) => set("name", e.target.value)} className={inputClass} />
       </Field>
-      <Field label="Tagline" hint='Shown under the name on the product page, e.g. "The Crimson Gold of Kashmir".' className="md:col-span-2">
+      <Field label="Page heading (H1)" hint="The big heading on the product page. Leave empty to use the name." className="md:col-span-2">
+        <input maxLength={160} value={values.heading} onChange={(e) => set("heading", e.target.value)} className={inputClass} />
+      </Field>
+      <Field label="Hook line" hint="One line shown just under the price." className="md:col-span-2">
         <input maxLength={160} value={values.tagline} onChange={(e) => set("tagline", e.target.value)} className={inputClass} />
       </Field>
-      <Field label="Short description" hint="One or two lines for product cards and search results." className="md:col-span-2">
+      <Field label="Google title" hint={`What Google shows as the link title. Keep it under 60–65 characters (${values.meta_title?.length ?? 0} now).`} className="md:col-span-2">
+        <input maxLength={160} value={values.meta_title} onChange={(e) => set("meta_title", e.target.value)} className={inputClass} />
+      </Field>
+      <Field label="Google description" hint={`The text under the link in Google. Aim for 140–160 characters (${values.meta_description?.length ?? 0} now).`} className="md:col-span-2">
+        <textarea rows={2} maxLength={320} value={values.meta_description} onChange={(e) => set("meta_description", e.target.value)} className={inputClass} />
+      </Field>
+      <Field label="Short description" hint="One or two lines for search results inside the store." className="md:col-span-2">
         <input maxLength={255} value={values.short_description} onChange={(e) => set("short_description", e.target.value)} className={inputClass} />
       </Field>
-      <Field label="Description" className="md:col-span-2">
+      <Field label="The Story" hint="Shown below Add to Cart under “The Story”." className="md:col-span-2">
         <textarea rows={4} value={values.description} onChange={(e) => set("description", e.target.value)} className={inputClass} />
       </Field>
       <Field label="Origin">

@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { Check } from "lucide-react";
-import type { ProductInfoSection, ProductOrigin, ProductProcessing } from "@/types/product";
+import type { ProductOrigin, ProductProcessing } from "@/types/product";
 import { cn } from "@/lib/utils/cn";
 import { qualityProcessContent, type QualityPoint } from "./QualityProcess";
 
@@ -10,32 +10,6 @@ type Tab = { id: string; title: string; render: () => ReactNode };
 
 const STAGGER_MS = 60;
 const stagger = (index: number): CSSProperties => ({ animationDelay: `${80 + index * STAGGER_MS}ms` });
-
-function InfoPanel({ section }: { section: ProductInfoSection }) {
-  return (
-    <div className="max-w-3xl">
-      {section.body && (
-        <p className="animate-tab-item text-[15px] leading-7 text-brand-ink/75" style={stagger(0)}>
-          {section.body}
-        </p>
-      )}
-      {section.items.length > 0 && (
-        <ul className={cn("grid grid-cols-1 gap-x-10 sm:grid-cols-2", section.body && "mt-6")}>
-          {section.items.map((item, index) => (
-            <li
-              key={`${item.label ?? ""}-${index}`}
-              className="animate-tab-item border-t border-brand-sand-dark py-4 text-sm leading-6 text-brand-ink/75 first:border-t-0 first:pt-0 sm:[&:nth-child(2)]:border-t-0 sm:[&:nth-child(2)]:pt-0"
-              style={stagger(index + 1)}
-            >
-              {item.label && <span className="block font-semibold text-brand-forest">{item.label}</span>}
-              {item.text}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 function ChecksPanel({ checks }: { checks: QualityPoint[] }) {
   return (
@@ -86,21 +60,18 @@ function StepsPanel({ steps }: { steps: QualityPoint[] }) {
   );
 }
 
-/** Product information, quality checks and process in one card, switched by tabs. */
+/** Quality checks and process in one card, switched by tabs. The product's own information is in ProductStory. */
 export function ProductDetailsTabs({
-  sections,
   name,
   origin,
   processing,
 }: {
-  sections: ProductInfoSection[];
   name: string;
   origin: ProductOrigin;
   processing: ProductProcessing;
 }) {
   const { checks, steps } = qualityProcessContent(name, origin, processing);
   const tabs: Tab[] = [
-    ...sections.map((section, index) => ({ id: `info-${index}`, title: section.title, render: () => <InfoPanel section={section} /> })),
     { id: "quality", title: "Quality Check", render: () => <ChecksPanel checks={checks} /> },
     { id: "process", title: "How We Process", render: () => <StepsPanel steps={steps} /> },
   ];

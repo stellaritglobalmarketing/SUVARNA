@@ -15,19 +15,23 @@ export async function replaceProductRows(conn, table, productId, columns, rows) 
 }
 
 /**
- * A product whose slug changed in the catalogue (`replaces`) is renamed in place, so it keeps its
- * id — and with it its images, reviews, wishlists and past orders. Skipped once the new slug exists.
+ * A product whose slug changed in the catalogue (`replaces`, newest old slug first) is renamed in place,
+ * so it keeps its id — and with it its images, reviews, wishlists and past orders. Skipped once the new
+ * slug exists.
  */
 export async function renameReplacedProducts(conn, products) {
     let renamed = 0;
     for (const p of products) {
-        if (!p.replaces) continue;
+        if (!p.replaces?.length) continue;
         const [[existing]] = await conn.query("SELECT id FROM products WHERE slug = ? LIMIT 1", [p.slug]);
         if (existing) continue;
-        const [result] = await conn.query("UPDATE products SET slug = ? WHERE slug = ?", [p.slug, p.replaces]);
-        if (result.affectedRows > 0) {
-            renamed += 1;
-            console.log(`  renamed ${p.replaces} → ${p.slug}`);
+        for (const oldSlug of p.replaces) {
+            const [result] = await conn.query("UPDATE products SET slug = ? WHERE slug = ?", [p.slug, oldSlug]);
+            if (result.affectedRows > 0) {
+                renamed += 1;
+                console.log(`  renamed ${oldSlug} → ${p.slug}`);
+                break;
+            }
         }
     }
     return renamed;
@@ -39,18 +43,21 @@ export async function upsertProducts(conn, products) {
     for (const [index, p] of products.entries()) {
         await conn.query(
             `INSERT INTO products
-                (name, tagline, slug, short_description, description, brand_name, origin, processing,
-                 delivery_min_days, delivery_max_days, is_featured, is_bestseller, sort_order, is_active, is_delete)
-             VALUES (?, ?, ?, ?, ?, 'Suvarna7', ?, ?, ?, ?, 1, ?, ?, 1, 0)
+                (name, tagline, heading, meta_title, meta_description, slug, short_description, description, brand_name,
+                 origin, processing, delivery_min_days, delivery_max_days, is_featured, is_bestseller, sort_order, is_active, is_delete)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Suvarna7', ?, ?, ?, ?, 1, ?, ?, 1, 0)
              ON DUPLICATE KEY UPDATE
-                name = VALUES(name), tagline = VALUES(tagline),
+                name = VALUES(name), tagline = VALUES(tagline), heading = VALUES(heading),
+                meta_title = VALUES(meta_title), meta_description = VALUES(meta_description),
                 short_description = VALUES(short_description), description = VALUES(description),
                 brand_name = VALUES(brand_name), origin = VALUES(origin), processing = VALUES(processing),
                 delivery_min_days = VALUES(delivery_min_days), delivery_max_days = VALUES(delivery_max_days),
                 is_featured = VALUES(is_featured), is_bestseller = VALUES(is_bestseller),
                 sort_order = VALUES(sort_order), is_active = 1, is_delete = 0`,
             [
-                p.name, p.tagline ?? null, p.slug, p.short_description, p.description, p.origin, p.processing,
+                // The card / search-result line is the Google description: the catalogue has no separate one.
+                p.name, p.tagline ?? null, p.heading ?? null, p.meta_title ?? null, p.meta_description ?? null, p.slug,
+                p.short_description ?? p.meta_description ?? null, p.description, p.origin, p.processing,
                 p.delivery_days[0], p.delivery_days[1], p.is_bestseller ? 1 : 0, index + 1,
             ]
         );
@@ -89,13 +96,16 @@ export async function upsertProducts(conn, products) {
                 "SELECT id FROM product_images WHERE product_id = ? AND image_url = ? AND is_delete = 0 LIMIT 1",
                 [productId, p.image]
             );
+            const altText = p.image_alt ?? p.name;
             if (existingImage.length === 0) {
                 // Bundled static asset served by the frontend, not a Cloudinary upload — hence no public id.
                 await conn.query(
                     `INSERT INTO product_images (product_id, cloudinary_public_id, image_url, alt_text, sort_order, is_primary)
                      VALUES (?, '', ?, ?, 0, 1)`,
-                    [productId, p.image, p.name]
+                    [productId, p.image, altText]
                 );
+            } else {
+                await conn.query("UPDATE product_images SET alt_text = ? WHERE id = ?", [altText, existingImage[0].id]);
             }
         }
 

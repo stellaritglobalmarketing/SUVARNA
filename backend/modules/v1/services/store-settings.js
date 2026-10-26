@@ -4,6 +4,7 @@ import db from "../../../config/db.js";
 // WhatsApp number), changed rarely, so values are cached briefly and the cache is dropped on save.
 
 const DEFAULT_WHATSAPP_NUMBER = "916353684881";
+const ANNOUNCEMENT_MAX_LENGTH = 160;
 const CACHE_MS = 30 * 1000;
 
 let cache = null; // { at, values }
@@ -44,10 +45,21 @@ async function getWhatsappNumber() {
     }
 }
 
+/** The site-wide top banner line; empty string when there's none (or the table can't be read). */
+async function getAnnouncementText() {
+    try {
+        const values = await readAll();
+        return (values.announcement_text ?? "").trim();
+    } catch (error) {
+        console.error("Store settings read error: ", error.message);
+        return "";
+    }
+}
+
 /** Public settings for the storefront and admin form. */
 async function getPublicSettings() {
-    const whatsapp_number = await getWhatsappNumber();
-    return { whatsapp_number, whatsapp_display: displayWhatsappNumber(whatsapp_number) };
+    const [whatsapp_number, announcement_text] = await Promise.all([getWhatsappNumber(), getAnnouncementText()]);
+    return { whatsapp_number, whatsapp_display: displayWhatsappNumber(whatsapp_number), announcement_text };
 }
 
 async function setWhatsappNumber(number) {
@@ -74,4 +86,12 @@ async function setSetting(key, value) {
     cache = null;
 }
 
-export { normalizeWhatsappNumber, getWhatsappNumber, getPublicSettings, setWhatsappNumber, getSetting, setSetting };
+export {
+    ANNOUNCEMENT_MAX_LENGTH,
+    normalizeWhatsappNumber,
+    getWhatsappNumber,
+    getPublicSettings,
+    setWhatsappNumber,
+    getSetting,
+    setSetting,
+};

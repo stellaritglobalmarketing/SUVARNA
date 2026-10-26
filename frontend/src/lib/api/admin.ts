@@ -166,9 +166,10 @@ export const getOrder = (orderNumber: string) => apiGet<AdminOrder>(`/admin/orde
 export interface AdminStoreSettings {
   whatsapp_number: string;
   whatsapp_display: string;
+  announcement_text: string;
 }
 export const getAdminSettings = () => apiGet<AdminStoreSettings>("/admin/settings");
-export const updateAdminSettings = (body: { whatsapp_number: string }) => apiPut<AdminStoreSettings>("/admin/settings", body);
+export const updateAdminSettings = (body: { whatsapp_number?: string; announcement_text?: string }) => apiPut<AdminStoreSettings>("/admin/settings", body);
 
 /** Asks Razorpay whether an unpaid order was in fact paid, and marks it paid if so. */
 export const syncAdminPayment = (orderNumber: string) =>
@@ -417,6 +418,9 @@ export interface AdminProduct extends ProductContent {
   id: number;
   name: string;
   tagline: string | null;
+  heading: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
   slug: string;
   short_description: string | null;
   description: string | null;
@@ -438,6 +442,9 @@ export interface AdminProduct extends ProductContent {
 export interface ProductInput {
   name: string;
   tagline?: string;
+  heading?: string;
+  meta_title?: string;
+  meta_description?: string;
   slug?: string;
   short_description?: string;
   description?: string;

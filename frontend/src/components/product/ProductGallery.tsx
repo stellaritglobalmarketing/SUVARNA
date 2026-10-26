@@ -39,11 +39,14 @@ export function ProductGallery({
   videos = [],
   gradient,
   name,
+  imageAlt,
 }: {
   images: string[];
   videos?: string[];
   gradient: [string, string];
   name: string;
+  /** Alt text of the main (first) photo. */
+  imageAlt?: string;
 }) {
   // Photos first (the primary photo leads), then videos. With nothing at all, one placeholder slide.
   const media: Media[] = [
@@ -51,6 +54,8 @@ export function ProductGallery({
     ...videos.map((src) => ({ type: "video" as const, src })),
   ];
   if (media.length === 0) media.push({ type: "image", src: "" });
+
+  const altFor = (index: number) => (index === 0 ? imageAlt || name : `${name} view ${index + 1}`);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -102,7 +107,7 @@ export function ProductGallery({
               ) : (
                 <ProductImagePlaceholder
                   src={item.src || undefined}
-                  alt={`${name} view ${index + 1}`}
+                  alt={altFor(index)}
                   gradient={gradient}
                   iconSize={56}
                   sizes="100vw"
@@ -138,7 +143,7 @@ export function ProductGallery({
             // key remounts the player so switching videos starts the new one from the beginning.
             <GalleryVideo key={active.src} src={active.src} name={name} />
           ) : (
-            <ProductImagePlaceholder src={active.src || undefined} alt={name} gradient={gradient} iconSize={56} className="h-full w-full" />
+            <ProductImagePlaceholder src={active.src || undefined} alt={altFor(activeIndex)} gradient={gradient} iconSize={56} className="h-full w-full" />
           )}
         </div>
         {media.length > 1 && (

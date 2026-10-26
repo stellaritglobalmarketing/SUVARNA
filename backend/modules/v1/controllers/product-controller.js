@@ -96,7 +96,7 @@ async function buildProductCards(rows) {
             ids
         ),
         db.query(
-            `SELECT product_id, media_type, image_url
+            `SELECT product_id, media_type, image_url, alt_text
              FROM product_images
              WHERE product_id IN (${placeholders}) AND is_active = 1 AND is_delete = 0
              ORDER BY is_primary DESC, sort_order ASC, id ASC`,
@@ -137,7 +137,9 @@ async function buildProductCards(rows) {
             in_stock: available > 0,
         };
     });
-    const imagesByProduct = groupByProduct(imageRows.filter((m) => m.media_type === "image"), (img) => img.image_url);
+    const photoRows = imageRows.filter((m) => m.media_type === "image");
+    const imagesByProduct = groupByProduct(photoRows, (img) => img.image_url);
+    const altByProduct = groupByProduct(photoRows, (img) => img.alt_text);
     const videosByProduct = groupByProduct(imageRows.filter((m) => m.media_type === "video"), (video) => video.image_url);
     const certificationsByProduct = groupByProduct(certificationRows, (c) => ({ label: c.label, description: c.description }));
     const benefitsByProduct = groupByProduct(benefitRows, (b) => b.benefit);
@@ -167,6 +169,8 @@ async function buildProductCards(rows) {
             discount_percent: defaultVariant ? discountPercent(defaultVariant.selling_price, defaultVariant.mrp) : 0,
             delivery_estimate_days: [r.delivery_min_days, r.delivery_max_days],
             image_url: images[0] || null,
+            // Alt text of the main photo (the first one); the storefront falls back to the product name.
+            image_alt: altByProduct.get(r.id)?.[0] || null,
             images,
             videos: videosByProduct.get(r.id) || [],
             min_price: toNumber(r.min_price),
@@ -367,7 +371,7 @@ const getProductDetails = async (req, res) => {
 
         const [productRows] = await db.query(
             `SELECT ${PRODUCT_CARD_COLUMNS},
-                    p.brand_name
+                    p.brand_name, p.heading, p.meta_title, p.meta_description
              ${PRODUCT_CARD_FROM}
              WHERE p.slug = ? AND ${LIVE_PRODUCT_WHERE}
              LIMIT 1`,
@@ -419,6 +423,9 @@ const getProductDetails = async (req, res) => {
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Product details fetched successfully", {
             ...card,
             brand_name: product.brand_name,
+            heading: product.heading,
+            meta_title: product.meta_title,
+            meta_description: product.meta_description,
             rating_breakdown: breakdown,
             info_sections: infoSections,
             frequently_bought_with: companionCards,

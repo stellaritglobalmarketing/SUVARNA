@@ -36,6 +36,7 @@ interface BackendHomeProductCard {
   min_price: number;
   max_price: number;
   image_url?: string | null;
+  image_alt?: string | null;
 }
 
 interface BackendCardVariant {
@@ -70,6 +71,9 @@ interface BackendProductCard extends BackendHomeProductCard {
 
 /** GET /product/:slug — the full card plus product-page-only data. */
 interface BackendProductDetail extends BackendProductCard {
+  heading?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
   info_sections?: { title: string; body: string | null; items: { label: string | null; text: string }[] }[];
   frequently_bought_with: BackendProductCard[];
   similar_products: BackendProductCard[];
@@ -244,6 +248,7 @@ function mapCardToProduct(card: BackendProductCard): Product {
     processing: (card.processing ?? "Raw") as ProductProcessing,
     healthBenefits: card.health_benefits as HealthBenefit[],
     images: card.images.length ? card.images : card.image_url ? [card.image_url] : [],
+    imageAlt: card.image_alt || undefined,
     videos: card.videos ?? [],
     // Placeholder colours behind a missing product photo — a storefront design choice, not product data.
     gradient: FALLBACK_GRADIENT,
@@ -261,6 +266,9 @@ function mapCardToProduct(card: BackendProductCard): Product {
 function mapDetailToProduct(detail: BackendProductDetail): ProductDetail {
   return {
     ...mapCardToProduct(detail),
+    heading: detail.heading || undefined,
+    metaTitle: detail.meta_title || undefined,
+    metaDescription: detail.meta_description || undefined,
     infoSections: detail.info_sections ?? [],
     frequentlyBoughtWith: detail.frequently_bought_with.map((companion) => companion.slug),
     frequentlyBoughtWithProducts: detail.frequently_bought_with.map(mapCardToProduct),

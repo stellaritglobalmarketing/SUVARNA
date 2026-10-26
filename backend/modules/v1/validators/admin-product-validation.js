@@ -80,8 +80,10 @@ function validateProductBody(body, { requireName }) {
     if (slug !== undefined && slug !== null && slug !== "" && String(slug).trim().length > 160) {
         return "slug must be 160 characters or fewer";
     }
-    if (body?.tagline !== undefined && body.tagline !== null && String(body.tagline).trim().length > 160) {
-        return "tagline must be 160 characters or fewer";
+    for (const [key, max] of [["tagline", 160], ["heading", 160], ["meta_title", 160], ["meta_description", 320]]) {
+        if (body?.[key] !== undefined && body[key] !== null && String(body[key]).trim().length > max) {
+            return `${key} must be ${max} characters or fewer`;
+        }
     }
     if (short_description !== undefined && short_description !== null && String(short_description).length > 255) {
         return "short_description must be 255 characters or fewer";
@@ -124,7 +126,9 @@ function validateProductBody(body, { requireName }) {
  */
 function pickStorefrontFields(body = {}) {
     const fields = {};
-    if (body.tagline !== undefined) fields.tagline = body.tagline ? String(body.tagline).trim() : null;
+    for (const key of ["tagline", "heading", "meta_title", "meta_description"]) {
+        if (body[key] !== undefined) fields[key] = body[key] ? String(body[key]).trim() : null;
+    }
     if (body.origin !== undefined) fields.origin = body.origin ? String(body.origin).trim() : null;
     if (body.processing !== undefined) fields.processing = body.processing ? String(body.processing).trim() : null;
     if (body.delivery_min_days !== undefined) fields.delivery_min_days = Number(body.delivery_min_days);
