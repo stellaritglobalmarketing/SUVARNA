@@ -34,23 +34,22 @@ Then sign in at the storefront's `/login` — admins land on the admin panel at 
 
 ## Payment configuration
 
-Online payment goes through **Cashfree**. Keys stay in `.env` only (never in the frontend, never in git):
+Online payment uses Razorpay. Set both keys in `.env` (never in the frontend, never in git):
 
 ```
-CASHFREE_APP_ID=xxx                # Cashfree Dashboard → Developers → API Keys
-CASHFREE_SECRET_KEY=cfsk_xxx
-CASHFREE_ENV=sandbox               # production once KYC is done and live keys are issued
+RAZORPAY_KEY_ID=rzp_test_xxx       # rzp_live_xxx in production
+RAZORPAY_KEY_SECRET=xxx
 ```
 
-Sandbox (test) keys work before KYC. Switch to the live keys **and** `CASHFREE_ENV=production` together, then restart. The checkout page opens Cashfree's SDK in the mode the backend reports, so nothing changes in the frontend. Until the keys are set, "Pay" shows "Couldn't start the payment".
+The key id is sent to the checkout page by `POST /payment/razorpay/order`; the secret never leaves the server. Use **test** keys while developing — live keys charge real money.
 
-**Live checklist** (Cashfree Dashboard):
+**Webhook (recommended in production).** On phones, UPI is often paid in the GPay/PhonePe app and the checkout tab never gets Razorpay's success callback, so the order would stay unpaid although the money was taken. Razorpay's webhook records the payment on the server regardless. In Razorpay Dashboard → Settings → Webhooks add:
 
-- **Whitelist the website domain** (Developers → Whitelisting → Payment Gateway): `https://suvarna7.com` and `https://www.suvarna7.com`. Production checkout is refused on domains that aren't whitelisted.
-- **Webhook**: every order is created with `notify_url = <PUBLIC_URL>/api/v1/webhooks/cashfree`, so set `PUBLIC_URL=https://api.suvarna7.com` on the server (Cashfree only calls https). Optionally also add the same URL under Developers → Webhooks (payment events). Calls are signed with the secret key; no extra secret is needed.
-- `CORS_ORIGIN` must include the storefront domain: after an in-app-browser redirect, Cashfree returns the customer to `<that origin>/checkout/success?order=…`.
+- URL: `https://api.suvarna7.com/api/v1/webhooks/razorpay`
+- Events: `payment.captured` and `order.paid`
+- Secret: any long random string, also set on the server as `RAZORPAY_WEBHOOK_SECRET=...`
 
-On phones, UPI is often paid in the GPay/PhonePe app and the checkout tab never hears back. The webhook records such payments on the server; without it, they are still picked up when the customer reopens the order (checkout and success pages call `POST /payment/sync`), when they press Pay again, or from the admin order page ("Check payment with Cashfree", `POST /admin/order/:orderNumber/payment-sync`).
+Without the webhook, a lost callback is still picked up when the customer reopens the order (checkout and success pages call `POST /payment/razorpay/sync`, which asks Razorpay), when they press Pay again, or from the admin order page ("Check payment with Razorpay", `POST /admin/order/:orderNumber/payment-sync`).
 
 ## Invoice & WhatsApp configuration
 
@@ -752,11 +751,11 @@ Only allowed while `order_status` is still `"pending"`. Once it's moved past tha
 
 ---
 
-# Payment — Cashfree (requires token, customer only)
+# Payment — Razorpay (requires token, customer only)
 
-Checkout flow: `POST /order` → `POST /payment/order` → open the Cashfree popup in the browser → `POST /payment/verify`.
+Checkout flow: `POST /order` → `POST /payment/razorpay/order` → open Razorpay Checkout in the browser → `POST /payment/razorpay/verify`.
 
-## `POST /payment/order`
+## `POST /payment/razorpay/order`
 
 **Request:** `{ "order_number": "ORD-20260924-0005" }` — one of the customer's own `pending` orders.
 
@@ -767,36 +766,43 @@ Checkout flow: `POST /order` → `POST /payment/order` → open the Cashfree pop
     "data": {
         "order_number": "ORD-20260924-0005",
         "already_paid": false,
-        "cashfree_mode": "sandbox",
-        "cashfree_order_id": "ORD-20260924-0005-mh3k2x1a",
-        "payment_session_id": "session_..."
+        "key_id": "rzp_test_xxx",
+        "razorpay_order_id": "order_Tfmqr...",
+        "amount": 32900,
+        "currency": "INR",
+        "name": "Suvarna7",
+        "description": "Order ORD-20260924-0005",
+        "prefill": { "name": "Ritika Sharma", "email": "ritika@example.com", "contact": "9876543210" }
     }
 }
 ```
 
-Open it with Cashfree's JS SDK: `Cashfree({ mode: cashfree_mode }).checkout({ paymentSessionId, redirectTarget: "_modal" })`. The amount always comes from the order in the database.
+Pass these straight into Razorpay Checkout (`key`, `order_id`, `amount` in **paise**, …). The amount always comes from the order in the database.
 
-- Calling it again for the same order reuses the Cashfree order while it is still `ACTIVE`; an expired one is closed (`failed`) and a new one created.
-- Before that, it asks Cashfree whether an earlier attempt was actually paid (e.g. the customer paid, then closed the tab before `verify` ran). If so it records the payment and returns `{ "already_paid": true }` — go to the success screen, don't open the popup.
+- Calling it again for the same order reuses the same Razorpay order instead of creating a new one.
+- Before that, it asks Razorpay whether the earlier attempt was actually paid (e.g. the customer paid, then closed the tab before `verify` ran). If so it records the payment and returns `{ "already_paid": true }` — go to the success screen, don't open Checkout.
 - `code: 0` if the order is not `pending` (e.g. cancelled).
 
-## `POST /payment/verify`
+## `POST /payment/razorpay/verify`
 
-**Request:** `{ "order_number": "ORD-20260924-0005" }`, sent when the Cashfree popup closes. Cashfree's SDK gives no signature, so the server asks Cashfree for the order (`PAID`, matching amount) and only then marks it `payment_status: "paid"`, `order_status: "confirmed"`. Safe to call twice. `data.gateway_status` tells the page what to do:
-
-- `PAID` — order is paid.
-- `PENDING` — the bank hasn't confirmed yet; show the success page, which keeps re-checking.
-- `FAILED` / `USER_DROPPED` / `NOT_ATTEMPTED` — not paid; `data.message` is Cashfree's reason.
+Send Razorpay Checkout's success response, plus the order number:
 
 ```json
-{ "code": 1, "message": "Payment successful", "data": { "order_number": "ORD-20260924-0005", "order_status": "confirmed", "payment_status": "paid", "gateway_status": "PAID", "message": "Payment successful" } }
+{
+    "order_number": "ORD-20260924-0005",
+    "razorpay_order_id": "order_Tfmqr...",
+    "razorpay_payment_id": "pay_...",
+    "razorpay_signature": "..."
+}
 ```
 
-If Cashfree can't be reached, the response asks the customer not to pay again — calling `POST /payment/order` later re-checks and records the payment.
+The server checks the signature (HMAC-SHA256 with the key secret), then fetches the payment from Razorpay to confirm it belongs to this Razorpay order, matches the amount, and is captured (capturing it if it was only authorized). Only then is the order marked `payment_status: "paid"`, `order_status: "confirmed"`.
 
-## `POST /payment/sync`
+```json
+{ "code": 1, "message": "Payment successful", "data": { "order_number": "ORD-20260924-0005", "order_status": "confirmed", "payment_status": "paid" } }
+```
 
-`{ "order_number": "..." }` — re-checks an unpaid order with Cashfree and records a payment whose callback was lost. Returns `{ order_number, order_status, payment_status }`.
+Safe to call twice. `code: 0` `"Payment verification failed"` for a bad signature; `code: 0` with Razorpay's reason if the payment isn't captured or doesn't match. If Razorpay can't be reached, the response asks the customer not to pay again — calling `POST /payment/razorpay/order` later re-checks and records the payment.
 
 ---
 

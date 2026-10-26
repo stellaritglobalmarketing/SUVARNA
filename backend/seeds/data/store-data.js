@@ -112,7 +112,7 @@ export const TESTIMONIALS = [
 export const FAQS = [
     {
         question: "Which payment methods do you accept?",
-        answer: "We accept UPI (Google Pay, PhonePe, Paytm and more), debit and credit cards, net banking and wallets, all processed securely by Cashfree Payments. We don't offer Cash on Delivery.",
+        answer: "We accept UPI (Google Pay, PhonePe, Paytm and more), debit and credit cards, net banking and wallets, all processed securely by Razorpay. We don't offer Cash on Delivery.",
     },
     {
         question: "Can I return or cancel my order?",

@@ -170,7 +170,7 @@ export interface AdminStoreSettings {
 export const getAdminSettings = () => apiGet<AdminStoreSettings>("/admin/settings");
 export const updateAdminSettings = (body: { whatsapp_number: string }) => apiPut<AdminStoreSettings>("/admin/settings", body);
 
-/** Asks Cashfree whether an unpaid order was in fact paid, and marks it paid if so. */
+/** Asks Razorpay whether an unpaid order was in fact paid, and marks it paid if so. */
 export const syncAdminPayment = (orderNumber: string) =>
   apiPost<{ paid: boolean }>(`/admin/order/${encodeURIComponent(orderNumber)}/payment-sync`, {});
 export const downloadAdminInvoice = (orderNumber: string) =>

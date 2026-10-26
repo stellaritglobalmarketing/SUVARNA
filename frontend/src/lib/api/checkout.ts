@@ -3,8 +3,8 @@ import { apiGet, apiPost, downloadFile } from "./http";
 /**
  * Checkout = three calls (see backend/README.md — Order and Payment):
  *   1. placeOrder: turns the server cart into a pending order (holds stock, empties the cart)
- *   2. createPaymentOrder: starts a Cashfree payment and returns the session its popup opens with (amount comes from the server)
- *   3. verifyPayment: after the popup closes, the server asks Cashfree how it went and marks the order paid
+ *   2. createPaymentOrder: gets the Razorpay order to open Checkout with (amount comes from the server)
+ *   3. verifyPayment: hands Razorpay's success response back so the server can confirm and mark it paid
  */
 
 export interface PlacedOrder {
@@ -21,19 +21,21 @@ export type PaymentOrder =
   | {
       order_number: string;
       already_paid: false;
-      cashfree_mode: "sandbox" | "production";
-      cashfree_order_id: string;
-      payment_session_id: string;
+      key_id: string;
+      razorpay_order_id: string;
+      /** In paise. */
+      amount: number;
+      currency: string;
+      name: string;
+      description: string;
+      prefill: { name: string; email: string; contact: string };
     };
 
-export interface PaymentStatus {
-  order_number: string;
-  order_status: string;
-  payment_status: string;
+export interface RazorpaySuccess {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
 }
-
-/** `gateway_status`: PAID, PENDING (bank still confirming), or the latest attempt's — FAILED, USER_DROPPED, … */
-export type VerifyResult = PaymentStatus & { gateway_status: string; message: string };
 
 export interface OrderDetail {
   order_number: string;
@@ -61,20 +63,24 @@ export async function placeOrder(addressId: number, notes?: string): Promise<Pla
 }
 
 export async function createPaymentOrder(orderNumber: string): Promise<PaymentOrder> {
-  return apiPost<PaymentOrder>("/payment/order", { order_number: orderNumber });
+  return apiPost<PaymentOrder>("/payment/razorpay/order", { order_number: orderNumber });
 }
 
 /**
- * Asks the backend to re-check an unpaid order with Cashfree. Catches payments whose success
- * callback never ran (e.g. UPI paid in the GPay app on a phone and the checkout tab reloaded).
+ * Asks the backend to re-check an unpaid order with Razorpay. Catches payments whose success callback
+ * never ran (e.g. UPI paid in the GPay app on a phone and the checkout tab reloaded).
  */
 export async function syncPayment(orderNumber: string) {
-  return apiPost<PaymentStatus>("/payment/sync", { order_number: orderNumber });
+  return apiPost<{ order_number: string; order_status: string; payment_status: string }>("/payment/razorpay/sync", {
+    order_number: orderNumber,
+  });
 }
 
-/** After the Cashfree popup closes: the backend asks Cashfree how the order stands. */
-export async function verifyPayment(orderNumber: string) {
-  return apiPost<VerifyResult>("/payment/verify", { order_number: orderNumber });
+export async function verifyPayment(orderNumber: string, response: RazorpaySuccess) {
+  return apiPost<{ order_number: string; order_status: string; payment_status: string }>("/payment/razorpay/verify", {
+    order_number: orderNumber,
+    ...response,
+  });
 }
 
 export async function fetchOrderDetail(orderNumber: string): Promise<OrderDetail> {

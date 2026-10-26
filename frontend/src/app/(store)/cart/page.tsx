@@ -91,7 +91,7 @@ export default function CartPage() {
             <Button href="/checkout" className="mt-5 w-full" size="lg">
               Proceed to Checkout
             </Button>
-            <p className="mt-2 text-center text-xs text-brand-ink/50">Secure payment by Cashfree Payments · Free delivery</p>
+            <p className="mt-2 text-center text-xs text-brand-ink/50">Secure payment by Razorpay · Free delivery</p>
           </div>
         </div>
       )}

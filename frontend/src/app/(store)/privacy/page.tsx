@@ -27,7 +27,7 @@ export default async function PrivacyPage() {
               <strong>Delivery addresses</strong> you save, including the name and phone number for each.
             </li>
             <li>
-              <strong>Orders:</strong> what you bought, prices, delivery instructions, and payment status and reference from Cashfree Payments.
+              <strong>Orders:</strong> what you bought, prices, delivery instructions, and payment status and reference from Razorpay.
             </li>
             <li>
               <strong>Things you add:</strong> your cart, wishlist and any reviews you write.
@@ -36,7 +36,7 @@ export default async function PrivacyPage() {
               <strong>Messages:</strong> anything you send us on WhatsApp or by phone.
             </li>
           </ul>
-          <p>We don&rsquo;t collect your card number, UPI PIN or bank login. Those go straight to Cashfree Payments.</p>
+          <p>We don&rsquo;t collect your card number, UPI PIN or bank login. Those go straight to Razorpay.</p>
         </>
       ),
     },
@@ -62,7 +62,7 @@ export default async function PrivacyPage() {
         <>
           <ul>
             <li>
-              <strong>Cashfree Payments</strong> — to process your payment. Cashfree follows its own privacy policy and RBI rules.
+              <strong>Razorpay</strong> — to process your payment. Razorpay follows its own privacy policy and RBI rules.
             </li>
             <li>
               <strong>Our courier partners</strong> (such as Ekart) — your name, phone number and delivery address, to deliver your parcel.
@@ -163,8 +163,8 @@ export default async function PrivacyPage() {
       }
       summary={[
         { label: "What we collect", text: "Name, phone, email, delivery addresses and your orders — nothing more." },
-        { label: "Payments", text: "Handled by Cashfree Payments. We never see or store card, UPI or bank details." },
-        { label: "Shared with", text: "Cashfree Payments, our courier partners and WhatsApp, only to complete your order. Never sold." },
+        { label: "Payments", text: "Handled by Razorpay. We never see or store card, UPI or bank details." },
+        { label: "Shared with", text: "Razorpay, our courier partners and WhatsApp, only to complete your order. Never sold." },
         { label: "Your choices", text: "Ask us any time to see, correct or delete your information." },
       ]}
       sections={sections}

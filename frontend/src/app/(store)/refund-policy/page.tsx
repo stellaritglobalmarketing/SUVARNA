@@ -144,16 +144,16 @@ export default async function RefundPolicyPage() {
     {
       id: "payment-issues",
       title: "Money deducted but no order confirmation",
-      inShort: "Don't pay twice — we check with Cashfree and either confirm your order or the bank returns the money.",
+      inShort: "Don't pay twice — we check with Razorpay and either confirm your order or the bank returns the money.",
       body: (
         <>
           <p>
             Sometimes, especially when paying by UPI in another app, money leaves your account but the website doesn&rsquo;t show the order
             as confirmed. Please don&rsquo;t pay again. Open the order from <Link href="/orders">My Orders</Link> — it checks the payment
-            with Cashfree and confirms the order if it went through.
+            with Razorpay and confirms the order if it went through.
           </p>
           <p>
-            If the payment failed, Cashfree and your bank return the money to your account automatically, usually within 5–7 working days.
+            If the payment failed, Razorpay and your bank return the money to your account automatically, usually within 5–7 working days.
             Still stuck? <a href={wa}>Message us on WhatsApp</a> with your order number and the UPI or bank reference.
           </p>
         </>

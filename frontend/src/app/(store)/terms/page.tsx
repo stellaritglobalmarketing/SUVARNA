@@ -62,11 +62,11 @@ export default async function TermsPage() {
     {
       id: "orders",
       title: "Orders and payment",
-      inShort: "Pay online through Cashfree Payments; your order is confirmed once the payment succeeds. We don't offer Cash on Delivery.",
+      inShort: "Pay online through Razorpay; your order is confirmed once the payment succeeds. We don't offer Cash on Delivery.",
       body: (
         <>
           <ul>
-            <li>Payments are handled securely by Cashfree Payments — UPI, debit and credit cards, net banking and wallets.</li>
+            <li>Payments are handled securely by Razorpay — UPI, debit and credit cards, net banking and wallets.</li>
             <li>We don&rsquo;t offer Cash on Delivery.</li>
             <li>
               Your items are reserved when you place the order, and the order is confirmed once payment succeeds. You&rsquo;ll see it under{" "}
@@ -185,7 +185,7 @@ export default async function TermsPage() {
         </p>
       }
       summary={[
-        { label: "Payment", text: "Online through Cashfree Payments — UPI, cards, net banking or wallets. No Cash on Delivery." },
+        { label: "Payment", text: "Online through Razorpay — UPI, cards, net banking or wallets. No Cash on Delivery." },
         { label: "Prices", text: "In rupees, GST included. Natural products vary a little from batch to batch." },
         { label: "Delivery", text: "Across India, usually in 2–4 days." },
         { label: "Returns", text: "No refunds. Sealed products can be returned within 36 hours for a replacement." },

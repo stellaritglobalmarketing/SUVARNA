@@ -56,7 +56,7 @@ export default function AdminOrderDetailPage() {
   const syncMutation = useAdminMutation(() => syncAdminPayment(orderNumber), {
     ...refresh,
     onSuccess: (result) =>
-      setSyncMessage(result.paid ? "Payment found on Cashfree — the order is now marked paid." : "Cashfree has no completed payment for this order."),
+      setSyncMessage(result.paid ? "Payment found on Razorpay — the order is now marked paid." : "Razorpay has no completed payment for this order."),
   });
   const [shipment, setShipment] = useState<ShipmentInput>(EMPTY_SHIPMENT);
   const [shipmentForm, setShipmentForm] = useState<"ekart" | "manual" | null>(null);
@@ -104,7 +104,7 @@ export default function AdminOrderDetailPage() {
           <>
             {order.payment_status !== "paid" && (
               <AdminButton variant="outline" onClick={() => syncMutation.mutate(undefined)} loading={syncMutation.isPending}>
-                {!syncMutation.isPending && <RefreshCw size={15} />} Check payment with Cashfree
+                {!syncMutation.isPending && <RefreshCw size={15} />} Check payment with Razorpay
               </AdminButton>
             )}
             <AdminButton variant="outline" onClick={() => invoiceMutation.mutate(undefined)} loading={invoiceMutation.isPending}>
@@ -120,7 +120,7 @@ export default function AdminOrderDetailPage() {
 
       {order.order_status === "cancelled" && order.payment_status === "paid" && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          This order was cancelled after it was paid. Refund the payment from the Cashfree dashboard, then set payment to &ldquo;Refunded&rdquo;.
+          This order was cancelled after it was paid. Refund the payment from the Razorpay dashboard, then set payment to &ldquo;Refunded&rdquo;.
         </p>
       )}
 
@@ -301,7 +301,7 @@ export default function AdminOrderDetailPage() {
                     onClick={() => {
                       const warning =
                         status === "cancelled"
-                          ? `Cancel ${order.order_number}? Its reserved stock is released.${order.payment_status === "paid" ? " It is PAID — you'll need to refund it in Cashfree." : ""}`
+                          ? `Cancel ${order.order_number}? Its reserved stock is released.${order.payment_status === "paid" ? " It is PAID — you'll need to refund it in Razorpay." : ""}`
                           : `Mark ${order.order_number} as ${humanize(status)}?`;
                       if (confirmAction(warning)) statusMutation.mutate({ order_status: status });
                     }}
