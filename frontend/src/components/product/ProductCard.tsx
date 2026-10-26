@@ -11,7 +11,6 @@ import { pushToast } from "@/lib/redux/slices/uiSlice";
 import { selectWishlistIds, toggleWishlist } from "@/lib/redux/slices/wishlistSlice";
 import { ProductImagePlaceholder } from "@/components/ui/ProductImagePlaceholder";
 import { WeightVariantSelector } from "@/components/ui/WeightVariantSelector";
-import { RatingStars } from "@/components/ui/RatingStars";
 import { PriceTag } from "@/components/ui/PriceTag";
 import { Badge } from "@/components/ui/Badge";
 import { formatInr } from "@/lib/utils/format";
@@ -168,7 +167,6 @@ export function ProductCard({ product }: { product: Product }) {
           <Link href={`/products/${product.slug}`}>
             <h3 className="text-base font-medium text-brand-forest leading-snug">{product.name}</h3>
           </Link>
-          <RatingStars rating={product.rating} reviewCount={product.reviewCount} />
 
           {purityLabel && (
             <p className="flex items-center gap-1 text-xs font-medium text-brand-forest">

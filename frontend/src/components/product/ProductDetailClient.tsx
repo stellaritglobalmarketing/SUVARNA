@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 import { useProduct } from "@/hooks/useProduct";
-import { useReviews } from "@/hooks/useReviews";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { addToCart } from "@/lib/redux/slices/cartSlice";
 import { pushToast } from "@/lib/redux/slices/uiSlice";
@@ -12,7 +11,6 @@ import { formatDiscount, formatInr } from "@/lib/utils/format";
 
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
-import { RatingStars } from "@/components/ui/RatingStars";
 import { PriceTag } from "@/components/ui/PriceTag";
 import { WeightVariantSelector } from "@/components/ui/WeightVariantSelector";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
@@ -26,13 +24,9 @@ import { FrequentlyBoughtTogether } from "./FrequentlyBoughtTogether";
 import { ProductDetailsTabs } from "./ProductDetailsTabs";
 import { ProductDescription, ProductTagline } from "./ProductDescription";
 import { SimilarProducts } from "./SimilarProducts";
-import { ReviewSummary } from "./ReviewSummary";
-import { ReviewList } from "./ReviewList";
-import { WriteReview } from "./WriteReview";
 
 export function ProductDetailClient({ slug }: { slug: string }) {
   const { data: product, isLoading, isError } = useProduct(slug);
-  const { data: reviewsData } = useReviews(slug);
   const dispatch = useAppDispatch();
 
   const [selectedVariantLabel, setSelectedVariantLabel] = useState<string | null>(null);
@@ -106,7 +100,6 @@ export function ProductDetailClient({ slug }: { slug: string }) {
 
             <h1 className="font-serif text-3xl font-bold text-brand-forest sm:text-4xl">{product.name}</h1>
             <ProductTagline text={product.tagline} />
-            <RatingStars rating={product.rating} reviewCount={product.reviewCount} />
             <ProductDescription text={product.description} />
 
             <CertificationBadges certifications={product.certifications} />
@@ -148,23 +141,6 @@ export function ProductDetailClient({ slug }: { slug: string }) {
 
       <Container className="pt-10">
         <ProductDetailsTabs sections={product.infoSections} name={product.name} origin={product.origin} processing={product.processing} />
-      </Container>
-
-      <Container className="py-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-serif text-xl font-semibold text-brand-forest">Verified Buyer Reviews</h2>
-          <WriteReview slug={product.slug} productName={product.name} />
-        </div>
-        <div className="mt-4 space-y-6">
-          {reviewsData && (
-            <>
-              {product.reviewCount > 0 && (
-                <ReviewSummary rating={product.rating} reviewCount={product.reviewCount} breakdown={reviewsData.breakdown} />
-              )}
-              <ReviewList reviews={reviewsData.reviews} />
-            </>
-          )}
-        </div>
       </Container>
 
       <Container className="py-10">
