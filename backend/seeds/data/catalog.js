@@ -6,6 +6,7 @@
 // - `heading` is the product page's H1; `name` stays short for cards, cart and invoices.
 // - `tagline` is the hook line under the price; `meta_title` / `meta_description` are for Google.
 // - `description` is "The Story".
+// - `image` is the main photo; `more_images` ([{ url, alt }]) follow it in the product page gallery.
 // - `certifications` are the trust points under Add to Cart (a label starting with "100%" also shows on cards).
 // - `info_sections` follow the story in order. A section titled "FAQs" is shown as questions and answers
 //   (items' `label` is the question) and also feeds the page's FAQ schema for Google.
@@ -270,8 +271,9 @@ export const PRODUCTS = [
         origin: "Kashmir",
         processing: "Raw",
         health_benefits: [],
-        image: "/images/products/kashmir-mamra-almonds.webp",
+        image: "/images/products/kashmiri-almonds.webp",
         image_alt: "Fresh Kashmiri almonds badam from Kashmir orchards",
+        more_images: [{ url: "/images/products/kashmiri-mamra-badam-pack.webp", alt: "Suvarna7 Kashmiri Mamra Badam 1kg pack" }],
         is_bestseller: true,
         certifications: trustPoints("Direct from Kashmir farmers", "Fresh this-season stock"),
         info_sections: [

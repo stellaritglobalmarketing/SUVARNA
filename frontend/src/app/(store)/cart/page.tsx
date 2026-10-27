@@ -21,7 +21,6 @@ export default function CartPage() {
   const items = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartSubtotal);
   const mrpTotal = useAppSelector(selectCartMrpTotal);
-  const savings = mrpTotal - subtotal;
 
   return (
     <Container className="py-10">
@@ -78,10 +77,6 @@ export default function CartPage() {
               <div className="flex justify-between text-brand-ink/70">
                 <span>MRP Total</span>
                 <span>{formatInr(mrpTotal)}</span>
-              </div>
-              <div className="flex justify-between text-brand-ink/70">
-                <span>You Save</span>
-                <span className="text-green-700">-{formatInr(savings)}</span>
               </div>
               <div className="flex justify-between border-t border-brand-sand-dark pt-2 text-base font-semibold text-brand-ink">
                 <span>Subtotal</span>

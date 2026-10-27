@@ -232,3 +232,47 @@ INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.i
 UPDATE hampers SET is_active = 0 WHERE is_active = 1 AND is_delete = 0 AND slug NOT IN ('heritage-box');
 
 COMMIT;
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-26 · Home page "What Our Customers Say": hide the sample testimonials.
+-- The section stays and shows "No reviews yet". Hidden (is_delete = 1), not removed.
+-- --------------------------------------------------------------------------------------------
+
+UPDATE `testimonials` SET `is_active` = 0, `is_delete` = 1 WHERE `is_delete` = 0;
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('014_hide_sample_testimonials.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-27 · Kashmiri Almonds: two new product photos — loose almonds (main), then the
+-- Kashmiri Mamra Badam 1kg pack. Needs the site deployed first, so both photos exist.
+-- Old photos are hidden (is_delete = 1), not removed. Videos stay.
+-- --------------------------------------------------------------------------------------------
+
+UPDATE `product_images` pi
+JOIN `products` p ON p.`id` = pi.`product_id`
+SET pi.`is_delete` = 1, pi.`is_primary` = 0
+WHERE p.`slug` IN ('kashmiri-almonds-badam', 'kashmiri-almonds', 'kashmir-mamra-almonds')
+  AND pi.`media_type` = 'image'
+  AND pi.`image_url` NOT IN ('/images/products/kashmiri-almonds.webp', '/images/products/kashmiri-mamra-badam-pack.webp');
+
+INSERT INTO `product_images` (`product_id`, `cloudinary_public_id`, `image_url`, `alt_text`, `sort_order`, `is_primary`)
+SELECT p.`id`, '', '/images/products/kashmiri-almonds.webp', 'Fresh Kashmiri almonds badam from Kashmir orchards', 0, 1
+FROM `products` p
+WHERE p.`slug` IN ('kashmiri-almonds-badam', 'kashmiri-almonds', 'kashmir-mamra-almonds')
+  AND NOT EXISTS (
+    SELECT 1 FROM `product_images` pi
+    WHERE pi.`product_id` = p.`id` AND pi.`image_url` = '/images/products/kashmiri-almonds.webp' AND pi.`is_delete` = 0
+  );
+
+INSERT INTO `product_images` (`product_id`, `cloudinary_public_id`, `image_url`, `alt_text`, `sort_order`, `is_primary`)
+SELECT p.`id`, '', '/images/products/kashmiri-mamra-badam-pack.webp', 'Suvarna7 Kashmiri Mamra Badam 1kg pack', 1, 0
+FROM `products` p
+WHERE p.`slug` IN ('kashmiri-almonds-badam', 'kashmiri-almonds', 'kashmir-mamra-almonds')
+  AND NOT EXISTS (
+    SELECT 1 FROM `product_images` pi
+    WHERE pi.`product_id` = p.`id` AND pi.`image_url` = '/images/products/kashmiri-mamra-badam-pack.webp' AND pi.`is_delete` = 0
+  );
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('015_kashmiri_almonds_photos.sql');

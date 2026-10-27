@@ -91,21 +91,21 @@ export async function upsertProducts(conn, products) {
             [productId, ...skus]
         );
 
-        if (p.image) {
+        const photos = p.image ? [{ url: p.image, alt: p.image_alt ?? p.name }, ...(p.more_images ?? [])] : [];
+        for (const [index, photo] of photos.entries()) {
             const [existingImage] = await conn.query(
                 "SELECT id FROM product_images WHERE product_id = ? AND image_url = ? AND is_delete = 0 LIMIT 1",
-                [productId, p.image]
+                [productId, photo.url]
             );
-            const altText = p.image_alt ?? p.name;
             if (existingImage.length === 0) {
                 // Bundled static asset served by the frontend, not a Cloudinary upload — hence no public id.
                 await conn.query(
                     `INSERT INTO product_images (product_id, cloudinary_public_id, image_url, alt_text, sort_order, is_primary)
-                     VALUES (?, '', ?, ?, 0, 1)`,
-                    [productId, p.image, altText]
+                     VALUES (?, '', ?, ?, ?, ?)`,
+                    [productId, photo.url, photo.alt, index, index === 0 ? 1 : 0]
                 );
             } else {
-                await conn.query("UPDATE product_images SET alt_text = ? WHERE id = ?", [altText, existingImage[0].id]);
+                await conn.query("UPDATE product_images SET alt_text = ? WHERE id = ?", [photo.alt, existingImage[0].id]);
             }
         }
 

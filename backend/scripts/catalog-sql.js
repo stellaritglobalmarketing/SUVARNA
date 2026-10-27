@@ -87,18 +87,18 @@ for (const [index, p] of PRODUCTS.entries()) {
         )
     );
 
-    if (p.image) {
-        const altText = p.image_alt ?? p.name;
+    const photos = p.image ? [{ url: p.image, alt: p.image_alt ?? p.name }, ...(p.more_images ?? [])] : [];
+    for (const [index, photo] of photos.entries()) {
         out.push(
             sql(
                 `INSERT INTO product_images (product_id, cloudinary_public_id, image_url, alt_text, sort_order, is_primary)
-                 SELECT @pid, '', ?, ?, 0, 1 FROM DUAL
+                 SELECT @pid, '', ?, ?, ?, ? FROM DUAL
                  WHERE NOT EXISTS (SELECT 1 FROM product_images WHERE product_id = @pid AND image_url = ? AND is_delete = 0)`,
-                [p.image, altText, p.image]
+                [photo.url, photo.alt, index, index === 0 ? 1 : 0, photo.url]
             )
         );
         out.push(
-            sql("UPDATE product_images SET alt_text = ? WHERE product_id = @pid AND image_url = ? AND is_delete = 0", [altText, p.image])
+            sql("UPDATE product_images SET alt_text = ? WHERE product_id = @pid AND image_url = ? AND is_delete = 0", [photo.alt, photo.url])
         );
     }
 
