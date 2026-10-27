@@ -271,7 +271,7 @@ export const PRODUCTS = [
         origin: "Kashmir",
         processing: "Raw",
         health_benefits: [],
-        image: "/images/products/kashmiri-mamra-badam-pack.webp",
+        image: "/images/products/kashmiri-mamra-badam.webp",
         image_alt: "Suvarna7 Kashmiri Mamra Badam 1kg pack",
         more_images: [{ url: "/images/products/kashmiri-almonds.webp", alt: "Fresh Kashmiri almonds badam from Kashmir orchards" }],
         is_bestseller: true,

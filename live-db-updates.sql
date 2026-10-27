@@ -292,3 +292,26 @@ WHERE p.`slug` IN ('kashmiri-almonds-badam', 'kashmiri-almonds', 'kashmir-mamra-
   AND pi.`is_delete` = 0;
 
 INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('016_kashmiri_almonds_pack_photo_first.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-27 · Kashmiri Almonds: square pack photo with space around it, under a new file name
+-- (kashmiri-mamra-badam.webp) so the whole pack shows on cards. Needs the site deployed first.
+-- Run AFTER the "pack photo goes first" block above.
+-- --------------------------------------------------------------------------------------------
+
+UPDATE `product_images` pi
+JOIN `products` p ON p.`id` = pi.`product_id`
+SET pi.`image_url` = '/images/products/kashmiri-mamra-badam.webp'
+WHERE p.`slug` IN ('kashmiri-almonds-badam', 'kashmiri-almonds', 'kashmir-mamra-almonds')
+  AND pi.`image_url` = '/images/products/kashmiri-mamra-badam-pack.webp';
+
+UPDATE `product_images` pi
+JOIN `products` p ON p.`id` = pi.`product_id`
+SET pi.`is_primary` = IF(pi.`image_url` = '/images/products/kashmiri-mamra-badam.webp', 1, 0),
+    pi.`sort_order` = IF(pi.`image_url` = '/images/products/kashmiri-mamra-badam.webp', 0, 1)
+WHERE p.`slug` IN ('kashmiri-almonds-badam', 'kashmiri-almonds', 'kashmir-mamra-almonds')
+  AND pi.`image_url` IN ('/images/products/kashmiri-mamra-badam.webp', '/images/products/kashmiri-almonds.webp')
+  AND pi.`is_delete` = 0;
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('017_kashmiri_almonds_square_pack_photo.sql');
