@@ -276,3 +276,19 @@ WHERE p.`slug` IN ('kashmiri-almonds-badam', 'kashmiri-almonds', 'kashmir-mamra-
   );
 
 INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('015_kashmiri_almonds_photos.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-27 · Kashmiri Almonds: the Mamra Badam pack photo goes first (main photo),
+-- the loose almonds photo second. Run AFTER the "two new product photos" block above.
+-- --------------------------------------------------------------------------------------------
+
+UPDATE `product_images` pi
+JOIN `products` p ON p.`id` = pi.`product_id`
+SET pi.`is_primary` = IF(pi.`image_url` = '/images/products/kashmiri-mamra-badam-pack.webp', 1, 0),
+    pi.`sort_order` = IF(pi.`image_url` = '/images/products/kashmiri-mamra-badam-pack.webp', 0, 1)
+WHERE p.`slug` IN ('kashmiri-almonds-badam', 'kashmiri-almonds', 'kashmir-mamra-almonds')
+  AND pi.`image_url` IN ('/images/products/kashmiri-mamra-badam-pack.webp', '/images/products/kashmiri-almonds.webp')
+  AND pi.`is_delete` = 0;
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('016_kashmiri_almonds_pack_photo_first.sql');

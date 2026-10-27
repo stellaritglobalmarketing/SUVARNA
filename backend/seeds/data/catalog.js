@@ -271,9 +271,9 @@ export const PRODUCTS = [
         origin: "Kashmir",
         processing: "Raw",
         health_benefits: [],
-        image: "/images/products/kashmiri-almonds.webp",
-        image_alt: "Fresh Kashmiri almonds badam from Kashmir orchards",
-        more_images: [{ url: "/images/products/kashmiri-mamra-badam-pack.webp", alt: "Suvarna7 Kashmiri Mamra Badam 1kg pack" }],
+        image: "/images/products/kashmiri-mamra-badam-pack.webp",
+        image_alt: "Suvarna7 Kashmiri Mamra Badam 1kg pack",
+        more_images: [{ url: "/images/products/kashmiri-almonds.webp", alt: "Fresh Kashmiri almonds badam from Kashmir orchards" }],
         is_bestseller: true,
         certifications: trustPoints("Direct from Kashmir farmers", "Fresh this-season stock"),
         info_sections: [
