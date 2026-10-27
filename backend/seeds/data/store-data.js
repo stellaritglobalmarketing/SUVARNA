@@ -79,35 +79,9 @@ export const HAMPERS = [
     },
 ];
 
-export const TESTIMONIALS = [
-    {
-        customer_name: "Ritika Sharma",
-        location: "Pune, Maharashtra",
-        rating: 5,
-        quote:
-            "The Mamra almonds taste nothing like what I used to buy from the supermarket — soft, sweet, and clearly fresh. Suvarna7 is now my only source for dry fruits.",
-    },
-    {
-        customer_name: "Arjun Mehta",
-        location: "Bengaluru, Karnataka",
-        rating: 5,
-        quote:
-            "Ordered the festive gift box for Diwali and everyone asked where it was from. Packaging felt premium and the cashews were genuinely the best I've had.",
-    },
-    {
-        customer_name: "Fatima Khan",
-        location: "Ghaziabad, Uttar Pradesh",
-        rating: 4,
-        quote: "Love that I can see the origin and processing details before buying. The pincode delivery estimate was spot on too.",
-    },
-    {
-        customer_name: "Suresh Nair",
-        location: "Kochi, Kerala",
-        rating: 5,
-        quote:
-            "Been buying dates and walnuts monthly for my parents. Consistent quality every single time, and the nitrogen-sealed pouches actually keep things fresh.",
-    },
-];
+// No testimonials until real customer reviews come in: the home page shows "No reviews yet".
+// (The earlier sample ones are hidden by migration 014_hide_sample_testimonials.sql.)
+export const TESTIMONIALS = [];
 
 export const FAQS = [
     {

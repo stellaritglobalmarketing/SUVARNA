@@ -11,7 +11,6 @@ import { AllProducts } from "./AllProducts";
 import { CraftStory } from "./CraftStory";
 import { CustomHampers } from "./CustomHampers";
 import { TrustSection } from "./TrustSection";
-import { Testimonials } from "./Testimonials";
 import { FAQSection } from "./FAQSection";
 
 /** Loads GET /product/home once and hands each section its slice; sections with no data render nothing. */
@@ -40,7 +39,6 @@ export function HomeContent() {
       {data.promo && <PromoBanner banner={data.promo} />}
       <CustomHampers hampers={data.hampers} products={data.products} />
       <TrustSection points={data.trustPoints} />
-      <Testimonials testimonials={data.testimonials} />
       <FAQSection faqs={data.faqs} />
     </>
   );
