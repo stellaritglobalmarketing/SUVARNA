@@ -9,19 +9,24 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
 import { ProductImagePlaceholder } from "@/components/ui/ProductImagePlaceholder";
 import { formatInr } from "@/lib/utils/format";
+import { BULK_GIFTING_WHATSAPP_DISPLAY, BULK_GIFTING_WHATSAPP_HREF } from "@/lib/contact";
+import { isDiwaliSeason } from "@/lib/diwali";
+import { useNow } from "@/hooks/useNow";
 import type { HomeHamper } from "@/types/home";
 import type { Product } from "@/types/product";
 import { HamperBuilderModal } from "./HamperBuilderModal";
+import { DiwaliHampers } from "./DiwaliHampers";
 
 const NO_PRESET: string[] = [];
 
 /**
- * Ready-made gift boxes (a hamper whose slug is a product, e.g. the Heritage Box) link to that product;
+ * Ready-made gift boxes (a hamper whose slug is a product: the Diwali Deepam, Utsav and Heritage boxes) link to that product;
  * themed hamper tiles and "build your own" open the same quantity-picker modal.
  */
 export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; products: Product[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [presetSlugs, setPresetSlugs] = useState<string[]>(NO_PRESET);
+  const isDiwali = isDiwaliSeason(useNow());
 
   const openWithPreset = (slugs: string[]) => {
     setPresetSlugs(slugs);
@@ -40,15 +45,38 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
   // Nothing to put in a hamper yet.
   if (products.length === 0) return null;
 
+  const builder = isOpen && (
+    <HamperBuilderModal
+      key={presetSlugs.join("|")}
+      onClose={() => setIsOpen(false)}
+      products={builderProducts}
+      presetSlugs={presetSlugs}
+    />
+  );
+
+  // During Diwali the gift boxes get the festive section.
+  if (isDiwali && gifts.length > 0) {
+    return (
+      <section id="hampers" tabIndex={-1} className="diwali-hampers relative scroll-mt-52 overflow-hidden border-y border-[#ecd3a6] py-14 sm:py-20">
+        <DiwaliHampers
+          gifts={gifts}
+          productNames={new Map(products.map((product) => [product.slug, product.name]))}
+          onCustomize={builderProducts.length > 0 ? () => openWithPreset(NO_PRESET) : undefined}
+        />
+        {builder}
+      </section>
+    );
+  }
+
   return (
     <section id="hampers" tabIndex={-1} className="scroll-mt-52 border-y border-brand-sand-dark bg-[#f7f4ed] py-12 sm:py-16">
       <Container>
         <SectionHeading
           eyebrow="Thoughtfully Given"
-          title="A little goodness, beautifully gifted."
+          title={gifts.length > 0 ? "Diwali Gift Hampers from Kashmir" : "A little goodness, beautifully gifted."}
           subtitle={
             gifts.length > 0
-              ? "Choose our ready-to-gift box, or build a hamper of your own."
+              ? "Kesar from our own farm, with the finest dry fruits, honey and ghee. Ready to gift."
               : themes.length > 0
                 ? "Pick a starting theme, or build your own from scratch."
                 : "Pick your favourites and build a hamper of your own."
@@ -56,7 +84,7 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
         />
 
         {gifts.length > 0 && (
-          <div className="mx-auto mt-6 grid max-w-4xl gap-5 sm:mt-8">
+          <div className="mx-auto mt-6 grid max-w-md gap-5 sm:mt-8 md:max-w-none md:grid-cols-3">
             {gifts.map(({ hamper, product }) => {
               const variant = product.variants.find((v) => v.stock > 0) ?? product.variants[0];
               const contents = hamper.productSlugs.map((slug) => productBySlug.get(slug)?.name).filter(Boolean);
@@ -64,25 +92,28 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
                 <Link
                   key={hamper.slug}
                   href={`/products/${product.slug}`}
-                  className="group grid overflow-hidden rounded-2xl border border-brand-sand-dark bg-white sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-brand-sand-dark bg-white"
                 >
-                  <ProductImagePlaceholder
-                    src={hamper.imageUrl ?? product.images[0]}
-                    alt={hamper.name}
-                    gradient={product.gradient}
-                    iconSize={40}
-                    sizes="(min-width: 640px) 40vw, 100vw"
-                    className="aspect-[4/3] w-full sm:aspect-auto sm:h-full sm:min-h-64"
-                  />
-                  <div className="flex flex-col gap-3 p-5 sm:p-7">
-                    <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-brand-walnut-dark">
-                      <Gift size={14} aria-hidden="true" /> Gift Hamper
-                    </p>
+                  <div className="relative">
+                    <ProductImagePlaceholder
+                      src={hamper.imageUrl ?? product.images[0]}
+                      alt={hamper.name}
+                      gradient={product.gradient}
+                      iconSize={40}
+                      sizes="(min-width: 768px) 33vw, 100vw"
+                      className="aspect-[3/2] w-full"
+                    />
+                    <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-brand-forest px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-sand">
+                      <Gift size={12} aria-hidden="true" /> Diwali Special
+                    </span>
+                  </div>
+                  <div className="flex flex-1 flex-col gap-3 p-5">
                     <div>
                       <h3 className="font-serif text-2xl font-semibold text-brand-forest">{hamper.name}</h3>
-                      {product.tagline && <p className="mt-1 text-sm text-brand-ink/60">{product.tagline}</p>}
+                      {hamper.subtitle && <p className="mt-0.5 text-sm font-medium text-brand-walnut-dark">{hamper.subtitle}</p>}
+                      {product.tagline && <p className="mt-1.5 text-sm text-brand-ink/60">{product.tagline}</p>}
                     </div>
-                    {contents.length > 0 ? (
+                    {contents.length > 0 && (
                       <ul className="flex flex-wrap gap-1.5">
                         {contents.map((name) => (
                           <li key={name} className="rounded-full bg-brand-sand px-2.5 py-1 text-xs text-brand-ink/75">
@@ -90,11 +121,14 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
                           </li>
                         ))}
                       </ul>
-                    ) : (
-                      hamper.subtitle && <p className="text-sm text-brand-ink/70">{hamper.subtitle}</p>
                     )}
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
-                      {variant && <span className="text-xl font-bold text-brand-forest tabular-nums">{formatInr(variant.price)}</span>}
+                      {variant && (
+                        <span>
+                          <span className="block text-xl font-bold text-brand-forest tabular-nums">{formatInr(variant.price)}</span>
+                          <span className="text-xs text-brand-ink/60">Free delivery</span>
+                        </span>
+                      )}
                       <span className="rounded-lg bg-brand-forest px-4 py-2 text-sm font-semibold text-brand-sand transition-colors group-hover:bg-brand-forest-light">
                         View Gift Box
                       </span>
@@ -104,6 +138,20 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
               );
             })}
           </div>
+        )}
+
+        {gifts.length > 0 && (
+          <p className="mx-auto mt-6 max-w-2xl rounded-xl border border-brand-sand-dark bg-white px-5 py-4 text-center text-sm text-brand-ink/75">
+            Gifting for your team or clients? Bulk orders from 10 boxes with a free name card. WhatsApp:{" "}
+            <a
+              href={BULK_GIFTING_WHATSAPP_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold whitespace-nowrap text-brand-forest underline underline-offset-2"
+            >
+              {BULK_GIFTING_WHATSAPP_DISPLAY}
+            </a>
+          </p>
         )}
 
         {themes.length > 0 && (
@@ -138,14 +186,7 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
         )}
       </Container>
 
-      {isOpen && (
-        <HamperBuilderModal
-          key={presetSlugs.join("|")}
-          onClose={() => setIsOpen(false)}
-          products={builderProducts}
-          presetSlugs={presetSlugs}
-        />
-      )}
+      {builder}
     </section>
   );
 }

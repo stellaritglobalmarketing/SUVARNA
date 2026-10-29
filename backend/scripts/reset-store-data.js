@@ -10,7 +10,7 @@
 //   - every admin except those listed with --keep-admin (default: admin@suvarna.com)
 //   - products and pack sizes that aren't in the catalogue, and soft-deleted product photos
 //   - the retired nutrient / lipid profile / storage tip tables' rows (no longer shown on the site)
-//   - every gift hamper except the catalogue's (heritage-box)
+//   - every gift hamper except the catalogue's (the Deepam, Utsav and Heritage boxes)
 // Banners, highlights, FAQs and testimonials are left alone. Take a database backup first.
 import db from "../config/db.js";
 import { PRODUCTS } from "../seeds/data/catalog.js";

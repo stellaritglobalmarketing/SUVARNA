@@ -373,3 +373,182 @@ WHERE p.`slug` IN ('kashmir-saffron', 'kashmiri-mongra-saffron', 'kashmiri-kesar
   );
 
 INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('019_kashmir_saffron_photos.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-29 · Delete the demo / test orders ORD-20261008-0001 … ORD-20261026-0013 (ids 1-13).
+-- Keeps ORD-20261028-0014 (Trilok, paid ₹949, processing) - a real order.
+-- Also gives back the stock those orders were holding (inventory.reserved_quantity).
+-- Removes only orders and their own rows: order items and payments. Run once.
+-- --------------------------------------------------------------------------------------------
+
+START TRANSACTION;
+
+UPDATE `inventory` inv
+JOIN (
+    SELECT `product_variant_id`, SUM(`quantity`) AS `qty`
+    FROM `order_items`
+    WHERE `order_id` IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+    GROUP BY `product_variant_id`
+) held ON held.`product_variant_id` = inv.`variant_id`
+SET inv.`reserved_quantity` = GREATEST(inv.`reserved_quantity` - held.`qty`, 0);
+
+DELETE FROM `payments`    WHERE `order_id` IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+DELETE FROM `order_items` WHERE `order_id` IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+DELETE FROM `orders`      WHERE `id`       IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+
+COMMIT;
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-29 · Delete the demo customers: Mansuri SAHIL (1), Priya (2), habil maa ahmed (3), aem (4).
+-- Run AFTER the "delete the demo orders" block above - a customer who still has orders can't be
+-- deleted, so MySQL stops with a foreign key error instead of removing anything. Run once.
+-- Also removes their addresses, cart, wishlist and login sessions.
+-- --------------------------------------------------------------------------------------------
+
+START TRANSACTION;
+
+DELETE FROM `addresses`    WHERE `user_id` IN (1, 2, 3, 4);
+DELETE FROM `cart`         WHERE `user_id` IN (1, 2, 3, 4);
+DELETE FROM `wishlist`     WHERE `user_id` IN (1, 2, 3, 4);
+DELETE FROM `user_devices` WHERE `user_id` IN (1, 2, 3, 4) AND `role` = 'user';
+DELETE FROM `users`        WHERE `id`      IN (1, 2, 3, 4);
+
+COMMIT;
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-29 · Diwali Gift Hampers PDF: Deepam Box (₹999) and Utsav Box (₹1,499) added; the Heritage
+-- Box becomes the new ₹1,799 box (kesar 1 g, Gir cow ghee 100 g, wild honey 100 g, walnuts 200 g,
+-- almonds 200 g) at /products/heritage-diwali-gift-hamper (same product, so its orders and reviews stay).
+-- Home gift section shows the three in order Deepam · Utsav · Heritage; the old "heritage-box" tile is hidden.
+-- Top banner: "FREE Delivery Across India · Diwali Hampers from ₹999 · Order by 1 Nov for Diwali delivery".
+-- Gift banner button on the home page: "Shop Diwali Hampers" → the hamper section.
+-- Run after the site is deployed (the old Heritage URL redirects). New boxes start with 45 in stock;
+-- the Heritage Box keeps its stock. Paste parts 1 and 2 together. Safe to run twice.
+-- --------------------------------------------------------------------------------------------
+
+-- Part 1 of 2 — migration 020_diwali_hampers_banner.sql
+INSERT INTO `store_settings` (`setting_key`, `setting_value`)
+VALUES ('announcement_text', 'FREE Delivery Across India · Diwali Hampers from ₹999 · Order by 1 Nov for Diwali delivery')
+ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
+
+UPDATE `home_banners`
+SET `cta_label` = 'Shop Diwali Hampers', `cta_href` = '/#hampers'
+WHERE `placement` = 'promo' AND `is_delete` = 0;
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('020_diwali_hampers_banner.sql');
+
+-- Part 2 of 2 — the three gift boxes (the gift-box part of `npm run catalog:sql`)
+START TRANSACTION;
+UPDATE products SET slug = 'heritage-diwali-gift-hamper' WHERE slug IN ('diwali-dry-fruit-gift-box-kashmir', 'heritage-box') AND NOT EXISTS (SELECT 1 FROM (SELECT slug FROM products) AS existing WHERE existing.slug = 'heritage-diwali-gift-hamper') ORDER BY FIELD(slug, 'diwali-dry-fruit-gift-box-kashmir', 'heritage-box') LIMIT 1;
+
+-- Deepam Box (/products/deepam-diwali-gift-box)
+INSERT INTO products (name, tagline, heading, meta_title, meta_description, slug, short_description, description, brand_name, origin, processing, delivery_min_days, delivery_max_days, is_featured, is_bestseller, sort_order, is_active, is_delete) VALUES ('Deepam Box', 'A little light of Kashmir, for everyone on your Diwali list.', 'Deepam Diwali Gift Box - Kashmiri Kesar, Walnuts, Almonds & Honey', 'Deepam Diwali Gift Box - Kashmiri Kesar, Walnuts, Almonds & Honey | Suvarna7', 'Diwali gift box with Kashmiri kesar 0.5g, walnuts, almonds and acacia honey in a ready-to-gift box. Free delivery across India. Order by 1 Nov.', 'deepam-diwali-gift-box', 'Diwali gift box with Kashmiri kesar 0.5g, walnuts, almonds and acacia honey in a ready-to-gift box. Free delivery across India. Order by 1 Nov.', 'Deepam means a lamp - the light at the heart of Diwali. This box brings four simple treasures of Kashmir together: kesar from our own fields in Pampore, fresh walnuts and almonds from the valley\'s orchards, and light acacia honey from the Kashmir hills. A thoughtful gift for friends, neighbours and colleagues.', 'Suvarna7', 'Kashmir', 'Traditional', 3, 5, 1, 0, 8, 1, 0) ON DUPLICATE KEY UPDATE name = VALUES(name), tagline = VALUES(tagline), heading = VALUES(heading), meta_title = VALUES(meta_title), meta_description = VALUES(meta_description), short_description = VALUES(short_description), description = VALUES(description), brand_name = VALUES(brand_name), origin = VALUES(origin), processing = VALUES(processing), delivery_min_days = VALUES(delivery_min_days), delivery_max_days = VALUES(delivery_max_days), is_featured = VALUES(is_featured), is_bestseller = VALUES(is_bestseller), sort_order = VALUES(sort_order), is_active = 1, is_delete = 0;
+SET @pid = (SELECT id FROM products WHERE slug = 'deepam-diwali-gift-box');
+INSERT INTO product_variants (product_id, variant_name, weight_value, weight_unit, sku, mrp, selling_price, is_default, is_active, is_delete) VALUES (@pid, '1 Box', 750, 'g', 'GFT-DEEPAM', 999, 999, 1, 1, 0) ON DUPLICATE KEY UPDATE product_id = VALUES(product_id), variant_name = VALUES(variant_name), weight_value = VALUES(weight_value), weight_unit = VALUES(weight_unit), mrp = VALUES(mrp), selling_price = VALUES(selling_price), is_default = VALUES(is_default), is_active = 1, is_delete = 0;
+INSERT IGNORE INTO inventory (variant_id, stock_quantity, reserved_quantity) SELECT id, 45, 0 FROM product_variants WHERE sku = 'GFT-DEEPAM';
+UPDATE product_variants SET is_active = 0, is_delete = 1, is_default = 0 WHERE product_id = @pid AND is_delete = 0 AND sku NOT IN ('GFT-DEEPAM');
+DELETE FROM product_certifications WHERE product_id = @pid;
+INSERT INTO product_certifications (product_id, label, description, sort_order) VALUES (@pid, 'Kesar from our own farm', NULL, 1), (@pid, 'Ready to gift', NULL, 2), (@pid, 'Free delivery across India', NULL, 3);
+DELETE FROM product_health_benefits WHERE product_id = @pid;
+DELETE FROM product_info_sections WHERE product_id = @pid;
+INSERT INTO product_info_sections (product_id, title, body, items, sort_order) VALUES (@pid, 'What\'s Inside', NULL, '[{\"label\":null,\"text\":\"Kashmiri Kesar - 0.5 g\"},{\"label\":null,\"text\":\"Kashmiri Walnut Kernels - 150 g\"},{\"label\":null,\"text\":\"Kashmiri Almonds - 150 g\"},{\"label\":null,\"text\":\"Kashmir Acacia Honey - 100 g\"}]', 1), (@pid, 'Perfect For', 'Friends and family, neighbours, teachers, small office gifts, house visits during Diwali.', NULL, 2), (@pid, 'FAQs', NULL, '[{\"label\":\"When should I order for Diwali delivery?\",\"text\":\"Order by 1 November for delivery before Diwali.\"},{\"label\":\"Can I order in bulk for my office?\",\"text\":\"Yes. We take bulk orders from 10 boxes with special corporate prices and a free name card. WhatsApp us on +91 78893 17203.\"},{\"label\":\"Can I add a personal message?\",\"text\":\"Yes. Add your message in the order notes and we will print it on the gift card.\"}]', 3);
+
+-- Utsav Box (/products/utsav-diwali-dry-fruit-hamper)
+INSERT INTO products (name, tagline, heading, meta_title, meta_description, slug, short_description, description, brand_name, origin, processing, delivery_min_days, delivery_max_days, is_featured, is_bestseller, sort_order, is_active, is_delete) VALUES ('Utsav Box', 'A full gram of our own kesar, with the finest dry fruits of the valley.', 'Utsav Diwali Hamper - 1g Kashmiri Kesar, Dry Fruits & Wild Honey', 'Utsav Diwali Dry Fruit Hamper with 1g Kashmiri Kesar | Suvarna7', 'Diwali dry fruit hamper with 1 gram Kashmiri kesar, walnuts, almonds and wild forest honey. Elegant gift box, free delivery across India.', 'utsav-diwali-dry-fruit-hamper', 'Diwali dry fruit hamper with 1 gram Kashmiri kesar, walnuts, almonds and wild forest honey. Elegant gift box, free delivery across India.', 'Utsav means celebration. At its heart is a full gram of kesar, hand-picked from our own saffron fields in Pampore, joined by fresh walnuts and almonds from Kashmir\'s orchards and dark wild honey from the forests of the hills. Generous, elegant and made to be remembered.', 'Suvarna7', 'Kashmir', 'Traditional', 3, 5, 1, 0, 9, 1, 0) ON DUPLICATE KEY UPDATE name = VALUES(name), tagline = VALUES(tagline), heading = VALUES(heading), meta_title = VALUES(meta_title), meta_description = VALUES(meta_description), short_description = VALUES(short_description), description = VALUES(description), brand_name = VALUES(brand_name), origin = VALUES(origin), processing = VALUES(processing), delivery_min_days = VALUES(delivery_min_days), delivery_max_days = VALUES(delivery_max_days), is_featured = VALUES(is_featured), is_bestseller = VALUES(is_bestseller), sort_order = VALUES(sort_order), is_active = 1, is_delete = 0;
+SET @pid = (SELECT id FROM products WHERE slug = 'utsav-diwali-dry-fruit-hamper');
+INSERT INTO product_variants (product_id, variant_name, weight_value, weight_unit, sku, mrp, selling_price, is_default, is_active, is_delete) VALUES (@pid, '1 Box', 1, 'kg', 'GFT-UTSAV', 1499, 1499, 1, 1, 0) ON DUPLICATE KEY UPDATE product_id = VALUES(product_id), variant_name = VALUES(variant_name), weight_value = VALUES(weight_value), weight_unit = VALUES(weight_unit), mrp = VALUES(mrp), selling_price = VALUES(selling_price), is_default = VALUES(is_default), is_active = 1, is_delete = 0;
+INSERT IGNORE INTO inventory (variant_id, stock_quantity, reserved_quantity) SELECT id, 45, 0 FROM product_variants WHERE sku = 'GFT-UTSAV';
+UPDATE product_variants SET is_active = 0, is_delete = 1, is_default = 0 WHERE product_id = @pid AND is_delete = 0 AND sku NOT IN ('GFT-UTSAV');
+DELETE FROM product_certifications WHERE product_id = @pid;
+INSERT INTO product_certifications (product_id, label, description, sort_order) VALUES (@pid, 'Kesar from our own farm', NULL, 1), (@pid, 'Ready to gift', NULL, 2), (@pid, 'Free delivery across India', NULL, 3);
+DELETE FROM product_health_benefits WHERE product_id = @pid;
+DELETE FROM product_info_sections WHERE product_id = @pid;
+INSERT INTO product_info_sections (product_id, title, body, items, sort_order) VALUES (@pid, 'What\'s Inside', NULL, '[{\"label\":null,\"text\":\"Kashmiri Kesar - 1 g\"},{\"label\":null,\"text\":\"Kashmiri Walnut Kernels - 200 g\"},{\"label\":null,\"text\":\"Kashmiri Almonds - 200 g\"},{\"label\":null,\"text\":\"Kashmir Wild Forest Honey - 100 g\"}]', 1), (@pid, 'Perfect For', 'Family elders, close friends, clients, business partners and corporate gifting.', NULL, 2), (@pid, 'FAQs', NULL, '[{\"label\":\"When should I order for Diwali delivery?\",\"text\":\"Order by 1 November for delivery before Diwali.\"},{\"label\":\"Can I order in bulk for my office?\",\"text\":\"Yes. We take bulk orders from 10 boxes with special corporate prices and a free name card. WhatsApp us on +91 78893 17203.\"},{\"label\":\"Can I add a personal message?\",\"text\":\"Yes. Add your message in the order notes and we will print it on the gift card.\"}]', 3);
+
+-- Heritage Box (/products/heritage-diwali-gift-hamper)
+INSERT INTO products (name, tagline, heading, meta_title, meta_description, slug, short_description, description, brand_name, origin, processing, delivery_min_days, delivery_max_days, is_featured, is_bestseller, sort_order, is_active, is_delete) VALUES ('Heritage Box', 'Five treasures of tradition, in one gift they will remember.', 'Heritage Box - Premium Diwali Hamper with Kashmiri Kesar & Gir Cow Ghee', 'Heritage Diwali Gift Hamper - Kesar, Gir Cow Ghee, Honey & Dry Fruits | Suvarna7', 'Premium Diwali gift hamper with 1g Kashmiri kesar, Gir cow bilona ghee, wild honey, walnuts and almonds. Free delivery across India.', 'heritage-diwali-gift-hamper', 'Premium Diwali gift hamper with 1g Kashmiri kesar, Gir cow bilona ghee, wild honey, walnuts and almonds. Free delivery across India.', 'Some gifts are opened and forgotten. Others are remembered. The Heritage Box brings together five treasures: kesar from our own fields in Pampore, golden Gir cow bilona ghee churned from dahi, wild forest honey from the Kashmir hills, and fresh walnuts and almonds from the valley. A gift of heritage and care for the people who matter most.', 'Suvarna7', 'Kashmir', 'Traditional', 3, 5, 1, 0, 10, 1, 0) ON DUPLICATE KEY UPDATE name = VALUES(name), tagline = VALUES(tagline), heading = VALUES(heading), meta_title = VALUES(meta_title), meta_description = VALUES(meta_description), short_description = VALUES(short_description), description = VALUES(description), brand_name = VALUES(brand_name), origin = VALUES(origin), processing = VALUES(processing), delivery_min_days = VALUES(delivery_min_days), delivery_max_days = VALUES(delivery_max_days), is_featured = VALUES(is_featured), is_bestseller = VALUES(is_bestseller), sort_order = VALUES(sort_order), is_active = 1, is_delete = 0;
+SET @pid = (SELECT id FROM products WHERE slug = 'heritage-diwali-gift-hamper');
+INSERT INTO product_variants (product_id, variant_name, weight_value, weight_unit, sku, mrp, selling_price, is_default, is_active, is_delete) VALUES (@pid, '1 Box', 1, 'kg', 'GFT-HERITAGE', 1799, 1799, 1, 1, 0) ON DUPLICATE KEY UPDATE product_id = VALUES(product_id), variant_name = VALUES(variant_name), weight_value = VALUES(weight_value), weight_unit = VALUES(weight_unit), mrp = VALUES(mrp), selling_price = VALUES(selling_price), is_default = VALUES(is_default), is_active = 1, is_delete = 0;
+INSERT IGNORE INTO inventory (variant_id, stock_quantity, reserved_quantity) SELECT id, 45, 0 FROM product_variants WHERE sku = 'GFT-HERITAGE';
+UPDATE product_variants SET is_active = 0, is_delete = 1, is_default = 0 WHERE product_id = @pid AND is_delete = 0 AND sku NOT IN ('GFT-HERITAGE');
+INSERT INTO product_images (product_id, cloudinary_public_id, image_url, alt_text, sort_order, is_primary) SELECT @pid, '', '/images/hampers/heritage-box.png', 'Heritage premium Diwali gift hamper with Kashmiri kesar Gir cow ghee honey walnuts almonds', 0, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM product_images WHERE product_id = @pid AND image_url = '/images/hampers/heritage-box.png' AND is_delete = 0);
+UPDATE product_images SET alt_text = 'Heritage premium Diwali gift hamper with Kashmiri kesar Gir cow ghee honey walnuts almonds' WHERE product_id = @pid AND image_url = '/images/hampers/heritage-box.png' AND is_delete = 0;
+DELETE FROM product_certifications WHERE product_id = @pid;
+INSERT INTO product_certifications (product_id, label, description, sort_order) VALUES (@pid, 'Kesar from our own farm', NULL, 1), (@pid, 'Ready to gift', NULL, 2), (@pid, 'Free delivery across India', NULL, 3);
+DELETE FROM product_health_benefits WHERE product_id = @pid;
+DELETE FROM product_info_sections WHERE product_id = @pid;
+INSERT INTO product_info_sections (product_id, title, body, items, sort_order) VALUES (@pid, 'What\'s Inside', NULL, '[{\"label\":null,\"text\":\"Kashmiri Kesar - 1 g\"},{\"label\":null,\"text\":\"Gir Cow Bilona Ghee - 100 g\"},{\"label\":null,\"text\":\"Kashmir Wild Forest Honey - 100 g\"},{\"label\":null,\"text\":\"Kashmiri Walnut Kernels - 200 g\"},{\"label\":null,\"text\":\"Kashmiri Almonds - 200 g\"}]', 1), (@pid, 'Perfect For', 'Parents and elders, special clients, wedding and festive gifting, premium corporate gifts.', NULL, 2), (@pid, 'FAQs', NULL, '[{\"label\":\"When should I order for Diwali delivery?\",\"text\":\"Order by 1 November for delivery before Diwali.\"},{\"label\":\"Can I order in bulk for my office?\",\"text\":\"Yes. We take bulk orders from 10 boxes with special corporate prices and a free name card. WhatsApp us on +91 78893 17203.\"},{\"label\":\"Can I add a personal message?\",\"text\":\"Yes. Add your message in the order notes and we will print it on the gift card.\"}]', 3);
+
+-- Frequently bought together
+DELETE FROM product_related WHERE product_id = (SELECT id FROM products WHERE slug = 'deepam-diwali-gift-box');
+INSERT INTO product_related (product_id, related_product_id, sort_order) SELECT owner.id, related.id, 1 FROM products owner JOIN products related ON related.slug = 'kashmiri-kesar-saffron' WHERE owner.slug = 'deepam-diwali-gift-box';
+INSERT INTO product_related (product_id, related_product_id, sort_order) SELECT owner.id, related.id, 2 FROM products owner JOIN products related ON related.slug = 'kashmir-acacia-honey' WHERE owner.slug = 'deepam-diwali-gift-box';
+DELETE FROM product_related WHERE product_id = (SELECT id FROM products WHERE slug = 'utsav-diwali-dry-fruit-hamper');
+INSERT INTO product_related (product_id, related_product_id, sort_order) SELECT owner.id, related.id, 1 FROM products owner JOIN products related ON related.slug = 'kashmiri-kesar-saffron' WHERE owner.slug = 'utsav-diwali-dry-fruit-hamper';
+INSERT INTO product_related (product_id, related_product_id, sort_order) SELECT owner.id, related.id, 2 FROM products owner JOIN products related ON related.slug = 'kashmir-wild-forest-honey' WHERE owner.slug = 'utsav-diwali-dry-fruit-hamper';
+DELETE FROM product_related WHERE product_id = (SELECT id FROM products WHERE slug = 'heritage-diwali-gift-hamper');
+INSERT INTO product_related (product_id, related_product_id, sort_order) SELECT owner.id, related.id, 1 FROM products owner JOIN products related ON related.slug = 'kashmiri-kesar-saffron' WHERE owner.slug = 'heritage-diwali-gift-hamper';
+INSERT INTO product_related (product_id, related_product_id, sort_order) SELECT owner.id, related.id, 2 FROM products owner JOIN products related ON related.slug = 'gir-cow-bilona-ghee' WHERE owner.slug = 'heritage-diwali-gift-hamper';
+
+-- Home page hamper tiles
+INSERT INTO hampers (name, slug, subtitle, image_url, sort_order) VALUES ('Deepam Box', 'deepam-diwali-gift-box', 'The everyday Diwali gift', NULL, 1) ON DUPLICATE KEY UPDATE name = VALUES(name), subtitle = VALUES(subtitle), image_url = VALUES(image_url), sort_order = VALUES(sort_order), is_active = 1, is_delete = 0;
+DELETE FROM hamper_products WHERE hamper_id = (SELECT id FROM hampers WHERE slug = 'deepam-diwali-gift-box');
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 1 FROM hampers h JOIN products p ON p.slug = 'kashmiri-kesar-saffron' WHERE h.slug = 'deepam-diwali-gift-box';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 2 FROM hampers h JOIN products p ON p.slug = 'kashmiri-walnut-kernels-akhrot' WHERE h.slug = 'deepam-diwali-gift-box';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 3 FROM hampers h JOIN products p ON p.slug = 'kashmiri-almonds-badam' WHERE h.slug = 'deepam-diwali-gift-box';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 4 FROM hampers h JOIN products p ON p.slug = 'kashmir-acacia-honey' WHERE h.slug = 'deepam-diwali-gift-box';
+INSERT INTO hampers (name, slug, subtitle, image_url, sort_order) VALUES ('Utsav Box', 'utsav-diwali-dry-fruit-hamper', 'Best value · with 1 g kesar', NULL, 2) ON DUPLICATE KEY UPDATE name = VALUES(name), subtitle = VALUES(subtitle), image_url = VALUES(image_url), sort_order = VALUES(sort_order), is_active = 1, is_delete = 0;
+DELETE FROM hamper_products WHERE hamper_id = (SELECT id FROM hampers WHERE slug = 'utsav-diwali-dry-fruit-hamper');
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 1 FROM hampers h JOIN products p ON p.slug = 'kashmiri-kesar-saffron' WHERE h.slug = 'utsav-diwali-dry-fruit-hamper';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 2 FROM hampers h JOIN products p ON p.slug = 'kashmiri-walnut-kernels-akhrot' WHERE h.slug = 'utsav-diwali-dry-fruit-hamper';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 3 FROM hampers h JOIN products p ON p.slug = 'kashmiri-almonds-badam' WHERE h.slug = 'utsav-diwali-dry-fruit-hamper';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 4 FROM hampers h JOIN products p ON p.slug = 'kashmir-wild-forest-honey' WHERE h.slug = 'utsav-diwali-dry-fruit-hamper';
+INSERT INTO hampers (name, slug, subtitle, image_url, sort_order) VALUES ('Heritage Box', 'heritage-diwali-gift-hamper', 'Premium · with Gir cow ghee', NULL, 3) ON DUPLICATE KEY UPDATE name = VALUES(name), subtitle = VALUES(subtitle), image_url = VALUES(image_url), sort_order = VALUES(sort_order), is_active = 1, is_delete = 0;
+DELETE FROM hamper_products WHERE hamper_id = (SELECT id FROM hampers WHERE slug = 'heritage-diwali-gift-hamper');
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 1 FROM hampers h JOIN products p ON p.slug = 'kashmiri-kesar-saffron' WHERE h.slug = 'heritage-diwali-gift-hamper';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 2 FROM hampers h JOIN products p ON p.slug = 'gir-cow-bilona-ghee' WHERE h.slug = 'heritage-diwali-gift-hamper';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 3 FROM hampers h JOIN products p ON p.slug = 'kashmir-wild-forest-honey' WHERE h.slug = 'heritage-diwali-gift-hamper';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 4 FROM hampers h JOIN products p ON p.slug = 'kashmiri-walnut-kernels-akhrot' WHERE h.slug = 'heritage-diwali-gift-hamper';
+INSERT INTO hamper_products (hamper_id, product_id, sort_order) SELECT h.id, p.id, 5 FROM hampers h JOIN products p ON p.slug = 'kashmiri-almonds-badam' WHERE h.slug = 'heritage-diwali-gift-hamper';
+UPDATE hampers SET is_active = 0 WHERE is_active = 1 AND is_delete = 0 AND slug NOT IN ('deepam-diwali-gift-box', 'utsav-diwali-dry-fruit-hamper', 'heritage-diwali-gift-hamper');
+
+COMMIT;
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-29 · Diwali gift box photos: Deepam, Utsav and Heritage get their new photos, shown whole on
+-- the product page, the shop cards and the home page hamper tiles. Heritage's old box photo is hidden.
+-- Run AFTER the "Diwali Gift Hampers PDF" block above, and after the site is deployed (so the photos exist).
+-- --------------------------------------------------------------------------------------------
+
+
+UPDATE `product_images` pi
+JOIN `products` p ON p.`id` = pi.`product_id`
+SET pi.`is_delete` = 1, pi.`is_primary` = 0
+WHERE p.`slug` IN ('deepam-diwali-gift-box', 'utsav-diwali-dry-fruit-hamper', 'heritage-diwali-gift-hamper')
+  AND pi.`media_type` = 'image'
+  AND pi.`image_url` <> CONCAT('/images/hampers/', p.`slug`, '.webp');
+
+INSERT INTO `product_images` (`product_id`, `cloudinary_public_id`, `image_url`, `alt_text`, `sort_order`, `is_primary`)
+SELECT p.`id`, '', CONCAT('/images/hampers/', p.`slug`, '.webp'),
+       CASE p.`slug`
+         WHEN 'deepam-diwali-gift-box' THEN 'Deepam Diwali gift box with Kashmiri kesar walnuts almonds and honey'
+         WHEN 'utsav-diwali-dry-fruit-hamper' THEN 'Utsav Diwali dry fruit hamper with 1g Kashmiri kesar walnuts almonds wild honey'
+         ELSE 'Heritage premium Diwali gift hamper with Kashmiri kesar Gir cow ghee honey walnuts almonds'
+       END,
+       0, 1
+FROM `products` p
+WHERE p.`slug` IN ('deepam-diwali-gift-box', 'utsav-diwali-dry-fruit-hamper', 'heritage-diwali-gift-hamper')
+  AND NOT EXISTS (
+    SELECT 1 FROM `product_images` pi
+    WHERE pi.`product_id` = p.`id` AND pi.`image_url` = CONCAT('/images/hampers/', p.`slug`, '.webp') AND pi.`is_delete` = 0
+  );
+
+UPDATE `hampers`
+SET `image_url` = CONCAT('/images/hampers/', `slug`, '.webp')
+WHERE `slug` IN ('deepam-diwali-gift-box', 'utsav-diwali-dry-fruit-hamper', 'heritage-diwali-gift-hamper');
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('021_diwali_hamper_photos.sql');

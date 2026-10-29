@@ -57,6 +57,7 @@ export function ProductCardImages({
                 src={src || undefined}
                 alt={index === 0 ? imageAlt || name : `${name} view ${index + 1}`}
                 gradient={gradient}
+                fit="contain"
                 className="h-full w-full"
               />
             </div>

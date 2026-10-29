@@ -11,6 +11,9 @@ import { cn } from "@/lib/utils/cn";
  * (e.g. a wrong or deleted image URL entered in the admin panel), so a card
  * never shows a broken-image icon. Keeps a single call site across the app so
  * swapping in the final photography pipeline only means passing `src`.
+ *
+ * `fit="contain"` shows the whole photo inside the frame (a wide gift box photo in a square frame), on a soft
+ * background; a square photo fills the frame either way.
  */
 export function ProductImagePlaceholder({
   src,
@@ -19,6 +22,7 @@ export function ProductImagePlaceholder({
   iconSize = 32,
   sizes = "(min-width: 1024px) 25vw, 50vw",
   className,
+  fit = "cover",
 }: {
   src?: string;
   alt?: string;
@@ -26,14 +30,15 @@ export function ProductImagePlaceholder({
   iconSize?: number;
   sizes?: string;
   className?: string;
+  fit?: "cover" | "contain";
 }) {
   // Remembers which URL failed, so a different `src` gets its own attempt without a reset effect.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
   if (src && src !== failedSrc) {
     return (
-      <div className={cn("relative overflow-hidden", className)}>
-        <Image src={src} alt={alt} fill sizes={sizes} className="object-cover" onError={() => setFailedSrc(src)} />
+      <div className={cn("relative overflow-hidden", fit === "contain" && "bg-[#f7f4ed]", className)}>
+        <Image src={src} alt={alt} fill sizes={sizes} className={fit === "contain" ? "object-contain" : "object-cover"} onError={() => setFailedSrc(src)} />
       </div>
     );
   }

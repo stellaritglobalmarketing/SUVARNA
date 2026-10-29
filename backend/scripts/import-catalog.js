@@ -2,7 +2,7 @@
 //   - renames products whose slug changed (keeps their id, images, reviews and order history)
 //   - creates new products, updates names, prices, sizes and product-page content
 //   - retires pack sizes and products that are no longer in the catalogue (hidden, not deleted)
-//   - sets the home page's hamper tiles to seeds/data/store-data.js HAMPERS (the Heritage Box gift)
+//   - sets the home page's hamper tiles to seeds/data/store-data.js HAMPERS (the Diwali gift boxes)
 //     and hides the others (re-enable one from Admin → Content if you want it back)
 // Banners, FAQs, testimonials and other home content are left alone.
 // Everything runs in one transaction. Run `npm run db:migrate` first, then `npm run catalog:import`.

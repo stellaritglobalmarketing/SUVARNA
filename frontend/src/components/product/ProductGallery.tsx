@@ -55,7 +55,7 @@ function ZoomImage({ src, alt, gradient }: { src: string; alt: string; gradient:
         style={{ transformOrigin: origin ?? "center", transform: origin ? "scale(2.2)" : undefined }}
       >
         {/* Loaded large so the zoomed view stays sharp. */}
-        <ProductImagePlaceholder src={src} alt={alt} gradient={gradient} iconSize={56} sizes="1200px" className="h-full w-full" />
+        <ProductImagePlaceholder src={src} alt={alt} gradient={gradient} iconSize={56} sizes="1200px" fit="contain" className="h-full w-full" />
       </div>
     </div>
   );
@@ -138,6 +138,7 @@ export function ProductGallery({
                   gradient={gradient}
                   iconSize={56}
                   sizes="100vw"
+                  fit="contain"
                   className="h-full w-full"
                 />
               )}

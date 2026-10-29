@@ -9,7 +9,7 @@ const RENAMED_PRODUCTS: Record<string, string[]> = {
   "gir-cow-bilona-ghee": ["pure-cow-ghee"],
   "kashmiri-almonds-badam": ["kashmiri-almonds", "kashmir-mamra-almonds"],
   "kashmiri-walnut-kernels-akhrot": ["kashmiri-walnut-kernels"],
-  "diwali-dry-fruit-gift-box-kashmir": ["heritage-box"],
+  "heritage-diwali-gift-hamper": ["diwali-dry-fruit-gift-box-kashmir", "heritage-box"],
 };
 
 const nextConfig: NextConfig = {

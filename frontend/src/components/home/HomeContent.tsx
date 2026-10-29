@@ -31,11 +31,15 @@ export function HomeContent() {
     );
   }
 
+  // Gift boxes (hampers that are products) show in the hamper section, not in the main product grid.
+  const giftSlugs = new Set(data.hampers.map((hamper) => hamper.slug));
+  const gridProducts = data.products.filter((product) => !giftSlugs.has(product.slug));
+
   return (
     <>
       {data.hero && <Hero banner={data.hero} hasHampers={data.products.length > 0} />}
       <CraftStory />
-      <AllProducts products={data.products} />
+      <AllProducts products={gridProducts} />
       {data.promo && <PromoBanner banner={data.promo} />}
       <CustomHampers hampers={data.hampers} products={data.products} />
       <TrustSection points={data.trustPoints} />

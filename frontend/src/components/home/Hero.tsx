@@ -3,14 +3,34 @@
 import { getImageProps } from "next/image";
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import type { HomeBanner } from "@/types/home";
+import { useNow } from "@/hooks/useNow";
+import { isDiwaliSeason } from "@/lib/diwali";
+import { DiwaliHeroLights } from "./DiwaliDecor";
+import { DiwaliHeroSlide } from "./DiwaliHeroSlide";
 
-const BANNERS = [
-  { src: "/images/hero/products-banner-v2.webp", href: "#products", label: "Shop the collection", alt: "Suvarna7. Goodness in every bite. Saffron, dry fruits, honey & ghee. Shop the collection." },
-  { src: "/images/hero/hampers-banner-v2.webp", href: "#hampers", label: "Explore hampers", alt: "Suvarna7. A gift of pure goodness. Thoughtfully curated. Beautifully gifted. Explore hampers." },
+interface Slide {
+  name: string;
+  /** Campaign artwork; the Diwali slide has none (it's drawn in HTML). */
+  src?: string;
+  href: string;
+  label: string;
+  alt?: string;
+  /** How long the slide stays before the carousel moves on. */
+  ms: number;
+}
+
+const BANNERS: Slide[] = [
+  { name: "products", src: "/images/hero/products-banner-v2.webp", href: "#products", label: "Shop the collection", alt: "Suvarna7. Goodness in every bite. Saffron, dry fruits, honey & ghee. Shop the collection.", ms: 3500 },
+  { name: "hampers", src: "/images/hero/hampers-banner-v2.webp", href: "#hampers", label: "Explore hampers", alt: "Suvarna7. A gift of pure goodness. Thoughtfully curated. Beautifully gifted. Explore hampers.", ms: 3500 },
 ];
 
+const DIWALI_SLIDE: Slide = { name: "Diwali", href: "#hampers", label: "Happy Diwali. Shop Diwali gift hampers from ₹999.", ms: 6000 };
+
 export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: boolean }) {
-  const slides = hasHampers ? BANNERS : BANNERS.slice(0, 1);
+  const now = useNow();
+  // During Diwali the festive slide leads, and fairy lights hang across the top.
+  const isDiwali = hasHampers && isDiwaliSeason(now);
+  const slides = hasHampers ? (isDiwali ? [DIWALI_SLIDE, ...BANNERS] : BANNERS) : BANNERS.slice(0, 1);
   const [active, setActive] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -20,6 +40,7 @@ export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: b
   const touchStart = useRef<number | null>(null);
   const swiped = useRef(false);
   const current = active % slides.length;
+  const slideMs = slides[current].ms;
 
   useEffect(() => {
     const header = document.querySelector<HTMLElement>(".store-header");
@@ -66,9 +87,9 @@ export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: b
     if (hovered || focused || reducedMotion || slides.length < 2) return;
     const timer = window.setInterval(() => {
       if (!document.hidden) void changeBanner((active + 1) % slides.length);
-    }, 3500);
+    }, slideMs);
     return () => window.clearInterval(timer);
-  }, [active, hovered, focused, reducedMotion, slides.length, changeBanner]);
+  }, [active, hovered, focused, reducedMotion, slides.length, slideMs, changeBanner]);
 
   const move = (direction: number) => {
     void changeBanner((active + direction + slides.length) % slides.length);
@@ -88,7 +109,7 @@ export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: b
   return (
     <section ref={sectionRef} className="store-hero" aria-label="Suvarna collections">
       <h1 className="sr-only">{banner.title}</h1>
-      <div className="hero-gallery" role="region" aria-roledescription="carousel" aria-label="Shop products and gift hampers"
+      <div className={`hero-gallery ${slides[current] === DIWALI_SLIDE ? "is-diwali" : ""}`} role="region" aria-roledescription="carousel" aria-label="Shop products and gift hampers"
         onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
         onFocusCapture={() => setFocused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}
         onTouchStart={(event) => { touchStart.current = event.touches[0].clientX; swiped.current = false; }}
@@ -102,17 +123,18 @@ export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: b
         }}>
         <div className="hero-photographs">
           {slides.map((slide, index) => (
-            <a key={slide.src} href={slide.href} className={`hero-slide ${index === current ? "is-active" : ""}`}
+            <a key={slide.name} href={slide.href} className={`hero-slide ${index === current ? "is-active" : ""}`}
               aria-label={slide.label} aria-hidden={index !== current} tabIndex={index === current ? 0 : -1}
               onClick={(event) => scrollToSection(event, slide.href)} draggable={false}>
-              <BannerArtwork slide={slide} first={index === 0} />
+              {slide.src ? <BannerArtwork src={slide.src} alt={slide.alt ?? ""} first={slide === BANNERS[0]} /> : <DiwaliHeroSlide now={now} />}
             </a>
           ))}
         </div>
         <div ref={fadeRef} className="hero-white-fade" aria-hidden="true" />
+        {isDiwali && <DiwaliHeroLights />}
         {slides.length > 1 && <div className="hero-controls">
           <div className="hero-pagination">
-            {slides.map((slide, index) => <button key={slide.src} type="button" className={`hero-dot ${index === current ? "is-active" : ""}`} aria-label={`Show ${index === 0 ? "products" : "hampers"} banner`} aria-pressed={index === current} onClick={() => { void changeBanner(index); }} />)}
+            {slides.map((slide, index) => <button key={slide.name} type="button" className={`hero-dot ${index === current ? "is-active" : ""}`} aria-label={`Show ${slide.name} banner`} aria-pressed={index === current} onClick={() => { void changeBanner(index); }} />)}
           </div>
         </div>}
       </div>
@@ -120,13 +142,13 @@ export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: b
   );
 }
 
-function BannerArtwork({ slide, first }: { slide: typeof BANNERS[number]; first: boolean }) {
-  const common = { alt: slide.alt, sizes: "100vw", loading: "eager" as const, fetchPriority: first ? "high" as const : "auto" as const };
-  const { props: desktop } = getImageProps({ ...common, src: slide.src, width: 2172, height: 724 });
+function BannerArtwork({ src, alt, first }: { src: string; alt: string; first: boolean }) {
+  const common = { alt, sizes: "100vw", loading: "eager" as const, fetchPriority: first ? "high" as const : "auto" as const };
+  const { props: desktop } = getImageProps({ ...common, src, width: 2172, height: 724 });
   return (
     <picture>
       {/* getImageProps supplies Next's optimized responsive image URLs. */}
-      <img {...desktop} alt={slide.alt} className="hero-artwork" draggable={false} />
+      <img {...desktop} alt={alt} className="hero-artwork" draggable={false} />
     </picture>
   );
 }

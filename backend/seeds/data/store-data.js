@@ -28,8 +28,8 @@ export const BANNERS = [
         subtitle: null,
         image_url: "https://images.unsplash.com/photo-1769255484646-16988ad5552d?auto=format&fit=crop&w=1000&q=80",
         image_alt: "Royal festive gift collection of dry fruits",
-        cta_label: "Shop Now",
-        cta_href: "/#products",
+        cta_label: "Shop Diwali Hampers",
+        cta_href: "/#hampers",
         secondary_cta_label: null,
         secondary_cta_href: null,
     },
@@ -66,16 +66,37 @@ export const HIGHLIGHTS = [
     },
 ];
 
-// Tiles in the home page's hamper section. A hamper whose slug matches a product (the Heritage Box)
+// Tiles in the home page's hamper section. A hamper whose slug matches a product (the Diwali gift boxes)
 // is a ready-made gift: its tile links to that product. Any other hamper is a theme that opens the
-// "build your own" picker with `product_slugs` pre-selected.
+// "build your own" picker with `product_slugs` pre-selected. A gift's `image_url` is its wide photo (the product's
+// own photo is square); without one the tile shows the product photo.
 export const HAMPERS = [
     {
-        slug: "heritage-box",
+        slug: "deepam-diwali-gift-box",
+        name: "Deepam Box",
+        subtitle: "The everyday Diwali gift",
+        image_url: "/images/hampers/deepam-diwali-gift-box.webp",
+        product_slugs: ["kashmiri-kesar-saffron", "kashmiri-walnut-kernels-akhrot", "kashmiri-almonds-badam", "kashmir-acacia-honey"],
+    },
+    {
+        slug: "utsav-diwali-dry-fruit-hamper",
+        name: "Utsav Box",
+        subtitle: "Best value · with 1 g kesar",
+        image_url: "/images/hampers/utsav-diwali-dry-fruit-hamper.webp",
+        product_slugs: ["kashmiri-kesar-saffron", "kashmiri-walnut-kernels-akhrot", "kashmiri-almonds-badam", "kashmir-wild-forest-honey"],
+    },
+    {
+        slug: "heritage-diwali-gift-hamper",
         name: "Heritage Box",
-        subtitle: "Saffron, wild dark honey, almonds & walnuts",
-        image_url: "/images/hampers/heritage-box.png",
-        product_slugs: ["kashmiri-kesar-saffron", "kashmir-wild-forest-honey", "kashmiri-almonds-badam", "kashmiri-walnut-kernels-akhrot"],
+        subtitle: "Premium · with Gir cow ghee",
+        image_url: "/images/hampers/heritage-diwali-gift-hamper.webp",
+        product_slugs: [
+            "kashmiri-kesar-saffron",
+            "gir-cow-bilona-ghee",
+            "kashmir-wild-forest-honey",
+            "kashmiri-walnut-kernels-akhrot",
+            "kashmiri-almonds-badam",
+        ],
     },
 ];
 

@@ -14,7 +14,9 @@ const FOOTER_COLUMNS = [
       { href: "/products/buffalo-bilona-ghee", label: "Buffalo Bilona Ghee" },
       { href: "/products/kashmiri-almonds-badam", label: "Kashmiri Almonds" },
       { href: "/products/kashmiri-walnut-kernels-akhrot", label: "Walnut Kernels" },
-      { href: "/products/diwali-dry-fruit-gift-box-kashmir", label: "Heritage Box" },
+      { href: "/products/deepam-diwali-gift-box", label: "Deepam Box" },
+      { href: "/products/utsav-diwali-dry-fruit-hamper", label: "Utsav Box" },
+      { href: "/products/heritage-diwali-gift-hamper", label: "Heritage Box" },
     ],
   },
   {

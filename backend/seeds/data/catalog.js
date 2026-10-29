@@ -26,6 +26,20 @@ const faqs = (...pairs) => ({ title: "FAQs", items: pairs.map(([label, text]) =>
 
 const trustPoints = (...labels) => [...labels.map((label) => ({ label, description: null })), FREE_DELIVERY];
 
+// Diwali gift boxes (Deepam, Utsav, Heritage) share their trust points and FAQs.
+const whatsInside = (...contents) => ({ title: "What's Inside", items: contents.map((text) => ({ label: null, text })) });
+
+const GIFT_TRUST_POINTS = trustPoints("Kesar from our own farm", "Ready to gift");
+
+const GIFT_FAQS = faqs(
+    ["When should I order for Diwali delivery?", "Order by 1 November for delivery before Diwali."],
+    [
+        "Can I order in bulk for my office?",
+        "Yes. We take bulk orders from 10 boxes with special corporate prices and a free name card. WhatsApp us on +91 78893 17203.",
+    ],
+    ["Can I add a personal message?", "Yes. Add your message in the order notes and we will print it on the gift card."]
+);
+
 export const PRODUCTS = [
     {
         slug: "kashmiri-kesar-saffron",
@@ -346,50 +360,91 @@ export const PRODUCTS = [
         frequently_bought_with: ["kashmiri-almonds-badam", "kashmir-wild-forest-honey"],
     },
     {
-        slug: "diwali-dry-fruit-gift-box-kashmir",
-        replaces: ["heritage-box"],
-        name: "Heritage Box",
-        heading: "Heritage Box - Kashmiri Kesar, Wild Honey & Dry Fruit Gift Box",
-        tagline: "Four treasures of Kashmir, in one gift they will remember.",
-        meta_title: "Diwali Dry Fruit Gift Box with Kashmiri Kesar | Heritage Box - Suvarna7",
+        slug: "deepam-diwali-gift-box",
+        name: "Deepam Box",
+        heading: "Deepam Diwali Gift Box - Kashmiri Kesar, Walnuts, Almonds & Honey",
+        tagline: "A little light of Kashmir, for everyone on your Diwali list.",
+        meta_title: "Deepam Diwali Gift Box - Kashmiri Kesar, Walnuts, Almonds & Honey | Suvarna7",
         meta_description:
-            "Premium Diwali gift box with Kashmiri kesar 1g, wild honey, almonds and walnuts in an elegant box. Corporate & bulk gifting available. Free delivery.",
+            "Diwali gift box with Kashmiri kesar 0.5g, walnuts, almonds and acacia honey in a ready-to-gift box. Free delivery across India. Order by 1 Nov.",
         description:
-            "Some gifts are opened and forgotten. Others are remembered. The Heritage Box brings together four treasures of Kashmir: kesar from our own fields in Pampore, dark wild honey from the hills, and fresh almonds and walnuts from the valley's orchards. Packed in an elegant keepsake box, it is a gift of heritage and care for the people who matter most.",
+            "Deepam means a lamp - the light at the heart of Diwali. This box brings four simple treasures of Kashmir together: kesar from our own fields in Pampore, fresh walnuts and almonds from the valley's orchards, and light acacia honey from the Kashmir hills. A thoughtful gift for friends, neighbours and colleagues.",
         origin: "Kashmir",
         processing: "Traditional",
         health_benefits: [],
-        image: "/images/hampers/heritage-box.png",
-        image_alt: "Heritage Diwali gift box with Kashmiri kesar honey almonds walnuts",
+        image: "/images/hampers/deepam-diwali-gift-box.webp",
+        image_alt: "Deepam Diwali gift box with Kashmiri kesar walnuts almonds and honey",
         is_bestseller: false,
-        certifications: trustPoints("Kesar from our own farm", "Ready to gift - no wrapping needed"),
+        certifications: GIFT_TRUST_POINTS,
         info_sections: [
-            {
-                title: "What's Inside",
-                items: [
-                    { label: null, text: "Kashmiri Kesar - 1 g" },
-                    { label: null, text: "Wild Dark Honey - 250 g" },
-                    { label: null, text: "Kashmiri Almonds - 250 g" },
-                    { label: null, text: "Kashmiri Walnut Kernels - 250 g" },
-                ],
-            },
-            {
-                title: "Perfect For",
-                body: "Perfect for Diwali, weddings, housewarmings, thank-you gifts, and corporate gifts for clients and teams.",
-            },
-            { title: "Bulk Orders", body: "Bulk orders from 10 boxes. Free name card. Order on WhatsApp: +91 78893 17203." },
-            faqs(
-                [
-                    "Can I order in bulk for my office?",
-                    "Yes. We take orders from 10 boxes, with special corporate prices. WhatsApp us for a quote.",
-                ],
-                ["Can you add our company name card?", "Yes, a printed name card is free with bulk orders."],
-                ["When should I order for Diwali?", "Order by 1 November for delivery before Diwali."]
-            ),
+            whatsInside("Kashmiri Kesar - 0.5 g", "Kashmiri Walnut Kernels - 150 g", "Kashmiri Almonds - 150 g", "Kashmir Acacia Honey - 100 g"),
+            { title: "Perfect For", body: "Friends and family, neighbours, teachers, small office gifts, house visits during Diwali." },
+            GIFT_FAQS,
         ],
-        // Contents weigh about 750 g; 1 kg is the packed box's upper bound, used for shipping estimates.
-        variants: [{ label: "1 Box", weight: [1, "kg"], price: 2049, mrp: 2049, stock: 45, sku: "GFT-HERITAGE" }],
+        // Contents weigh about 400 g; 750 g allows for the jar and the box, used for shipping estimates.
+        variants: [{ label: "1 Box", weight: [750, "g"], price: 999, mrp: 999, stock: 45, sku: "GFT-DEEPAM" }],
+        delivery_days: [3, 5],
+        frequently_bought_with: ["kashmiri-kesar-saffron", "kashmir-acacia-honey"],
+    },
+    {
+        slug: "utsav-diwali-dry-fruit-hamper",
+        name: "Utsav Box",
+        heading: "Utsav Diwali Hamper - 1g Kashmiri Kesar, Dry Fruits & Wild Honey",
+        tagline: "A full gram of our own kesar, with the finest dry fruits of the valley.",
+        meta_title: "Utsav Diwali Dry Fruit Hamper with 1g Kashmiri Kesar | Suvarna7",
+        meta_description:
+            "Diwali dry fruit hamper with 1 gram Kashmiri kesar, walnuts, almonds and wild forest honey. Elegant gift box, free delivery across India.",
+        description:
+            "Utsav means celebration. At its heart is a full gram of kesar, hand-picked from our own saffron fields in Pampore, joined by fresh walnuts and almonds from Kashmir's orchards and dark wild honey from the forests of the hills. Generous, elegant and made to be remembered.",
+        origin: "Kashmir",
+        processing: "Traditional",
+        health_benefits: [],
+        image: "/images/hampers/utsav-diwali-dry-fruit-hamper.webp",
+        image_alt: "Utsav Diwali dry fruit hamper with 1g Kashmiri kesar walnuts almonds wild honey",
+        is_bestseller: false,
+        certifications: GIFT_TRUST_POINTS,
+        info_sections: [
+            whatsInside("Kashmiri Kesar - 1 g", "Kashmiri Walnut Kernels - 200 g", "Kashmiri Almonds - 200 g", "Kashmir Wild Forest Honey - 100 g"),
+            { title: "Perfect For", body: "Family elders, close friends, clients, business partners and corporate gifting." },
+            GIFT_FAQS,
+        ],
+        // Contents weigh about 500 g; 1 kg is the packed box's upper bound, used for shipping estimates.
+        variants: [{ label: "1 Box", weight: [1, "kg"], price: 1499, mrp: 1499, stock: 45, sku: "GFT-UTSAV" }],
         delivery_days: [3, 5],
         frequently_bought_with: ["kashmiri-kesar-saffron", "kashmir-wild-forest-honey"],
+    },
+    {
+        slug: "heritage-diwali-gift-hamper",
+        replaces: ["diwali-dry-fruit-gift-box-kashmir", "heritage-box"],
+        name: "Heritage Box",
+        heading: "Heritage Box - Premium Diwali Hamper with Kashmiri Kesar & Gir Cow Ghee",
+        tagline: "Five treasures of tradition, in one gift they will remember.",
+        meta_title: "Heritage Diwali Gift Hamper - Kesar, Gir Cow Ghee, Honey & Dry Fruits | Suvarna7",
+        meta_description:
+            "Premium Diwali gift hamper with 1g Kashmiri kesar, Gir cow bilona ghee, wild honey, walnuts and almonds. Free delivery across India.",
+        description:
+            "Some gifts are opened and forgotten. Others are remembered. The Heritage Box brings together five treasures: kesar from our own fields in Pampore, golden Gir cow bilona ghee churned from dahi, wild forest honey from the Kashmir hills, and fresh walnuts and almonds from the valley. A gift of heritage and care for the people who matter most.",
+        origin: "Kashmir",
+        processing: "Traditional",
+        health_benefits: [],
+        image: "/images/hampers/heritage-diwali-gift-hamper.webp",
+        image_alt: "Heritage premium Diwali gift hamper with Kashmiri kesar Gir cow ghee honey walnuts almonds",
+        is_bestseller: false,
+        certifications: GIFT_TRUST_POINTS,
+        info_sections: [
+            whatsInside(
+                "Kashmiri Kesar - 1 g",
+                "Gir Cow Bilona Ghee - 100 g",
+                "Kashmir Wild Forest Honey - 100 g",
+                "Kashmiri Walnut Kernels - 200 g",
+                "Kashmiri Almonds - 200 g"
+            ),
+            { title: "Perfect For", body: "Parents and elders, special clients, wedding and festive gifting, premium corporate gifts." },
+            GIFT_FAQS,
+        ],
+        // Contents weigh about 600 g; 1 kg is the packed box's upper bound, used for shipping estimates.
+        variants: [{ label: "1 Box", weight: [1, "kg"], price: 1799, mrp: 1799, stock: 45, sku: "GFT-HERITAGE" }],
+        delivery_days: [3, 5],
+        frequently_bought_with: ["kashmiri-kesar-saffron", "gir-cow-bilona-ghee"],
     },
 ];
