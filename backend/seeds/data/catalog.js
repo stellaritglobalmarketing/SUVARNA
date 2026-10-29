@@ -41,8 +41,12 @@ export const PRODUCTS = [
         origin: "Kashmir",
         processing: "Traditional",
         health_benefits: [],
-        image: "/images/products/kashmir-saffron.webp",
-        image_alt: "Original Kashmiri kesar Mongra saffron threads from Pampore farm",
+        image: "/images/products/kashmiri-saffron-jar.webp",
+        image_alt: "Kashmir Saffron jar of pure Pampore kesar threads, packed by IIKSTC",
+        more_images: [
+            { url: "/images/products/kashmiri-saffron-tag.webp", alt: "Kashmir Saffron tag: 100% pure, certified and packed by IIKSTC, Dussu Pampore" },
+            { url: "/images/products/kashmiri-saffron-gi-label.webp", alt: "Kashmir Saffron GI No. 635 tag with FSSAI licence number" },
+        ],
         is_bestseller: false,
         certifications: trustPoints("Grown on our own farm", "Tested & packed by IIKSTC, Pampore"),
         info_sections: [

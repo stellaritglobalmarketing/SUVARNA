@@ -330,3 +330,46 @@ WHERE p.`slug` IN ('kashmir-wild-forest-honey', 'kashmir-wild-dark-honey', 'raw-
   AND pi.`is_delete` = 0;
 
 INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('018_hide_wild_honey_videos.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-29 · Kashmir Saffron: three new product photos — jar with tag (main), tag close-up,
+-- then the tag back (GI No. 635, FSSAI). Needs the site deployed first, so the photos exist.
+-- Old photos are hidden (is_delete = 1), not removed. Videos stay.
+-- --------------------------------------------------------------------------------------------
+
+UPDATE `product_images` pi
+JOIN `products` p ON p.`id` = pi.`product_id`
+SET pi.`is_delete` = 1, pi.`is_primary` = 0
+WHERE p.`slug` IN ('kashmir-saffron', 'kashmiri-mongra-saffron', 'kashmiri-kesar-saffron')
+  AND pi.`media_type` = 'image'
+  AND pi.`image_url` NOT IN ('/images/products/kashmiri-saffron-jar.webp', '/images/products/kashmiri-saffron-tag.webp', '/images/products/kashmiri-saffron-gi-label.webp');
+
+INSERT INTO `product_images` (`product_id`, `cloudinary_public_id`, `image_url`, `alt_text`, `sort_order`, `is_primary`)
+SELECT p.`id`, '', '/images/products/kashmiri-saffron-jar.webp', 'Kashmir Saffron jar of pure Pampore kesar threads, packed by IIKSTC', 0, 1
+FROM `products` p
+WHERE p.`slug` IN ('kashmir-saffron', 'kashmiri-mongra-saffron', 'kashmiri-kesar-saffron')
+  AND NOT EXISTS (
+    SELECT 1 FROM `product_images` pi
+    WHERE pi.`product_id` = p.`id` AND pi.`image_url` = '/images/products/kashmiri-saffron-jar.webp' AND pi.`is_delete` = 0
+  );
+
+INSERT INTO `product_images` (`product_id`, `cloudinary_public_id`, `image_url`, `alt_text`, `sort_order`, `is_primary`)
+SELECT p.`id`, '', '/images/products/kashmiri-saffron-tag.webp', 'Kashmir Saffron tag: 100% pure, certified and packed by IIKSTC, Dussu Pampore', 1, 0
+FROM `products` p
+WHERE p.`slug` IN ('kashmir-saffron', 'kashmiri-mongra-saffron', 'kashmiri-kesar-saffron')
+  AND NOT EXISTS (
+    SELECT 1 FROM `product_images` pi
+    WHERE pi.`product_id` = p.`id` AND pi.`image_url` = '/images/products/kashmiri-saffron-tag.webp' AND pi.`is_delete` = 0
+  );
+
+INSERT INTO `product_images` (`product_id`, `cloudinary_public_id`, `image_url`, `alt_text`, `sort_order`, `is_primary`)
+SELECT p.`id`, '', '/images/products/kashmiri-saffron-gi-label.webp', 'Kashmir Saffron GI No. 635 tag with FSSAI licence number', 2, 0
+FROM `products` p
+WHERE p.`slug` IN ('kashmir-saffron', 'kashmiri-mongra-saffron', 'kashmiri-kesar-saffron')
+  AND NOT EXISTS (
+    SELECT 1 FROM `product_images` pi
+    WHERE pi.`product_id` = p.`id` AND pi.`image_url` = '/images/products/kashmiri-saffron-gi-label.webp' AND pi.`is_delete` = 0
+  );
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('019_kashmir_saffron_photos.sql');

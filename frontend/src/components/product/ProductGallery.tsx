@@ -34,6 +34,33 @@ function VideoThumb({ src }: { src: string }) {
   );
 }
 
+/** Main desktop photo that magnifies under the pointer while hovered. */
+function ZoomImage({ src, alt, gradient }: { src: string; alt: string; gradient: [string, string] }) {
+  // Pointer position as a CSS transform-origin; null while the pointer is outside.
+  const [origin, setOrigin] = useState<string | null>(null);
+
+  if (!src) return <ProductImagePlaceholder alt={alt} gradient={gradient} iconSize={56} className="h-full w-full" />;
+
+  return (
+    <div
+      className="h-full w-full cursor-zoom-in"
+      onMouseMove={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setOrigin(`${((event.clientX - rect.left) / rect.width) * 100}% ${((event.clientY - rect.top) / rect.height) * 100}%`);
+      }}
+      onMouseLeave={() => setOrigin(null)}
+    >
+      <div
+        className="h-full w-full transition-transform duration-200 ease-out"
+        style={{ transformOrigin: origin ?? "center", transform: origin ? "scale(2.2)" : undefined }}
+      >
+        {/* Loaded large so the zoomed view stays sharp. */}
+        <ProductImagePlaceholder src={src} alt={alt} gradient={gradient} iconSize={56} sizes="1200px" className="h-full w-full" />
+      </div>
+    </div>
+  );
+}
+
 export function ProductGallery({
   images,
   videos = [],
@@ -143,7 +170,7 @@ export function ProductGallery({
             // key remounts the player so switching videos starts the new one from the beginning.
             <GalleryVideo key={active.src} src={active.src} name={name} />
           ) : (
-            <ProductImagePlaceholder src={active.src || undefined} alt={altFor(activeIndex)} gradient={gradient} iconSize={56} className="h-full w-full" />
+            <ZoomImage key={active.src} src={active.src} alt={altFor(activeIndex)} gradient={gradient} />
           )}
         </div>
         {media.length > 1 && (

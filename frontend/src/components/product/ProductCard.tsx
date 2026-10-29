@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { addToCart } from "@/lib/redux/slices/cartSlice";
 import { pushToast } from "@/lib/redux/slices/uiSlice";
 import { selectWishlistIds, toggleWishlist } from "@/lib/redux/slices/wishlistSlice";
-import { ProductImagePlaceholder } from "@/components/ui/ProductImagePlaceholder";
+import { ProductCardImages } from "@/components/product/ProductCardImages";
 import { WeightVariantSelector } from "@/components/ui/WeightVariantSelector";
 import { PriceTag } from "@/components/ui/PriceTag";
 import { Badge } from "@/components/ui/Badge";
@@ -53,9 +53,7 @@ export function ProductCard({ product }: { product: Product }) {
       {/* Compact app-style card — quick-commerce density for mobile browsing */}
       <div className="sm:hidden">
         <div className="relative aspect-square overflow-hidden">
-          <Link href={`/products/${product.slug}`} className="absolute inset-0 block">
-            <ProductImagePlaceholder src={product.images[0]} alt={product.imageAlt || product.name} gradient={product.gradient} className="h-full w-full" />
-          </Link>
+          <ProductCardImages images={product.images} href={`/products/${product.slug}`} name={product.name} imageAlt={product.imageAlt} gradient={product.gradient} />
           {(product.isBestSeller || product.discountPercent > 0) && (
             <span className="pointer-events-none absolute left-2 top-2 rounded-md bg-brand-forest px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-sand">
               {product.discountPercent > 0 ? `${product.discountPercent}% OFF` : "Best Seller"}
@@ -144,13 +142,13 @@ export function ProductCard({ product }: { product: Product }) {
 
       {/* Full storefront card — desktop / tablet */}
       <div className="relative hidden sm:flex sm:flex-1 sm:flex-col">
-        <Link href={`/products/${product.slug}`} className="relative block aspect-square overflow-hidden">
-          <ProductImagePlaceholder src={product.images[0]} alt={product.imageAlt || product.name} gradient={product.gradient} className="h-full w-full" />
-          <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+        <div className="relative aspect-square overflow-hidden">
+          <ProductCardImages images={product.images} href={`/products/${product.slug}`} name={product.name} imageAlt={product.imageAlt} gradient={product.gradient} />
+          <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1.5">
             {product.isBestSeller && <Badge tone="gold">Best Seller</Badge>}
             {product.discountPercent > 0 && <Badge tone="forest">{product.discountPercent}% OFF</Badge>}
           </div>
-        </Link>
+        </div>
 
         <button
           type="button"
