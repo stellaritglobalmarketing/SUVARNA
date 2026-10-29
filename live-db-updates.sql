@@ -315,3 +315,18 @@ WHERE p.`slug` IN ('kashmiri-almonds-badam', 'kashmiri-almonds', 'kashmir-mamra-
   AND pi.`is_delete` = 0;
 
 INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('017_kashmiri_almonds_square_pack_photo.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-27 · Kashmir Wild Dark Honey: remove the product videos from the product page.
+-- Hidden (is_delete = 1), not removed. The photo stays. No deploy needed first.
+-- --------------------------------------------------------------------------------------------
+
+UPDATE `product_images` pi
+JOIN `products` p ON p.`id` = pi.`product_id`
+SET pi.`is_delete` = 1, pi.`is_primary` = 0
+WHERE p.`slug` IN ('kashmir-wild-forest-honey', 'kashmir-wild-dark-honey', 'raw-forest-honey')
+  AND pi.`media_type` = 'video'
+  AND pi.`is_delete` = 0;
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('018_hide_wild_honey_videos.sql');
