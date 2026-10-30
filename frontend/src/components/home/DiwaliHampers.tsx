@@ -52,10 +52,10 @@ export function DiwaliHampers({
                     gradient={product.gradient}
                     iconSize={40}
                     sizes="(min-width: 768px) 33vw, 100vw"
-                    fit="contain"
-                    className="aspect-[3/2] w-full transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="aspect-[2/3] w-full transition-transform duration-500 group-hover:scale-[1.03]"
                   />
-                  <span className="absolute left-0 top-3 flex items-center gap-1.5 bg-gradient-to-r from-[#7a1d1d] to-[#5a1414] py-1 pl-2.5 pr-5 text-[11px] font-semibold uppercase tracking-wide text-[#fbe2a8] shadow-md [clip-path:polygon(0_0,100%_0,90%_50%,100%_100%,0_100%)]">
+                  {/* At the bottom: the gift bag photos carry the box name and price across the top. */}
+                  <span className="absolute bottom-3 left-0 flex items-center gap-1.5 bg-gradient-to-r from-[#7a1d1d] to-[#5a1414] py-1 pl-2.5 pr-5 text-[11px] font-semibold uppercase tracking-wide text-[#fbe2a8] shadow-md [clip-path:polygon(0_0,100%_0,90%_50%,100%_100%,0_100%)]">
                     <Diya className="w-4" /> Diwali Special ✦
                   </span>
                 </div>

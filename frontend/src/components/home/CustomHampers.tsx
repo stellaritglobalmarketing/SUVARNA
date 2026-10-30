@@ -101,7 +101,7 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
                       gradient={product.gradient}
                       iconSize={40}
                       sizes="(min-width: 768px) 33vw, 100vw"
-                      className="aspect-[3/2] w-full"
+                      className="aspect-[2/3] w-full"
                     />
                     <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-brand-forest px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-sand">
                       <Gift size={12} aria-hidden="true" /> Diwali Special

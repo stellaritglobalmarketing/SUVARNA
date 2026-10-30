@@ -2,8 +2,16 @@ import Image from "next/image";
 import { diwaliOrderCountdown } from "@/lib/diwali";
 import { Burst, Diya, Embers, Rangoli } from "./DiwaliDecor";
 
-// Layout size before a photo loads; once loaded each photo keeps its own shape (h-auto).
-const PHOTO = { width: 1200, height: 800 };
+/** One gift box photo in a tall gold-edged frame, gently floating. Positioned by `className`. */
+function GiftPhoto({ src, sizes, wait = 0, className }: { src: string; sizes: string; wait?: number; className: string }) {
+  return (
+    <div className={`absolute aspect-[2/3] ${className}`}>
+      <div className="diwali-float relative h-full w-full overflow-hidden rounded-xl border-2 border-[#f3c969]/70 shadow-2xl" style={{ animationDelay: `-${wait}s` }}>
+        <Image src={src} alt="" fill sizes={sizes} className="object-cover" />
+      </div>
+    </div>
+  );
+}
 
 /**
  * The hero's Diwali slide (it sits inside the slide's link to the hamper section): "Happy Diwali", the gift
@@ -13,7 +21,7 @@ const PHOTO = { width: 1200, height: 800 };
 export function DiwaliHeroSlide({ now, photos }: { now: number; photos: string[] }) {
   const countdown = diwaliOrderCountdown(now);
   // The last box (the premium one) sits in front; the others fan out behind it.
-  const top = photos[photos.length - 1];
+  const front = photos[photos.length - 1];
   const left = photos[0];
   const right = photos[1] ?? photos[0];
   return (
@@ -46,19 +54,11 @@ export function DiwaliHeroSlide({ now, photos }: { now: number; photos: string[]
       </div>
 
       <div className="absolute inset-y-0 right-0 w-[42%] sm:w-1/2">
-        {/* Phones: the top box. Larger screens: all three, fanned out. Photos keep their own shape. */}
-        <div className="absolute right-3 top-1/2 w-[94%] -translate-y-1/2 sm:hidden">
-          <Image src={top} {...PHOTO} alt="" sizes="40vw" className="diwali-float h-auto w-full rounded-lg border border-[#f3c969]/60 shadow-xl" />
-        </div>
-        <div className="absolute left-[4%] top-[14%] hidden w-[48%] -rotate-[8deg] sm:block">
-          <Image src={left} {...PHOTO} alt="" sizes="25vw" className="diwali-float h-auto w-full rounded-xl border-2 border-[#f3c969]/60 shadow-2xl" style={{ animationDelay: "-1.2s" }} />
-        </div>
-        <div className="absolute right-[4%] top-[14%] hidden w-[48%] rotate-[8deg] sm:block">
-          <Image src={right} {...PHOTO} alt="" sizes="25vw" className="diwali-float h-auto w-full rounded-xl border-2 border-[#f3c969]/60 shadow-2xl" style={{ animationDelay: "-2.4s" }} />
-        </div>
-        <div className="absolute left-1/2 top-[34%] z-10 hidden w-[56%] -translate-x-1/2 sm:block">
-          <Image src={top} {...PHOTO} alt="" sizes="30vw" className="diwali-float h-auto w-full rounded-xl border-2 border-[#f3c969]/80 shadow-2xl" />
-        </div>
+        {/* Phones: the front box. Larger screens: all three, fanned out, in tall frames like the gift bag photos. */}
+        <GiftPhoto src={front} sizes="30vw" className="right-4 top-1/2 h-[84%] -translate-y-1/2 sm:hidden" />
+        <GiftPhoto src={left} sizes="20vw" wait={1.2} className="left-[6%] top-[16%] hidden w-[34%] -rotate-[7deg] sm:block" />
+        <GiftPhoto src={right} sizes="20vw" wait={2.4} className="right-[6%] top-[16%] hidden w-[34%] rotate-[7deg] sm:block" />
+        <GiftPhoto src={front} sizes="25vw" className="left-1/2 top-[8%] z-10 hidden w-[40%] -translate-x-1/2 sm:block" />
       </div>
 
       <div className="absolute bottom-2 left-10 hidden gap-2 sm:flex lg:bottom-6 lg:left-20 lg:gap-4">
