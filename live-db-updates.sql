@@ -631,3 +631,18 @@ SELECT @pid, '', '/images/hampers/heritage-diwali-gift-bag.webp', 'Heritage prem
 UPDATE `product_images` SET `alt_text` = 'Heritage Box opened: Kashmiri kesar, Gir cow ghee, wild forest honey, walnut kernels and almonds'
 WHERE `product_id` = @pid AND `image_url` = '/images/hampers/heritage-diwali-gift-hamper.webp' AND `is_delete` = 0;
 INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('022_new_main_product_photos.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-10-30 · Honey, ghee and walnut photos: studio versions on a plain warm-beige backdrop with a soft
+-- shadow, like the Kashmiri Mamra Badam pack. Run AFTER the "New main photos" block above, and after the
+-- site is deployed (so the photos exist). Safe to run twice.
+-- --------------------------------------------------------------------------------------------
+
+UPDATE `product_images` SET `image_url` = '/images/products/kashmir-acacia-honey-studio.webp' WHERE `image_url` = '/images/products/kashmir-acacia-honey-jar.webp';
+UPDATE `product_images` SET `image_url` = '/images/products/kashmir-wild-honey-studio.webp' WHERE `image_url` = '/images/products/kashmir-wild-honey-jar.webp';
+UPDATE `product_images` SET `image_url` = '/images/products/buffalo-bilona-ghee-studio.webp' WHERE `image_url` = '/images/products/buffalo-bilona-ghee-jar.webp';
+UPDATE `product_images` SET `image_url` = '/images/products/gir-cow-bilona-ghee-studio.webp' WHERE `image_url` = '/images/products/gir-cow-bilona-ghee-jar.webp';
+UPDATE `product_images` SET `image_url` = '/images/products/kashmiri-walnut-kernels-studio.webp' WHERE `image_url` = '/images/products/kashmiri-walnut-kernels-pouch.webp';
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('023_studio_product_photos.sql');
