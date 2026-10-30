@@ -2,15 +2,20 @@ import Image from "next/image";
 import { diwaliOrderCountdown } from "@/lib/diwali";
 import { Burst, Diya, Embers, Rangoli } from "./DiwaliDecor";
 
-const BOX = { width: 1536, height: 1024 };
+// Layout size before a photo loads; once loaded each photo keeps its own shape (h-auto).
+const PHOTO = { width: 1200, height: 800 };
 
 /**
- * The hero's Diwali slide (it sits inside the slide's link to the hamper section): "Happy Diwali", the three
- * gift boxes fanned out, a countdown to the order-by date, diyas, rising sparks and fireworks. Drawn in HTML,
+ * The hero's Diwali slide (it sits inside the slide's link to the hamper section): "Happy Diwali", the gift
+ * boxes' photos (`photos`, from Admin → Products, in hamper order) fanned out, a countdown to the order-by date, diyas, rising sparks and fireworks. Drawn in HTML,
  * not artwork, so the countdown stays live.
  */
-export function DiwaliHeroSlide({ now }: { now: number }) {
+export function DiwaliHeroSlide({ now, photos }: { now: number; photos: string[] }) {
   const countdown = diwaliOrderCountdown(now);
+  // The last box (the premium one) sits in front; the others fan out behind it.
+  const top = photos[photos.length - 1];
+  const left = photos[0];
+  const right = photos[1] ?? photos[0];
   return (
     <div className="diwali-anim diwali-slide relative h-full w-full overflow-hidden">
       <Rangoli className="absolute -right-[12%] top-1/2 aspect-square h-[150%] -translate-y-1/2 text-[#f3c969] opacity-[0.13]" />
@@ -41,18 +46,18 @@ export function DiwaliHeroSlide({ now }: { now: number }) {
       </div>
 
       <div className="absolute inset-y-0 right-0 w-[42%] sm:w-1/2">
-        {/* Phones: one box. Larger screens: all three, fanned out. */}
+        {/* Phones: the top box. Larger screens: all three, fanned out. Photos keep their own shape. */}
         <div className="absolute right-3 top-1/2 w-[94%] -translate-y-1/2 sm:hidden">
-          <Image src="/images/hampers/heritage-diwali-gift-hamper.webp" {...BOX} alt="" sizes="40vw" className="diwali-float rounded-lg border border-[#f3c969]/60 shadow-xl" />
+          <Image src={top} {...PHOTO} alt="" sizes="40vw" className="diwali-float h-auto w-full rounded-lg border border-[#f3c969]/60 shadow-xl" />
         </div>
         <div className="absolute left-[4%] top-[14%] hidden w-[48%] -rotate-[8deg] sm:block">
-          <Image src="/images/hampers/deepam-diwali-gift-box.webp" {...BOX} alt="" sizes="25vw" className="diwali-float rounded-xl border-2 border-[#f3c969]/60 shadow-2xl" style={{ animationDelay: "-1.2s" }} />
+          <Image src={left} {...PHOTO} alt="" sizes="25vw" className="diwali-float h-auto w-full rounded-xl border-2 border-[#f3c969]/60 shadow-2xl" style={{ animationDelay: "-1.2s" }} />
         </div>
         <div className="absolute right-[4%] top-[14%] hidden w-[48%] rotate-[8deg] sm:block">
-          <Image src="/images/hampers/utsav-diwali-dry-fruit-hamper.webp" {...BOX} alt="" sizes="25vw" className="diwali-float rounded-xl border-2 border-[#f3c969]/60 shadow-2xl" style={{ animationDelay: "-2.4s" }} />
+          <Image src={right} {...PHOTO} alt="" sizes="25vw" className="diwali-float h-auto w-full rounded-xl border-2 border-[#f3c969]/60 shadow-2xl" style={{ animationDelay: "-2.4s" }} />
         </div>
         <div className="absolute left-1/2 top-[34%] z-10 hidden w-[56%] -translate-x-1/2 sm:block">
-          <Image src="/images/hampers/heritage-diwali-gift-hamper.webp" {...BOX} alt="" sizes="30vw" className="diwali-float rounded-xl border-2 border-[#f3c969]/80 shadow-2xl" />
+          <Image src={top} {...PHOTO} alt="" sizes="30vw" className="diwali-float h-auto w-full rounded-xl border-2 border-[#f3c969]/80 shadow-2xl" />
         </div>
       </div>
 

@@ -15,7 +15,7 @@ import { useNow } from "@/hooks/useNow";
 import type { HomeHamper } from "@/types/home";
 import type { Product } from "@/types/product";
 import { HamperBuilderModal } from "./HamperBuilderModal";
-import { DiwaliHampers } from "./DiwaliHampers";
+import { DiwaliHampers, giftPhoto } from "./DiwaliHampers";
 
 const NO_PRESET: string[] = [];
 
@@ -96,7 +96,7 @@ export function CustomHampers({ hampers, products }: { hampers: HomeHamper[]; pr
                 >
                   <div className="relative">
                     <ProductImagePlaceholder
-                      src={hamper.imageUrl ?? product.images[0]}
+                      src={giftPhoto(hamper, product)}
                       alt={hamper.name}
                       gradient={product.gradient}
                       iconSize={40}

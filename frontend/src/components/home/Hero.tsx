@@ -26,10 +26,10 @@ const BANNERS: Slide[] = [
 
 const DIWALI_SLIDE: Slide = { name: "Diwali", href: "#hampers", label: "Happy Diwali. Shop Diwali gift hampers from ₹999.", ms: 6000 };
 
-export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: boolean }) {
+export function Hero({ banner, hasHampers, giftPhotos }: { banner: HomeBanner; hasHampers: boolean; giftPhotos: string[] }) {
   const now = useNow();
   // During Diwali the festive slide leads, and fairy lights hang across the top.
-  const isDiwali = hasHampers && isDiwaliSeason(now);
+  const isDiwali = hasHampers && giftPhotos.length > 0 && isDiwaliSeason(now);
   const slides = hasHampers ? (isDiwali ? [DIWALI_SLIDE, ...BANNERS] : BANNERS) : BANNERS.slice(0, 1);
   const [active, setActive] = useState(0);
   const [hovered, setHovered] = useState(false);
@@ -126,7 +126,7 @@ export function Hero({ banner, hasHampers }: { banner: HomeBanner; hasHampers: b
             <a key={slide.name} href={slide.href} className={`hero-slide ${index === current ? "is-active" : ""}`}
               aria-label={slide.label} aria-hidden={index !== current} tabIndex={index === current ? 0 : -1}
               onClick={(event) => scrollToSection(event, slide.href)} draggable={false}>
-              {slide.src ? <BannerArtwork src={slide.src} alt={slide.alt ?? ""} first={slide === BANNERS[0]} /> : <DiwaliHeroSlide now={now} />}
+              {slide.src ? <BannerArtwork src={slide.src} alt={slide.alt ?? ""} first={slide === BANNERS[0]} /> : <DiwaliHeroSlide now={now} photos={giftPhotos} />}
             </a>
           ))}
         </div>

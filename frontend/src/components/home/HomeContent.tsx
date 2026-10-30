@@ -10,6 +10,7 @@ import { PromoBanner } from "./PromoBanner";
 import { AllProducts } from "./AllProducts";
 import { CraftStory } from "./CraftStory";
 import { CustomHampers } from "./CustomHampers";
+import { giftPhoto } from "./DiwaliHampers";
 import { TrustSection } from "./TrustSection";
 import { FAQSection } from "./FAQSection";
 
@@ -34,10 +35,16 @@ export function HomeContent() {
   // Gift boxes (hampers that are products) show in the hamper section, not in the main product grid.
   const giftSlugs = new Set(data.hampers.map((hamper) => hamper.slug));
   const gridProducts = data.products.filter((product) => !giftSlugs.has(product.slug));
+  // Gift box photos for the hero's Diwali slide, in hamper order.
+  const giftPhotos = data.hampers.flatMap((hamper) => {
+    const product = data.products.find((p) => p.slug === hamper.slug);
+    const photo = product && giftPhoto(hamper, product);
+    return photo ? [photo] : [];
+  });
 
   return (
     <>
-      {data.hero && <Hero banner={data.hero} hasHampers={data.products.length > 0} />}
+      {data.hero && <Hero banner={data.hero} hasHampers={data.products.length > 0} giftPhotos={giftPhotos} />}
       <CraftStory />
       <AllProducts products={gridProducts} />
       {data.promo && <PromoBanner banner={data.promo} />}
