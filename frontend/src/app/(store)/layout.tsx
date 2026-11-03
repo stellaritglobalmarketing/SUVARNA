@@ -5,11 +5,12 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { DeliverySheet } from "@/components/layout/DeliverySheet";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { ActivityTracker } from "@/components/layout/ActivityTracker";
 import { getStoreSettings } from "@/lib/api/settings";
 
 /** Customer-facing pages. The (store) folder is a route group, so it doesn't appear in URLs. */
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
-  const { announcement_text } = await getStoreSettings();
+  const { announcement_text, meta_pixel_id } = await getStoreSettings();
   return (
     // Bottom padding keeps content clear of the fixed mobile tab bar.
     <div className="flex flex-1 flex-col pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] lg:pb-0">
@@ -21,6 +22,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
       <MobileBottomNav />
       <DeliverySheet />
       <WhatsAppButton />
+      <ActivityTracker pixelId={meta_pixel_id} />
     </div>
   );
 }

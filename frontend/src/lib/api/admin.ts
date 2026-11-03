@@ -161,15 +161,102 @@ export interface AdminOrder {
 
 export const getOrders = (query: Query) => paged<AdminOrderRow>("/admin/order", query);
 export const getOrder = (orderNumber: string) => apiGet<AdminOrder>(`/admin/order/${encodeURIComponent(orderNumber)}`);
+// ============================================================================ user activity
+
+export interface ActivitySource {
+  source: string;
+  medium: string;
+  visits: number;
+  visitors: number;
+  orders: number;
+  paid_orders: number;
+  revenue: number;
+}
+
+export interface ActivitySummary {
+  live_now: number;
+  visits: number;
+  visitors: number;
+  orders: number;
+  paid_orders: number;
+  revenue: number;
+  funnel: { step: string; visits: number }[];
+  sources: ActivitySource[];
+  top_products: {
+    slug: string;
+    name: string | null;
+    image_url: string | null;
+    views: number;
+    visitors: number;
+    added_to_cart: number;
+    /** Share of the visits that viewed the product and also added it to the cart; null if it was only added from a list. */
+    add_to_cart_rate: number | null;
+    units_sold: number;
+    revenue: number;
+    top_source: string | null;
+    last_viewed_at: string | null;
+  }[];
+}
+
+export interface ActivityVisitRow {
+  id: number;
+  source: string;
+  medium: string;
+  campaign: string | null;
+  landing_path: string | null;
+  device_type: string | null;
+  browser: string | null;
+  os: string | null;
+  page_views: number;
+  event_count: number;
+  last_event_type: string | null;
+  last_event_label: string | null;
+  started_at: string;
+  last_seen_at: string;
+  is_live: boolean;
+  customer: { id: number; name: string; phone: string } | null;
+  orders: { order_number: string; payment_status: string }[];
+}
+
+export interface ActivityEvent {
+  id: number;
+  event_type: string;
+  path: string | null;
+  label: string | null;
+  product_slug: string | null;
+  variant: string | null;
+  quantity: number | null;
+  value: number | null;
+  order_number: string | null;
+  payment_status: string | null;
+  order_status: string | null;
+  created_at: string;
+}
+
+export interface ActivityVisit extends Omit<ActivityVisitRow, "orders" | "last_event_type" | "last_event_label"> {
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  referrer: string | null;
+  events: ActivityEvent[];
+  other_visits: { id: number; source: string; medium: string; page_views: number; started_at: string }[];
+}
+
+export const getActivitySummary = (range: string) => apiGet<ActivitySummary>("/admin/activity/summary", toParams({ range }));
+export const getActivitySessions = (query: Query) => paged<ActivityVisitRow>("/admin/activity/session", query);
+export const getActivitySession = (id: string) => apiGet<ActivityVisit>(`/admin/activity/session/${encodeURIComponent(id)}`);
+
 // ============================================================================ settings
 
 export interface AdminStoreSettings {
   whatsapp_number: string;
   whatsapp_display: string;
   announcement_text: string;
+  meta_pixel_id: string;
 }
 export const getAdminSettings = () => apiGet<AdminStoreSettings>("/admin/settings");
-export const updateAdminSettings = (body: { whatsapp_number?: string; announcement_text?: string }) => apiPut<AdminStoreSettings>("/admin/settings", body);
+export const updateAdminSettings = (body: { whatsapp_number?: string; announcement_text?: string; meta_pixel_id?: string }) => apiPut<AdminStoreSettings>("/admin/settings", body);
 
 /** Asks Razorpay whether an unpaid order was in fact paid, and marks it paid if so. */
 export const syncAdminPayment = (orderNumber: string) =>

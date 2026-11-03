@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { MapPin, Megaphone, MessageCircle, Truck } from "lucide-react";
+import { Activity, MapPin, Megaphone, MessageCircle, Truck } from "lucide-react";
 import { getAdminSettings, updateAdminSettings, type AdminStoreSettings } from "@/lib/api/admin";
 import { queryKeys } from "@/lib/query/keys";
 import { AdminButton, Card, Field, FormError, PageHeader, inputClass, useAdminMutation } from "@/components/admin/ui";
@@ -61,6 +61,54 @@ function TopBannerCard({ settings }: { settings: AdminStoreSettings }) {
           <AdminButton type="submit" disabled={text.trim() === settings.announcement_text} loading={save.isPending}>
             Save banner
           </AdminButton>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+/** Off until an ID is saved. Events are sent from the store only, never the admin panel. */
+function MetaPixelCard({ settings }: { settings: AdminStoreSettings }) {
+  const queryClient = useQueryClient();
+  // null until the admin types; until then the box shows the saved ID.
+  const [typed, setTyped] = useState<string | null>(null);
+  const pixelId = typed ?? settings.meta_pixel_id;
+  const isValid = pixelId === "" || /^\d{8,20}$/.test(pixelId);
+
+  const save = useAdminMutation((value: string) => updateAdminSettings({ meta_pixel_id: value }), {
+    success: "Meta Pixel saved",
+    invalidate: [["admin", "settings"]],
+    onSuccess: () => {
+      setTyped(null);
+      queryClient.invalidateQueries({ queryKey: queryKeys.storeSettings });
+    },
+  });
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    save.mutate(pixelId);
+  };
+
+  return (
+    <Card title="Meta Pixel">
+      <p className="mb-5 max-w-2xl text-sm text-brand-ink/65">
+        Sends page views, product views, add to cart, checkout and purchases to your Meta Events Manager so you can measure Facebook and
+        Instagram ads. Find the ID in Meta Events Manager → Data sources. Leave it empty to turn the pixel off. Store pages pick up a change
+        within a minute.
+      </p>
+      <form onSubmit={handleSubmit} className="grid max-w-md grid-cols-1 gap-4">
+        <Field label="Pixel ID" hint="Digits only, for example 1234567890123456.">
+          <input inputMode="numeric" maxLength={20} value={pixelId} onChange={(e) => setTyped(e.target.value.trim())} className={inputClass} />
+        </Field>
+        {!isValid && <p className="-mt-2 text-xs text-red-600">A Pixel ID is 8 to 20 digits.</p>}
+        <FormError error={save.error} />
+        <div className="flex flex-wrap items-center gap-3">
+          <AdminButton type="submit" disabled={!isValid || pixelId === settings.meta_pixel_id} loading={save.isPending}>
+            Save Pixel ID
+          </AdminButton>
+          <Link href="/admin/activity" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-forest underline underline-offset-4">
+            <Activity size={14} /> See user activity
+          </Link>
         </div>
       </form>
     </Card>
@@ -146,6 +194,8 @@ export default function AdminSettingsPage() {
       </Card>
 
       {data && <TopBannerCard settings={data} />}
+
+      {data && <MetaPixelCard settings={data} />}
 
       <Card title="Ekart shipping">
         <p className="mb-4 max-w-2xl text-sm text-brand-ink/65">

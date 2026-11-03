@@ -1001,6 +1001,19 @@ Updating `shipment_status` stamps `shipped_at`/`delivered_at` when appropriate a
 
 Ekart statuses map to ours: picked up / in transit / out for delivery / undelivered (`ndr`) move the order to `shipped`; `delivered` moves it to `delivered`; a cancelled booking puts `fulfillment_status` back to `unfulfilled` so a new one can be booked.
 
+## User activity — `/activity/event`, `/admin/activity`
+
+The store reports what visitors do (`frontend/src/lib/tracking/track.ts`); Admin → User Activity shows it. Visits end after 30 minutes without activity. Rows older than `ACTIVITY_RETENTION_DAYS` (default 90) are deleted daily.
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/activity/event` | API key only, optional customer token. `{ session_key, visitor_key, context: { referrer, landing_path, utm_*, click_id }, event: { type, path, label, product_slug, variant, quantity, value, order_number } }`. Admins and bots are ignored; order events must match the signed-in customer's own order |
+| GET | `/admin/activity/summary` | `range` = `24h\|7d\|30d\|90d` (default `7d`): live count, visitors, visit-to-order funnel, sources with orders and paid revenue, most viewed products |
+| GET | `/admin/activity/session` | `range, source, search, status (live\|ordered), page, limit`: visits, latest activity first |
+| GET | `/admin/activity/session/:id` | one visit's full timeline and the visitor's other visits |
+
+To tell paid ads from organic posts, tag ad links: `?utm_source=instagram&utm_medium=paid&utm_campaign=diwali`. `fbclid` alone counts as social, because Meta adds it to every outbound link. The Meta Pixel ID is set in Admin → Settings (`meta_pixel_id` in `PUT /admin/settings`); empty keeps the pixel off, and User Activity works either way.
+
 ---
 
 # Quick integration flow

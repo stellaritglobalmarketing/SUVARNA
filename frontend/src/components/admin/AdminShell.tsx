@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Activity,
   Boxes,
   ExternalLink,
   LayoutDashboard,
@@ -28,6 +29,7 @@ const NAV = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/inventory", label: "Inventory", icon: Boxes },
   { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/activity", label: "User Activity", icon: Activity },
   { href: "/admin/reviews", label: "Reviews", icon: MessageSquareText },
   { href: "/admin/shipments", label: "Shipments", icon: Truck },
   { href: "/admin/content", label: "Home Content", icon: LayoutTemplate },

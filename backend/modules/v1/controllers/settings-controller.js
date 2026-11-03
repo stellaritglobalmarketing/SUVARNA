@@ -3,6 +3,7 @@ import Codes from "../../../config/status_codes.js";
 import {
     ANNOUNCEMENT_MAX_LENGTH,
     getPublicSettings,
+    normalizeMetaPixelId,
     normalizeWhatsappNumber,
     setSetting,
     setWhatsappNumber,
@@ -20,12 +21,13 @@ const getSettings = async (_req, res) => {
 
 /**
  * PUT /admin/settings — any of { "whatsapp_number": "6353684881" (any common Indian mobile format),
- * "announcement_text": "FREE Delivery Across India" (empty hides the banner) }. Fields left out keep their value.
+ * "announcement_text": "FREE Delivery Across India" (empty hides the banner), "meta_pixel_id": "1234567890123456"
+ * (empty turns the pixel off) }. Fields left out keep their value.
  */
 const updateSettings = async (req, res) => {
     try {
-        const { whatsapp_number, announcement_text } = req.body || {};
-        if (whatsapp_number === undefined && announcement_text === undefined) {
+        const { whatsapp_number, announcement_text, meta_pixel_id } = req.body || {};
+        if (whatsapp_number === undefined && announcement_text === undefined && meta_pixel_id === undefined) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, "Nothing to save", null);
         }
 
@@ -38,8 +40,14 @@ const updateSettings = async (req, res) => {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, `Keep the banner text to ${ANNOUNCEMENT_MAX_LENGTH} characters or fewer`, null);
         }
 
+        const pixelId = meta_pixel_id === undefined ? "" : normalizeMetaPixelId(meta_pixel_id);
+        if (pixelId === null) {
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, "A Meta Pixel ID is 8 to 20 digits", null);
+        }
+
         if (number) await setWhatsappNumber(number);
         if (announcement !== null) await setSetting("announcement_text", announcement);
+        if (meta_pixel_id !== undefined) await setSetting("meta_pixel_id", pixelId);
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Settings saved", await getPublicSettings());
     } catch (error) {
         console.error("Update settings error: ", error);

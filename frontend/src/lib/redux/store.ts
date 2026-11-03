@@ -6,6 +6,7 @@ import uiReducer from "./slices/uiSlice";
 import wishlistReducer from "./slices/wishlistSlice";
 import recentlyViewedReducer from "./slices/recentlyViewedSlice";
 import { syncMiddleware } from "./sync";
+import { trackingMiddleware } from "@/lib/tracking/middleware";
 
 export function makeStore() {
   return configureStore({
@@ -17,8 +18,9 @@ export function makeStore() {
       wishlist: wishlistReducer,
       recentlyViewed: recentlyViewedReducer,
     },
-    // Mirrors a logged-in customer's cart/wishlist changes to the backend (see ./sync.ts).
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(syncMiddleware.middleware),
+    // Mirrors a logged-in customer's cart/wishlist changes to the backend (see ./sync.ts), and reports them
+    // to User Activity and the Meta Pixel (see lib/tracking/middleware.ts).
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(syncMiddleware.middleware, trackingMiddleware.middleware),
   });
 }
 

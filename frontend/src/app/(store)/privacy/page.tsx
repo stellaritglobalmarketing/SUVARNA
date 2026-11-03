@@ -15,7 +15,7 @@ export default async function PrivacyPage() {
     {
       id: "collect",
       title: "What we collect",
-      inShort: "Only what we need to run your account and deliver your orders.",
+      inShort: "What we need to run your account and deliver your orders, plus how you use our store.",
       body: (
         <>
           <ul>
@@ -35,6 +35,11 @@ export default async function PrivacyPage() {
             <li>
               <strong>Messages:</strong> anything you send us on WhatsApp or by phone.
             </li>
+            <li>
+              <strong>How you use our store:</strong> where your visit came from (such as Google, Instagram or Facebook), the pages and
+              products you open, what you search for, add to your cart or buy, and your type of device and browser. If you&rsquo;re signed
+              in, this is linked to your account.
+            </li>
           </ul>
           <p>We don&rsquo;t collect your card number, UPI PIN or bank login. Those go straight to Razorpay.</p>
         </>
@@ -50,6 +55,7 @@ export default async function PrivacyPage() {
           <li>To take payment, pack and ship your order, and give you tracking updates and invoices.</li>
           <li>To answer your questions and handle returns or replacements.</li>
           <li>To show approved reviews with your first name.</li>
+          <li>To understand how shoppers use our store, improve it, and measure and improve our advertising.</li>
           <li>To keep the site secure and prevent fraud.</li>
         </ul>
       ),
@@ -57,7 +63,7 @@ export default async function PrivacyPage() {
     {
       id: "share",
       title: "Who we share it with",
-      inShort: "Only with the companies that make your order happen — never sold, never rented.",
+      inShort: "With the companies that make your order happen, and with Meta to measure our ads — never sold, never rented.",
       body: (
         <>
           <ul>
@@ -71,24 +77,34 @@ export default async function PrivacyPage() {
               <strong>WhatsApp (Meta)</strong> — when you message us, and to send your order details and invoice to our own business number.
             </li>
             <li>
+              <strong>Meta (Facebook and Instagram)</strong> — we use the Meta Pixel, which tells Meta the pages and products you view, what
+              you add to your cart and buy, along with your browser details and IP address, so we can measure and improve our ads. Meta
+              handles this under its own privacy policy.
+            </li>
+            <li>
               <strong>Hosting providers</strong> who store our website and database securely.
             </li>
             <li>Government or legal authorities, only when the law requires it.</li>
           </ul>
-          <p>We never sell or rent your personal information, and we don&rsquo;t send it to advertisers.</p>
+          <p>We never sell or rent your personal information.</p>
         </>
       ),
     },
     {
       id: "storage",
       title: "Cookies and your browser",
-      inShort: "Your browser keeps only your sign-in — no advertising or tracking cookies.",
+      inShort: "Your browser keeps your sign-in and a visitor ID, and Meta's Pixel sets advertising cookies.",
       body: (
-        <p>
-          The site saves a sign-in token and your name in your browser so you stay signed in. Your cart is kept with your account on our
-          server, so it follows you across devices. You can clear the saved sign-in any time from your browser settings; you&rsquo;ll just be
-          signed out.
-        </p>
+        <>
+          <p>
+            The site saves a sign-in token and your name in your browser so you stay signed in. Your cart is kept with your account on our
+            server, so it follows you across devices.
+          </p>
+          <p>
+            We also save a random visitor ID in your browser so we can tell one visit from another, and the Meta Pixel sets its own cookies
+            to measure our ads. You can clear all of these any time from your browser settings; you&rsquo;ll just be signed out.
+          </p>
+        </>
       ),
     },
     {
@@ -98,7 +114,8 @@ export default async function PrivacyPage() {
       body: (
         <p>
           We keep your account details while your account is active. Order and invoice records are kept for as long as Indian tax and
-          accounting laws require (usually up to 8 years), even if you close your account.
+          accounting laws require (usually up to 8 years), even if you close your account. Records of how you used our store are deleted
+          after 90 days.
         </p>
       ),
     },
@@ -154,7 +171,7 @@ export default async function PrivacyPage() {
     <PolicyPage
       eyebrow="Policies"
       title="Privacy Policy"
-      updated="8 October 2026"
+      updated="3 November 2026"
       intro={
         <p>
           Your trust matters as much as the quality of what we sell. Here&rsquo;s exactly what information we collect when you shop with

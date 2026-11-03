@@ -18,9 +18,12 @@ import adminReviewRoutes from "./modules/v1/routes/admin-review-routes.js";
 import adminContentRoutes from "./modules/v1/routes/admin-content-routes.js";
 import shippingRoutes from "./modules/v1/routes/shipping-routes.js";
 import webhookRoutes from "./modules/v1/routes/webhook-routes.js";
+import activityRoutes from "./modules/v1/routes/activity-routes.js";
+import adminActivityRoutes from "./modules/v1/routes/admin-activity-routes.js";
 import settingsRoutes from "./modules/v1/routes/settings-routes.js";
 import ekart from "./config/ekart.js";
 import { syncOpenShipments } from "./modules/v1/services/ekart-shipping.js";
+import { purgeOldActivity } from "./modules/v1/services/visitor-activity.js";
 import cors from "cors";
 import { UPLOAD_ROOT } from "./config/uploads.js";
 import { storeUploadPaths } from "./config/public-url.js";
@@ -88,6 +91,7 @@ app.use("/api/v1/order/", orderRoutes);
 app.use("/api/v1/payment/", paymentRoutes);
 app.use("/api/v1/shipping/", shippingRoutes);
 app.use("/api/v1/settings", settingsRoutes);
+app.use("/api/v1/activity/", activityRoutes);
 app.use("/api/v1/admin/", adminRoutes);
 app.use("/api/v1/admin/", adminProductRoutes);
 app.use("/api/v1/admin/", adminOrderRoutes);
@@ -95,6 +99,7 @@ app.use("/api/v1/admin/", adminInventoryRoutes);
 app.use("/api/v1/admin/", adminShippingRoutes);
 app.use("/api/v1/admin/", adminReviewRoutes);
 app.use("/api/v1/admin/", adminContentRoutes);
+app.use("/api/v1/admin/", adminActivityRoutes);
 
 // Unknown routes and unhandled errors answer in the same JSON envelope as every other
 // response, instead of Express's default HTML pages, so the apps can always parse them.
@@ -149,6 +154,22 @@ function startEkartSync() {
   console.log(`✓ Ekart tracking sync every ${minutes} min`);
 }
 
+// User Activity rows are only kept for ACTIVITY_RETENTION_DAYS (default 90), checked daily. 0 keeps them forever.
+function startActivityCleanup() {
+  const days = Number(process.env.ACTIVITY_RETENTION_DAYS ?? 90);
+  if (!Number.isFinite(days) || days <= 0) {
+    return;
+  }
+  const run = () =>
+    purgeOldActivity(days)
+      .then((deleted) => {
+        if (deleted) console.log(`User activity cleanup: ${deleted} old visits deleted`);
+      })
+      .catch((error) => console.error("User activity cleanup error:", error.message));
+  setInterval(run, 24 * 60 * 60 * 1000);
+  setTimeout(run, 60 * 1000);
+}
+
 // Start server
 async function startServer() {
   try {
@@ -158,7 +179,13 @@ async function startServer() {
     }
     // startCronJobs();
     startEkartSync();
-    app.listen(PORT, () => {
+    startActivityCleanup();
+    // Express 5 reports a failed listen (such as a port already in use) here, not by throwing.
+    app.listen(PORT, (error) => {
+      if (error) {
+        console.error(`✗ Server could not start on port ${PORT}: ${error.code === "EADDRINUSE" ? "another program is already using this port" : error.message}`);
+        process.exit(1);
+      }
       console.log(`✓ Server is running on port ${PORT}`);
     });
   } catch (error) {

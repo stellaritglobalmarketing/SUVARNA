@@ -56,10 +56,27 @@ async function getAnnouncementText() {
     }
 }
 
+/** A Meta Pixel ID is digits only; "" turns the pixel off. Returns null for anything else. */
+function normalizeMetaPixelId(input) {
+    const id = String(input ?? "").trim();
+    return id === "" || /^\d{8,20}$/.test(id) ? id : null;
+}
+
+/** The Meta Pixel ID from Admin → Settings; empty means the pixel stays off. */
+async function getMetaPixelId() {
+    try {
+        const values = await readAll();
+        return normalizeMetaPixelId(values.meta_pixel_id) || "";
+    } catch (error) {
+        console.error("Store settings read error: ", error.message);
+        return "";
+    }
+}
+
 /** Public settings for the storefront and admin form. */
 async function getPublicSettings() {
-    const [whatsapp_number, announcement_text] = await Promise.all([getWhatsappNumber(), getAnnouncementText()]);
-    return { whatsapp_number, whatsapp_display: displayWhatsappNumber(whatsapp_number), announcement_text };
+    const [whatsapp_number, announcement_text, meta_pixel_id] = await Promise.all([getWhatsappNumber(), getAnnouncementText(), getMetaPixelId()]);
+    return { whatsapp_number, whatsapp_display: displayWhatsappNumber(whatsapp_number), announcement_text, meta_pixel_id };
 }
 
 async function setWhatsappNumber(number) {
@@ -89,6 +106,7 @@ async function setSetting(key, value) {
 export {
     ANNOUNCEMENT_MAX_LENGTH,
     normalizeWhatsappNumber,
+    normalizeMetaPixelId,
     getWhatsappNumber,
     getPublicSettings,
     setWhatsappNumber,

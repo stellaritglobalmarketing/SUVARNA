@@ -5,23 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, IndianRupee, MessageSquareText, Package, ShoppingCart, Users } from "lucide-react";
 import { getDashboard, ORDER_STATUSES } from "@/lib/api/admin";
 import { formatInr } from "@/lib/utils/format";
-import { Card, PageHeader, StatusPill, Table, TableState, formatDateTime, humanize } from "@/components/admin/ui";
-
-function Tile({ label, value, sub, icon: Icon, href }: { label: string; value: string | number; sub?: string; icon: typeof Users; href?: string }) {
-  const body = (
-    <div className="flex items-start justify-between gap-3 rounded-2xl border border-brand-sand-dark bg-white p-5 transition-shadow hover:shadow-sm">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand-ink/50">{label}</p>
-        <p className="mt-2 font-serif text-2xl font-bold text-brand-forest">{value}</p>
-        {sub && <p className="mt-1 text-xs text-brand-ink/60">{sub}</p>}
-      </div>
-      <span className="rounded-xl bg-brand-sand p-2.5 text-brand-forest">
-        <Icon size={20} />
-      </span>
-    </div>
-  );
-  return href ? <Link href={href}>{body}</Link> : body;
-}
+import { Card, PageHeader, StatusPill, Table, TableState, Tile, formatDateTime, humanize } from "@/components/admin/ui";
 
 export default function AdminDashboardPage() {
   const { data, isLoading, isError, refetch } = useQuery({ queryKey: ["admin", "dashboard"], queryFn: getDashboard });

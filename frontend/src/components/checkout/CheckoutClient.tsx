@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, MapPin, MessageCircle, Plus, ShieldCheck } from "lucide-react";
@@ -14,6 +14,7 @@ import { createAddress, fetchAddresses } from "@/lib/api/addresses";
 import { fetchServerCart } from "@/lib/api/cart";
 import { createPaymentOrder, fetchOrderDetail, placeOrder, syncPayment, verifyPayment } from "@/lib/api/checkout";
 import { openRazorpay } from "@/lib/razorpay";
+import { track } from "@/lib/tracking/track";
 import { IS_WHATSAPP_CHECKOUT, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { queryKeys } from "@/lib/query/keys";
@@ -62,6 +63,14 @@ export function CheckoutClient() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // The saved cart loads a moment after the page does, so wait for it; report the checkout only once.
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current || !isCustomer || pendingOrder || cartItems.length === 0) return;
+    checkoutTracked.current = true;
+    track("begin_checkout", { value: cartSubtotal, quantity: cartItems.reduce((sum, line) => sum + line.quantity, 0) });
+  }, [isCustomer, pendingOrder, cartItems, cartSubtotal]);
 
   // Checkout needs an account (server cart, saved addresses). The session is restored from
   // storage after the first render, so check storage itself before sending anyone to log in.
@@ -167,6 +176,7 @@ export function CheckoutClient() {
         goToSuccess(orderNumber);
         return;
       }
+      track("payment_started", { order_number: orderNumber, value: paymentOrder.amount / 100 });
       await openRazorpay(
         {
           key: paymentOrder.key_id,
@@ -189,6 +199,7 @@ export function CheckoutClient() {
           },
           modal: {
             ondismiss: () => {
+              track("payment_cancelled", { order_number: orderNumber });
               setStatus("idle");
               setNotice("Payment wasn't completed. Your order is saved — you can pay whenever you're ready.");
             },
@@ -230,6 +241,7 @@ export function CheckoutClient() {
       }
 
       const order = await placeOrder(selectedAddressId, notes.trim());
+      track("order_placed", { order_number: order.order_number, value: serverSubtotal });
       dispatch(setCartItems([])); // the server emptied the cart when it created the order
       if (IS_WHATSAPP_CHECKOUT) {
         await sendOrderOnWhatsapp(order.order_number, waWindow, notes);

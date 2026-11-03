@@ -3,6 +3,7 @@ import { USE_MOCK_API } from "@/lib/api/config";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { clearCredentials, selectAuthToken, selectAuthUser, selectIsAuthenticated, setCredentials } from "@/lib/redux/slices/authSlice";
 import { clearSession, getToken, saveSession } from "@/lib/auth/token";
+import { track } from "@/lib/tracking/track";
 import type { LoginPayload, SignupPayload } from "@/types/auth";
 
 /** Wraps the auth API calls with Redux + localStorage persistence so every call site stays in sync. */
@@ -16,6 +17,7 @@ export function useAuth() {
     const session = await loginRequest(payload);
     saveSession(session.token, session.user);
     dispatch(setCredentials(session));
+    track("login");
     return session;
   };
 
@@ -23,6 +25,7 @@ export function useAuth() {
     const session = await signupRequest(payload);
     saveSession(session.token, session.user);
     dispatch(setCredentials(session));
+    track("signup");
     return session;
   };
 

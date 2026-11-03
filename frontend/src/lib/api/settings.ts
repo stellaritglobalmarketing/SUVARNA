@@ -10,12 +10,15 @@ export interface StoreSettings {
   whatsapp_display: string;
   /** The site-wide top banner line; empty hides the banner. */
   announcement_text: string;
+  /** Meta Pixel ID; empty keeps the pixel off. */
+  meta_pixel_id: string;
 }
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   whatsapp_number: WHATSAPP_ORDER_NUMBER,
   whatsapp_display: WHATSAPP_ORDER_NUMBER_DISPLAY,
   announcement_text: "",
+  meta_pixel_id: "",
 };
 
 /** Client-side read (through useStoreSettings). */

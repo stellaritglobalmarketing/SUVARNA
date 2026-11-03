@@ -9,6 +9,7 @@ import { addToCart } from "@/lib/redux/slices/cartSlice";
 import { pushToast } from "@/lib/redux/slices/uiSlice";
 import { addRecentlyViewed } from "@/lib/redux/slices/recentlyViewedSlice";
 import { formatDiscount, formatInr } from "@/lib/utils/format";
+import { track } from "@/lib/tracking/track";
 
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
@@ -36,7 +37,10 @@ export function ProductDetailClient({ slug, initialProduct }: { slug: string; in
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    if (product) dispatch(addRecentlyViewed(product.slug));
+    if (!product) return;
+    dispatch(addRecentlyViewed(product.slug));
+    const price = product.variants.find((variant) => variant.stock > 0)?.price ?? product.variants[0]?.price;
+    track("view_product", { label: product.name, product_slug: product.slug, value: price });
   }, [product, dispatch]);
 
   if (isLoading) {

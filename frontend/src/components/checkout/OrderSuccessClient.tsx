@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { downloadOrderInvoice, fetchOrderDetail, syncPayment } from "@/lib/api/checkout";
 import { IS_WHATSAPP_CHECKOUT, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { track } from "@/lib/tracking/track";
 import { queryKeys } from "@/lib/query/keys";
 import { formatInr } from "@/lib/utils/format";
 import { Container } from "@/components/ui/Container";
@@ -55,6 +56,16 @@ export function OrderSuccessClient() {
     check();
     return () => window.clearInterval(timer);
   }, [awaitingRazorpay, orderNumber, queryClient]);
+
+  // Counted only once the server says it's paid, which can be well after this page opens.
+  useEffect(() => {
+    if (order?.payment_status !== "paid") return;
+    track("purchase", {
+      order_number: orderNumber,
+      value: order.total_amount,
+      quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+    });
+  }, [order, orderNumber]);
 
   if (!orderNumber || isError) {
     return (

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, ImagePlus, Loader2, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImagePlus, Loader2, Search, X, type LucideIcon } from "lucide-react";
 import type { PaginationMeta } from "@/lib/api/http";
 import { uploadImage } from "@/lib/api/admin";
 import { useAppDispatch } from "@/lib/redux/hooks";
@@ -44,6 +45,22 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>
   );
+}
+
+export function Tile({ label, value, sub, icon: Icon, href }: { label: string; value: string | number; sub?: string; icon: LucideIcon; href?: string }) {
+  const body = (
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-brand-sand-dark bg-white p-5 transition-shadow hover:shadow-sm">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand-ink/50">{label}</p>
+        <p className="mt-2 font-serif text-2xl font-bold text-brand-forest">{value}</p>
+        {sub && <p className="mt-1 text-xs text-brand-ink/60">{sub}</p>}
+      </div>
+      <span className="rounded-xl bg-brand-sand p-2.5 text-brand-forest">
+        <Icon size={20} />
+      </span>
+    </div>
+  );
+  return href ? <Link href={href}>{body}</Link> : body;
 }
 
 export function Card({ title, actions, children, className }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {

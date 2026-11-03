@@ -75,6 +75,7 @@ async function main() {
         await run("addresses", "DELETE FROM addresses");
         await run("customer sessions", "DELETE FROM user_devices WHERE role <> 'admin'");
         await run("customers", "DELETE FROM users");
+        await run("visits (user activity)", "DELETE FROM visitor_sessions");
 
         // Admins
         const keepIds = admins.map((a) => a.id);
