@@ -230,6 +230,7 @@ export async function estimateCharge({ dropPincode, pkg, invoiceAmount }) {
         width: pkg.width_cm,
         height: pkg.height_cm,
         serviceType: serviceType(),
+        shippingDirection: "FORWARD",
         codAmount: 0,
     });
     const num = (v) => (v === undefined || v === null || v === "" ? null : round2(v));
