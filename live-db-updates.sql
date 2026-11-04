@@ -752,3 +752,16 @@ SET `meta_description` = REPLACE(`meta_description`, ' Order by 1 Nov.', ' Order
 WHERE `slug` = 'deepam-diwali-gift-box';
 
 INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('027_gift_box_text_after_diwali_cutoff.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-11-04 · Home page promo banner: the "Kashmir's Finest Naturals" poster replaces the old photo.
+-- Run AFTER deploying: the poster file ships with the frontend. Safe to run twice.
+-- --------------------------------------------------------------------------------------------
+
+UPDATE `home_banners`
+SET `image_url` = '/images/hero/kashmirs-finest-naturals.webp',
+    `image_alt` = 'Suvarna7, Kashmir''s Finest Naturals: Kashmiri mamra badam, walnut kernels, acacia honey, wild honey, saffron, buffalo ghee and Gir cow ghee'
+WHERE `placement` = 'promo' AND `is_delete` = 0;
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('028_promo_banner_finest_naturals.sql');
