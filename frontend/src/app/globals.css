@@ -173,6 +173,27 @@ button {
   .hero-dot.is-active::after { width: 12px; height: 12px; }}
 @media (prefers-reduced-motion: reduce) { .hero-slide { transition: none; } }
 
+/* ---- Home promo band (components/home/PromoBanner.tsx) ----
+   Walnut band with a faint gold lattice and a warm light behind the poster. The arch echoes the product
+   labels; its top stays shallow enough not to clip the logo printed on the poster. */
+.promo-band {
+  background:
+    radial-gradient(55% 85% at 74% 40%, rgb(150 96 46 / .55), transparent 72%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cpath d='M28 4 52 28 28 52 4 28ZM28 18 38 28 28 38 18 28Z' fill='none' stroke='%23d9a441' stroke-opacity='.1'/%3E%3C/svg%3E"),
+    #2b1c11;
+}
+.promo-arch { border-radius: 50% 50% 10px 10px / 14% 14% 10px 10px; }
+.promo-arch-frame {
+  padding: 7px;
+  border: 1px solid #d9a441;
+  border-radius: 50% 50% 16px 16px / 14% 14% 16px 16px;
+  background: #2b1c11;
+  box-shadow: 0 30px 60px -20px rgb(0 0 0 / .75);
+}
+.promo-seal-text { transform-origin: 60px 60px; animation: promo-seal-turn 30s linear infinite; }
+@keyframes promo-seal-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .promo-seal-text { animation: none; } }
+
 /* ---- Home craft frieze under the hero (components/home/CraftStory.tsx) ----
    A faint single-tone band that drifts sideways; each figure loops on its own. Pivots are set
    inline in SVG user units; parts that turn about their own box use fill-box. */
