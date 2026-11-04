@@ -5,23 +5,47 @@ import Codes from "../../../config/status_codes.js";
 import { isValidOrderNumber } from "../validators/order-validation.js";
 import { sendInvoiceToStore } from "../services/whatsapp-invoice.js";
 import { sendOrderEmailToStore } from "../services/order-email.js";
+import { orderOwnerClause, attachGuestOrderToAccount, claimGuestLogin } from "../services/guest-order.js";
+import { startCustomerSession } from "./user-controller.js";
 
 const STORE_NAME = "Suvarna7";
 const MIN_AMOUNT_PAISE = 100; // Razorpay's minimum charge is ₹1
+const GUEST_ORDER_HOLD_HOURS = 2;
 
 function toPaise(amount) {
     return Math.round(Number(amount) * 100);
 }
 
-async function getOwnOrder(conn, order_number, user_id, { forUpdate = false } = {}) {
+async function getOwnOrder(conn, order_number, req) {
+    const owner = orderOwnerClause(req);
     const [rows] = await conn.query(
         `SELECT id, order_number, total_amount, order_status, payment_status, customer_name, customer_email, customer_phone
          FROM orders
-         WHERE order_number = ? AND user_id = ? AND is_delete = 0
-         LIMIT 1${forUpdate ? " FOR UPDATE" : ""}`,
-        [order_number, user_id]
+         WHERE order_number = ? AND ${owner.sql} AND is_delete = 0
+         LIMIT 1`,
+        [order_number, ...owner.params]
     );
     return rows[0] || null;
+}
+
+// The money is already recorded by now, so a failure here must not fail the payment. A later re-check retries it.
+async function giveGuestOrderAnAccount(orderId) {
+    try {
+        await attachGuestOrderToAccount(orderId);
+    } catch (error) {
+        console.error(`Couldn't attach guest order id ${orderId} to an account: `, error);
+    }
+}
+
+/**
+ * For the browser that placed a guest order: once it's paid, the login for the account this order created
+ * (see services/guest-order.js). Undefined for everyone else, and for every call after the first.
+ */
+async function guestSession(req, order) {
+    if (req.user || order.payment_status !== "paid") return undefined;
+    await giveGuestOrderAnAccount(order.id);
+    const user_id = await claimGuestLogin(order.id);
+    return user_id ? startCustomerSession(user_id) : undefined;
 }
 
 /**
@@ -89,6 +113,7 @@ async function markPaid(payment, rzpPayment, signature) {
         sendInvoiceToStore(payment.order_id);
         sendOrderEmailToStore(payment.order_id);
     }
+    await giveGuestOrderAnAccount(payment.order_id);
 }
 
 /**
@@ -132,7 +157,7 @@ const createRazorpayOrder = async (req, res) => {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, "A valid order_number is required", null);
         }
 
-        const order = await getOwnOrder(db, order_number, req.user.id);
+        const order = await getOwnOrder(db, order_number, req);
         if (!order) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Order not found", null);
         }
@@ -223,7 +248,7 @@ const verifyRazorpayPayment = async (req, res) => {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, "Missing or invalid payment details", null);
         }
 
-        const order = await getOwnOrder(db, order_number, req.user.id);
+        const order = await getOwnOrder(db, order_number, req);
         if (!order) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Order not found", null);
         }
@@ -258,11 +283,12 @@ const verifyRazorpayPayment = async (req, res) => {
             await markPaid(payment, rzpPayment, razorpay_signature);
         }
 
-        const updated = await getOwnOrder(db, order_number, req.user.id);
+        const updated = await getOwnOrder(db, order_number, req);
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Payment successful", {
             order_number,
             order_status: updated.order_status,
             payment_status: updated.payment_status,
+            session: await guestSession(req, updated),
         });
     } catch (error) {
         console.error("Verify Razorpay payment error: ", error);
@@ -288,18 +314,19 @@ const syncRazorpayPayment = async (req, res) => {
         if (!isValidOrderNumber(order_number)) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, "A valid order_number is required", null);
         }
-        const order = await getOwnOrder(db, order_number, req.user.id);
+        const order = await getOwnOrder(db, order_number, req);
         if (!order) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Order not found", null);
         }
         if (order.payment_status !== "paid") {
             await recoverPaidAttempt(order.id);
         }
-        const updated = await getOwnOrder(db, order_number, req.user.id);
+        const updated = await getOwnOrder(db, order_number, req);
         return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Payment status checked", {
             order_number,
             order_status: updated.order_status,
             payment_status: updated.payment_status,
+            session: await guestSession(req, updated),
         });
     } catch (error) {
         console.error("Sync Razorpay payment error: ", error);
@@ -362,4 +389,51 @@ const handleRazorpayWebhook = async (req, res) => {
     }
 };
 
-export { createRazorpayOrder, verifyRazorpayPayment, syncRazorpayPayment, adminSyncRazorpayPayment, handleRazorpayWebhook };
+/**
+ * Guests abandon checkouts far more often than customers do, and each pending order holds stock. So a guest order
+ * still unpaid after GUEST_ORDER_HOLD_HOURS is cancelled and its stock released, after one last check with
+ * Razorpay. A payment that arrives even later is still recorded and shows up in admin for a refund (see markPaid).
+ */
+async function releaseAbandonedGuestOrders() {
+    const [rows] = await db.query(
+        `SELECT id FROM orders
+         WHERE guest_token_hash IS NOT NULL AND order_status = 'pending' AND payment_status <> 'paid' AND is_delete = 0
+           AND created_at < NOW() - INTERVAL ? HOUR
+         LIMIT 100`,
+        [GUEST_ORDER_HOLD_HOURS]
+    );
+    let released = 0;
+    for (const { id } of rows) {
+        try {
+            if (await recoverPaidAttempt(id)) continue;
+        } catch (error) {
+            console.warn(`Guest order id ${id}: couldn't check Razorpay, trying again next round: ${error.message}`);
+            continue;
+        }
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            const [[order]] = await conn.query("SELECT order_status, payment_status FROM orders WHERE id = ? FOR UPDATE", [id]);
+            if (order.order_status === "pending" && order.payment_status !== "paid") {
+                const [items] = await conn.query("SELECT product_variant_id, quantity FROM order_items WHERE order_id = ?", [id]);
+                for (const item of items) {
+                    await conn.query(
+                        "UPDATE inventory SET reserved_quantity = GREATEST(reserved_quantity - ?, 0) WHERE variant_id = ?",
+                        [item.quantity, item.product_variant_id]
+                    );
+                }
+                await conn.query("UPDATE orders SET order_status = 'cancelled' WHERE id = ?", [id]);
+                released += 1;
+            }
+            await conn.commit();
+        } catch (error) {
+            await conn.rollback();
+            console.error(`Guest order id ${id}: couldn't release it: `, error);
+        } finally {
+            conn.release();
+        }
+    }
+    return released;
+}
+
+export { createRazorpayOrder, verifyRazorpayPayment, syncRazorpayPayment, adminSyncRazorpayPayment, handleRazorpayWebhook, releaseAbandonedGuestOrders };

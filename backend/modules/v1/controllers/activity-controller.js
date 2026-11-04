@@ -4,6 +4,7 @@ import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import { ORDER_EVENT_TYPES, validateActivityEvent } from "../validators/activity-validation.js";
 import { isBot, recordEvent } from "../services/visitor-activity.js";
+import { orderOwnerClause } from "../services/guest-order.js";
 
 const RATE_LIMIT_PER_MINUTE = 300;
 const RATE_LIMIT_MAX_IPS = 5000;
@@ -40,7 +41,7 @@ const ignored = (res) => middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPO
 /**
  * POST /activity/event — one thing a visitor did on the store. API key only, so guests can be recorded;
  * an optional token ties the visit to the customer. Admins and bots aren't recorded. Order events must
- * match one of the signed-in customer's own orders, and take their amount from it, not from the browser.
+ * match the customer's or guest's own order, and take their amount from it, not from the browser.
  */
 const trackEvent = async (req, res) => {
     try {
@@ -56,10 +57,11 @@ const trackEvent = async (req, res) => {
 
         const { event } = value;
         if (ORDER_EVENT_TYPES.includes(event.type)) {
-            if (!userId) return ignored(res);
+            if (!userId && !req.headers["guest-token"]) return ignored(res);
+            const owner = orderOwnerClause({ user: userId ? { id: userId } : null, headers: req.headers });
             const [orders] = await db.query(
-                "SELECT total_amount, payment_status FROM orders WHERE order_number = ? AND user_id = ? AND is_delete = 0 LIMIT 1",
-                [event.order_number, userId]
+                `SELECT total_amount, payment_status FROM orders WHERE order_number = ? AND ${owner.sql} AND is_delete = 0 LIMIT 1`,
+                [event.order_number, ...owner.params]
             );
             if (orders.length === 0) return ignored(res);
             if (event.type === "purchase" && orders[0].payment_status !== "paid") return ignored(res);

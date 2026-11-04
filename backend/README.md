@@ -672,6 +672,37 @@ The cart is emptied automatically once the order is placed. `discount_amount`/`s
 - `code: 0` `"Only N unit(s) of \"<Product> - <Variant>\" available in stock"` — someone else bought the remaining stock first
 - On any error, nothing is created and the cart is left untouched (safe to retry after fixing the issue).
 
+## `POST /order/guest` — checkout without an account (API key only)
+
+**Request:**
+```json
+{
+    "name": "Asha", "phone": "9876543210", "email": "asha@example.com",
+    "address": "12 MG Road, Fort Area", "pincode": "400001",
+    "items": [{ "product_variant_id": 12, "quantity": 2 }],
+    "expected_subtotal": 1398
+}
+```
+
+`email` is optional. City and state come from Ekart's pincode data; send `city` and `state` only when it has none (the API answers `code: 2`, "Please enter your city and state"). Prices are read from the database, and the order is refused if they no longer add up to `expected_subtotal`. Limited to 20 calls per hour per IP.
+
+The response is the same as `POST /order`, plus `guest_token`. Send it as a `guest-token` header on `GET /order/:order_number`, its `/invoice`, and `POST /payment/razorpay/order`, `/verify` and `/sync`. Only its hash is stored, so it can't be fetched again.
+
+**After payment** (browser, webhook, re-check or admin marking it paid), the order joins the account with its phone, else its email. If there is none, an account is made from the order, with no password and the address saved.
+
+- When the order made the account, the next `/verify` or `/sync` from the guest returns `data.session` (`{ token, user }`), once. `user.has_password` is `false` until `POST /user/set-password` with `{ "password": "…" }`, which only works while the account has no password.
+- When the account already existed, the order joins it and no session is issued, because phone numbers aren't verified. A disabled or deleted account is left alone and the order stays a guest order.
+
+A guest order still unpaid after 2 hours is cancelled and its stock released, after a last check with Razorpay (`releaseAbandonedGuestOrders`).
+
+## `POST /order/track` — track with order number + mobile (API key only)
+
+```json
+{ "order_number": "ORD-20260919-0001", "phone": "9876543210" }
+```
+
+Returns status, items, shipment and destination city/state/pincode, without the name, street address, phone or email. `code: 3` if the two don't match. Limited to 30 calls per 15 minutes per IP.
+
 ## `GET /order/my-orders` — order history
 
 | param | default |

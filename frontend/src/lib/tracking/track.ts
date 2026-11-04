@@ -1,4 +1,5 @@
 import { API_BASE_URL, API_KEY, USE_MOCK_API } from "@/lib/api/config";
+import { guestOrderHeaders } from "@/lib/auth/guestOrders";
 import { getStoredUser, getToken } from "@/lib/auth/token";
 
 /**
@@ -263,6 +264,7 @@ function sendToServer(type: ActivityEventType, data: ActivityEventData) {
   if (API_KEY) headers["api-key"] = API_KEY;
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (data?.order_number) Object.assign(headers, guestOrderHeaders(data.order_number));
 
   // keepalive lets an event finish sending when the page is being left.
   fetch(`${API_BASE_URL.replace(/\/$/, "")}/activity/event`, {

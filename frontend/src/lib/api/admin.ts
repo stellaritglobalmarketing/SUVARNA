@@ -122,7 +122,8 @@ export interface AdminShipment {
 
 export interface AdminOrder {
   order_number: string;
-  customer: { id: number; name: string; phone: string; email: string | null };
+  /** id is null for a guest order that hasn't joined an account. */
+  customer: { id: number | null; name: string; phone: string; email: string | null };
   shipping_address: {
     name: string;
     phone: string;

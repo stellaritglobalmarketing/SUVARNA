@@ -14,6 +14,7 @@ import {
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
+import { SetPasswordCard } from "@/components/account/SetPasswordCard";
 
 const MENU_ITEMS = [
   { icon: PackageSearch, label: "My Orders", href: "/orders" },
@@ -51,6 +52,8 @@ export default function ProfilePage() {
           </Button>
         )}
       </div>
+
+      <SetPasswordCard className="mt-6" />
 
       <div className="mt-6 divide-y divide-brand-sand-dark overflow-hidden rounded-2xl border border-brand-sand-dark bg-white">
         {MENU_ITEMS.map(({ icon: Icon, label, href }) => (

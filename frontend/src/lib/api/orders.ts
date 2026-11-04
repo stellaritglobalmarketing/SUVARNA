@@ -1,8 +1,9 @@
 import type { OrderTracking, ShipmentDiagnostic, TrackingStage } from "@/types/order";
 import { getMockOrderByAwb } from "@/lib/data/orders.mock";
+import { guestOrderHeaders } from "@/lib/auth/guestOrders";
 import { USE_MOCK_API } from "./config";
 import { mockDelay } from "./delay";
-import { apiGet, apiGetPaginated, type PaginationMeta } from "./http";
+import { apiGet, apiGetPaginated, apiPost, type PaginationMeta } from "./http";
 
 // ---- Real backend response shape (see backend/README.md — "GET /order/:order_number") ----
 interface BackendShippingAddress {
@@ -207,8 +208,8 @@ function mapOrderDetailToTracking(detail: BackendOrderDetail): OrderTracking {
 }
 
 /**
- * Looks up a customer's own order by order number (e.g. "ORD-20260919-0001").
- * Requires the caller to be logged in — the backend has no public/AWB-based tracking.
+ * Looks up a customer's own order by order number (e.g. "ORD-20260919-0001"), for a logged-in customer
+ * or the browser that placed the order as a guest.
  */
 export async function fetchOrderTracking(orderNumber: string): Promise<OrderTracking> {
   if (USE_MOCK_API) {
@@ -217,7 +218,13 @@ export async function fetchOrderTracking(orderNumber: string): Promise<OrderTrac
     if (!order) throw new Error(`No order found for ${orderNumber}`);
     return order;
   }
-  const detail = await apiGet<BackendOrderDetail>(`/order/${encodeURIComponent(orderNumber)}`);
+  const detail = await apiGet<BackendOrderDetail>(`/order/${encodeURIComponent(orderNumber)}`, undefined, guestOrderHeaders(orderNumber));
+  return mapOrderDetailToTracking(detail);
+}
+
+/** Tracking with no login: order number + mobile number. The reply leaves out the name and street address. */
+export async function trackOrderByPhone(orderNumber: string, phone: string): Promise<OrderTracking> {
+  const detail = await apiPost<BackendOrderDetail>("/order/track", { order_number: orderNumber, phone });
   return mapOrderDetailToTracking(detail);
 }
 

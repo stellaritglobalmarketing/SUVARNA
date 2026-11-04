@@ -24,6 +24,7 @@ import settingsRoutes from "./modules/v1/routes/settings-routes.js";
 import ekart from "./config/ekart.js";
 import { syncOpenShipments } from "./modules/v1/services/ekart-shipping.js";
 import { purgeOldActivity } from "./modules/v1/services/visitor-activity.js";
+import { releaseAbandonedGuestOrders } from "./modules/v1/controllers/payment-controller.js";
 import cors from "cors";
 import { UPLOAD_ROOT } from "./config/uploads.js";
 import { storeUploadPaths } from "./config/public-url.js";
@@ -170,6 +171,18 @@ function startActivityCleanup() {
   setTimeout(run, 60 * 1000);
 }
 
+// Guest orders nobody paid for give their stock back (releaseAbandonedGuestOrders).
+function startGuestOrderSweep() {
+  const run = () =>
+    releaseAbandonedGuestOrders()
+      .then((released) => {
+        if (released) console.log(`Guest order sweep: ${released} unpaid orders released`);
+      })
+      .catch((error) => console.error("Guest order sweep error:", error.message));
+  setInterval(run, 15 * 60 * 1000);
+  setTimeout(run, 90 * 1000);
+}
+
 // Start server
 async function startServer() {
   try {
@@ -180,6 +193,7 @@ async function startServer() {
     // startCronJobs();
     startEkartSync();
     startActivityCleanup();
+    startGuestOrderSweep();
     // Express 5 reports a failed listen (such as a port already in use) here, not by throwing.
     app.listen(PORT, (error) => {
       if (error) {

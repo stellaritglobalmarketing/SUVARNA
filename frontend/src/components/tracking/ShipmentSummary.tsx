@@ -58,9 +58,9 @@ export function ShipmentSummary({ order }: { order: OrderTracking }) {
 
       <div className="mt-4 border-t border-brand-sand-dark pt-4 text-sm">
         <p className="text-xs uppercase tracking-wide text-brand-ink/50">Delivering To</p>
-        <p className="mt-1 font-medium text-brand-ink">{order.destination.name}</p>
+        {order.destination.name && <p className="mt-1 font-medium text-brand-ink">{order.destination.name}</p>}
         <p className="text-brand-ink/70">
-          {order.destination.addressLine}, {order.destination.city}, {order.destination.state} -{" "}
+          {[order.destination.addressLine, order.destination.city, order.destination.state].filter(Boolean).join(", ")} -{" "}
           {order.destination.pincode}
         </p>
       </div>

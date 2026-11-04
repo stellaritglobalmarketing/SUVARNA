@@ -1,12 +1,28 @@
-﻿import type { HomeHighlight } from "@/types/home";
+﻿import { ShieldCheck, Sprout, FlaskConical } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 
-export function TrustBadges({ badges }: { badges: HomeHighlight[] }) {
-  if (badges.length === 0) return null;
+// Each badge breaks into two lines on phones, where three have to share one row.
+const BADGES = [
+  { icon: Sprout, lines: ["Own farm", "in Pampore"] },
+  { icon: FlaskConical, lines: ["Tested by", "IIKSTC"] },
+  { icon: ShieldCheck, lines: ["FSSAI Lic.", "10726994001139"] },
+];
+
+/** The three proofs of origin and quality, kept just under the hero so they're seen before the products. */
+export function TrustBadges() {
   return (
-    <section className="border-y border-brand-sand-dark bg-white py-4">
-      <Container className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-        {badges.map(({ title }) => <span key={title} className="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-brand-ink/65 sm:text-xs">{title}</span>)}
+    <section className="pt-3 sm:pt-5" aria-label="Our quality promise">
+      <Container>
+        <ul className="grid grid-cols-3 divide-x divide-brand-sand-dark">
+          {BADGES.map(({ icon: Icon, lines }) => (
+            <li key={lines[0]} className="flex flex-col items-center gap-1 px-1 text-center sm:flex-row sm:justify-center sm:gap-2">
+              <Icon size={16} className="shrink-0 text-brand-walnut-dark" aria-hidden="true" />
+              <span className="text-[10.5px] font-medium leading-tight text-brand-ink/75 sm:text-sm">
+                {lines[0]} <span className="block sm:inline">{lines[1]}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
       </Container>
     </section>
   );

@@ -1,10 +1,24 @@
+import { useCallback } from "react";
 import { login as loginRequest, logout as logoutRequest, signup as signupRequest } from "@/lib/api/auth";
 import { USE_MOCK_API } from "@/lib/api/config";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { clearCredentials, selectAuthToken, selectAuthUser, selectIsAuthenticated, setCredentials } from "@/lib/redux/slices/authSlice";
 import { clearSession, getToken, saveSession } from "@/lib/auth/token";
+import { clearGuestTokens } from "@/lib/auth/guestOrders";
 import { track } from "@/lib/tracking/track";
-import type { LoginPayload, SignupPayload } from "@/types/auth";
+import type { AuthSession, LoginPayload, SignupPayload } from "@/types/auth";
+
+/** Takes on a session that didn't come from the login form, such as the one a paid guest order hands over. */
+export function useAdoptSession() {
+  const dispatch = useAppDispatch();
+  return useCallback(
+    (session: AuthSession) => {
+      saveSession(session.token, session.user);
+      dispatch(setCredentials(session));
+    },
+    [dispatch],
+  );
+}
 
 /** Wraps the auth API calls with Redux + localStorage persistence so every call site stays in sync. */
 export function useAuth() {
@@ -36,6 +50,7 @@ export function useAuth() {
       logoutRequest().catch(() => undefined);
     }
     clearSession();
+    clearGuestTokens();
     dispatch(clearCredentials());
   };
 

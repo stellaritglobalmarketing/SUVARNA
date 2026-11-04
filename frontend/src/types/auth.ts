@@ -5,6 +5,8 @@ export interface AuthUser {
   phone?: string;
   role: "user" | "admin";
   is_verified?: boolean;
+  /** False only for an account made at guest checkout that hasn't set one yet. */
+  has_password?: boolean;
 }
 
 export interface AuthSession {

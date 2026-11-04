@@ -3,14 +3,15 @@ import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import { isValidOrderNumber } from "../validators/order-validation.js";
 import { findOrderId, invoiceFilename, loadInvoiceData, renderInvoicePdf } from "../services/invoice.js";
+import { orderOwnerClause } from "../services/guest-order.js";
 
 /** Streams the PDF invoice for an order. Customers get only their own paid orders; admins any order. */
-async function sendInvoice(req, res, { orderNumber, userId, paidOnly }) {
+async function sendInvoice(req, res, { orderNumber, owner, paidOnly }) {
     try {
         if (!isValidOrderNumber(orderNumber)) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Order not found", null);
         }
-        const orderId = await findOrderId(db, orderNumber, { userId });
+        const orderId = await findOrderId(db, orderNumber, { owner });
         const data = orderId ? await loadInvoiceData(db, orderId) : null;
         if (!data) {
             return middleware.sendResponse(res, Codes.SUCCESS, Codes.NO_DATA_FOUND, "Order not found", null);
@@ -30,7 +31,7 @@ async function sendInvoice(req, res, { orderNumber, userId, paidOnly }) {
     }
 }
 
-const getMyInvoice = (req, res) => sendInvoice(req, res, { orderNumber: String(req.params.order_number || "").trim(), userId: req.user.id, paidOnly: true });
+const getMyInvoice = (req, res) => sendInvoice(req, res, { orderNumber: String(req.params.order_number || "").trim(), owner: orderOwnerClause(req), paidOnly: true });
 
 const getAdminInvoice = (req, res) => sendInvoice(req, res, { orderNumber: String(req.params.orderNumber || "").trim(), paidOnly: false });
 

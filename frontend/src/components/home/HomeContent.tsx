@@ -11,6 +11,7 @@ import { AllProducts } from "./AllProducts";
 import { CraftStory } from "./CraftStory";
 import { CustomHampers } from "./CustomHampers";
 import { giftPhoto } from "./DiwaliHampers";
+import { TrustBadges } from "./TrustBadges";
 import { TrustSection } from "./TrustSection";
 import { FAQSection } from "./FAQSection";
 
@@ -45,6 +46,7 @@ export function HomeContent() {
   return (
     <>
       {data.hero && <Hero banner={data.hero} hasHampers={data.products.length > 0} giftPhotos={giftPhotos} />}
+      <TrustBadges />
       <CraftStory />
       <AllProducts products={gridProducts} />
       {data.promo && <PromoBanner banner={data.promo} />}

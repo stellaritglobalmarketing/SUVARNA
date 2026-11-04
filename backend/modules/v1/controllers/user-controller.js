@@ -3,7 +3,7 @@ import db from "../../../config/db.js";
 import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import common from "../../../config/common.js";
-import { validateSignup, validateLogin, normalizePhone } from "../validators/user-validation.js";
+import { validateSignup, validateLogin, validateSetPassword, normalizePhone } from "../validators/user-validation.js";
 
 const SALT_ROUNDS = 10;
 // user_devices.token is varchar(512) and the DB isn't in strict mode, so a longer token would be
@@ -20,6 +20,7 @@ function toSafeUser(record, role) {
     if (role === "user") {
         safe.phone = record.phone;
         safe.is_verified = !!record.is_verified;
+        safe.has_password = !!record.password_hash;
     }
     return safe;
 }
@@ -72,7 +73,7 @@ const signup = async (req, res) => {
                 "INSERT INTO users (name, email, phone, password_hash) VALUES (?, ?, ?, ?)",
                 [name, email, phone, password_hash]
             );
-            newUser = { id: result.insertId, name, email, phone, is_verified: 0, role: "user" };
+            newUser = { id: result.insertId, name, email, phone, password_hash, is_verified: 0, role: "user" };
             token = await common.generateToken(newUser);
             await createDeviceSession(conn, newUser.id, "user", token);
             await conn.commit();
@@ -168,4 +169,34 @@ const logout = async (req, res) => {
     }
 };
 
-export { signup, login, logout };
+/** Logs a customer in without a password. For guest checkout, which proves the account is the buyer's own. */
+async function startCustomerSession(user_id) {
+    const [[account]] = await db.query(
+        "SELECT id, name, email, phone, password_hash, is_verified FROM users WHERE id = ? AND is_active = 1 AND is_delete = 0 LIMIT 1",
+        [user_id]
+    );
+    const token = await common.generateToken({ ...account, role: "user" });
+    await createDeviceSession(db, account.id, "user", token);
+    return { token, user: toSafeUser(account, "user") };
+}
+
+/** An account made at guest checkout has no password yet. Only that first one can be set here: this isn't a password change. */
+const setPassword = async (req, res) => {
+    try {
+        const error = validateSetPassword(req.body);
+        if (error) {
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.MISSING_FIELD, error, null);
+        }
+        const password_hash = await bcrypt.hash(req.body.password, SALT_ROUNDS);
+        const [result] = await db.query("UPDATE users SET password_hash = ? WHERE id = ? AND password_hash IS NULL", [password_hash, req.user.id]);
+        if (result.affectedRows === 0) {
+            return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_ERROR, "This account already has a password", null);
+        }
+        return middleware.sendResponse(res, Codes.SUCCESS, Codes.RESPONSE_SUCCESS, "Password saved", null);
+    } catch (err) {
+        console.error("Error in set password: ", err);
+        return middleware.sendResponse(res, Codes.INTERNAL_ERROR, Codes.RESPONSE_ERROR, "Something went wrong. Please try again later", null);
+    }
+};
+
+export { signup, login, logout, setPassword, startCustomerSession };

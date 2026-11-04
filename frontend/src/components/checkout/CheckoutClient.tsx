@@ -5,14 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, MapPin, MessageCircle, Plus, ShieldCheck } from "lucide-react";
 import type { AddressInput } from "@/types/address";
-import { useAuth } from "@/hooks/useAuth";
+import { useAdoptSession, useAuth } from "@/hooks/useAuth";
+import { useGuestToken, useIsClient, useStoredSessionToken } from "@/hooks/useBrowserStorage";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { selectCartItems, selectCartMrpTotal, selectCartSubtotal, setCartItems } from "@/lib/redux/slices/cartSlice";
 import { pushToast } from "@/lib/redux/slices/uiSlice";
 import { getToken } from "@/lib/auth/token";
+import { saveGuestToken } from "@/lib/auth/guestOrders";
 import { createAddress, fetchAddresses } from "@/lib/api/addresses";
 import { fetchServerCart } from "@/lib/api/cart";
-import { createPaymentOrder, fetchOrderDetail, placeOrder, syncPayment, verifyPayment } from "@/lib/api/checkout";
+import { createPaymentOrder, fetchOrderDetail, placeGuestOrder, placeOrder, syncPayment, verifyPayment } from "@/lib/api/checkout";
 import { openRazorpay } from "@/lib/razorpay";
 import { track } from "@/lib/tracking/track";
 import { IS_WHATSAPP_CHECKOUT, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
@@ -26,9 +28,11 @@ import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ProductImagePlaceholder } from "@/components/ui/ProductImagePlaceholder";
 import { AddressForm } from "./AddressForm";
+import { GuestCheckoutForm, type GuestDetails } from "./GuestCheckoutForm";
 
 const BRAND_COLOR = "#3d2b1c";
 const PLACEHOLDER_GRADIENT: [string, string] = ["#8a6a4f", "#d4a373"];
+const GUEST_FORM_ID = "guest-checkout";
 
 type Status = "idle" | "placing" | "opening" | "paying" | "verifying" | "sending";
 
@@ -38,7 +42,7 @@ function errorText(error: unknown): string {
 
 /**
  * Two stages on one page:
- *  - no `?order=`: review the cart, pick/add an address, then "Place Order & Pay" creates the order
+ *  - no `?order=`: review the cart, pick/add an address (a guest fills in one short form), then pay creates the order
  *  - `?order=ORD-…`: an order that's waiting for payment — pay (or retry) with Razorpay
  * Keeping the pending order in the URL means a closed payment window or a page refresh never
  * loses it, and the customer can't accidentally place the same order twice.
@@ -51,7 +55,16 @@ export function CheckoutClient() {
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const isCustomer = isAuthenticated && user?.role === "user";
+  const adoptSession = useAdoptSession();
   const store = useStoreSettings();
+
+  // No session on this device. The WhatsApp fallback needs an account: its order waits for payment by hand.
+  const isClient = useIsClient();
+  const storedSession = useStoredSessionToken();
+  const guestToken = useGuestToken(pendingOrder ?? "");
+  const isGuest = isClient && !isAuthenticated && !storedSession;
+  const canCheckOutAsGuest = isGuest && !IS_WHATSAPP_CHECKOUT && (!pendingOrder || Boolean(guestToken));
+  const canSeePendingOrder = isCustomer || (canCheckOutAsGuest && Boolean(guestToken));
 
   const cartItems = useAppSelector(selectCartItems);
   const cartSubtotal = useAppSelector(selectCartSubtotal);
@@ -67,19 +80,19 @@ export function CheckoutClient() {
   // The saved cart loads a moment after the page does, so wait for it; report the checkout only once.
   const checkoutTracked = useRef(false);
   useEffect(() => {
-    if (checkoutTracked.current || !isCustomer || pendingOrder || cartItems.length === 0) return;
+    if (checkoutTracked.current || !(isCustomer || canCheckOutAsGuest) || pendingOrder || cartItems.length === 0) return;
     checkoutTracked.current = true;
     track("begin_checkout", { value: cartSubtotal, quantity: cartItems.reduce((sum, line) => sum + line.quantity, 0) });
-  }, [isCustomer, pendingOrder, cartItems, cartSubtotal]);
+  }, [isCustomer, canCheckOutAsGuest, pendingOrder, cartItems, cartSubtotal]);
 
-  // Checkout needs an account (server cart, saved addresses). The session is restored from
-  // storage after the first render, so check storage itself before sending anyone to log in.
+  // Only someone who can't check out as a guest is sent to log in: the WhatsApp fallback, or an order this
+  // browser didn't place. The session is restored from storage after the first render, so check storage itself.
   useEffect(() => {
-    if (!isAuthenticated && !getToken()) {
+    if (isClient && !isAuthenticated && !getToken() && !canCheckOutAsGuest) {
       const next = pendingOrder ? `/checkout?order=${pendingOrder}` : "/checkout";
       router.replace(`/login?next=${encodeURIComponent(next)}`);
     }
-  }, [isAuthenticated, pendingOrder, router]);
+  }, [isClient, isAuthenticated, canCheckOutAsGuest, pendingOrder, router]);
 
   const addressesQuery = useQuery({
     queryKey: queryKeys.addresses,
@@ -93,7 +106,7 @@ export function CheckoutClient() {
   const orderQuery = useQuery({
     queryKey: queryKeys.orderDetail(pendingOrder ?? ""),
     queryFn: () => fetchOrderDetail(pendingOrder!),
-    enabled: isCustomer && Boolean(pendingOrder),
+    enabled: canSeePendingOrder && Boolean(pendingOrder),
   });
 
   // Landing back on a pending order that has since been paid (e.g. paid, then refreshed).
@@ -108,11 +121,12 @@ export function CheckoutClient() {
   // So on arrival, and whenever the tab becomes visible again, ask the backend to check with Razorpay.
   const orderIsUnpaid = Boolean(pendingOrder) && orderQuery.data != null && orderQuery.data.payment_status !== "paid";
   useEffect(() => {
-    if (!isCustomer || !pendingOrder || !orderIsUnpaid) return;
+    if (!canSeePendingOrder || !pendingOrder || !orderIsUnpaid) return;
     let cancelled = false;
     const check = async () => {
       try {
         const result = await syncPayment(pendingOrder);
+        if (result.session) adoptSession(result.session);
         if (!cancelled && result.payment_status === "paid") {
           queryClient.invalidateQueries({ queryKey: queryKeys.orderDetail(pendingOrder) });
           queryClient.invalidateQueries({ queryKey: queryKeys.orders.allMine });
@@ -131,7 +145,7 @@ export function CheckoutClient() {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [isCustomer, pendingOrder, orderIsUnpaid, queryClient, router]);
+  }, [canSeePendingOrder, pendingOrder, orderIsUnpaid, adoptSession, queryClient, router]);
 
   const saveAddress = useMutation({
     mutationFn: (input: AddressInput) => createAddress(input),
@@ -190,7 +204,8 @@ export function CheckoutClient() {
           handler: async (response) => {
             setStatus("verifying");
             try {
-              await verifyPayment(orderNumber, response);
+              const result = await verifyPayment(orderNumber, response);
+              if (result.session) adoptSession(result.session);
               goToSuccess(orderNumber);
             } catch (verifyError) {
               setStatus("idle");
@@ -201,7 +216,11 @@ export function CheckoutClient() {
             ondismiss: () => {
               track("payment_cancelled", { order_number: orderNumber });
               setStatus("idle");
-              setNotice("Payment wasn't completed. Your order is saved — you can pay whenever you're ready.");
+              setNotice(
+                isGuest
+                  ? "Payment wasn't completed. We're holding your items for 2 hours, so you can pay again here."
+                  : "Payment wasn't completed. Your order is saved — you can pay whenever you're ready.",
+              );
             },
           },
         },
@@ -256,6 +275,27 @@ export function CheckoutClient() {
     }
   };
 
+  const handleGuestOrder = async (details: GuestDetails) => {
+    const items = cartItems.flatMap((line) => (line.variantId != null ? [{ product_variant_id: line.variantId, quantity: line.quantity }] : []));
+    if (items.length !== cartItems.length) {
+      setError("An item in your cart is no longer available. Please remove it and add it again.");
+      return;
+    }
+    setError(null);
+    setStatus("placing");
+    try {
+      const order = await placeGuestOrder({ ...details, items, expected_subtotal: cartSubtotal });
+      saveGuestToken(order.order_number, order.guest_token);
+      track("order_placed", { order_number: order.order_number, value: order.total_amount });
+      dispatch(setCartItems([]));
+      router.replace(`/checkout?order=${encodeURIComponent(order.order_number)}`);
+      await startPayment(order.order_number);
+    } catch (placeError) {
+      setStatus("idle");
+      setError(errorText(placeError));
+    }
+  };
+
   const busyLabel: Partial<Record<Status, string>> = {
     placing: "Placing order…",
     opening: "Opening payment…",
@@ -265,7 +305,7 @@ export function CheckoutClient() {
   };
   const isBusy = status !== "idle";
 
-  if (!isAuthenticated) {
+  if (!isClient || (!isAuthenticated && !canCheckOutAsGuest)) {
     return (
       <Container className="py-10">
         <Skeleton className="h-8 w-48" />
@@ -274,7 +314,7 @@ export function CheckoutClient() {
     );
   }
 
-  if (!isCustomer) {
+  if (isAuthenticated && !isCustomer) {
     return (
       <Container className="py-20 text-center">
         <p className="text-brand-ink/70">Checkout is available for customer accounts only.</p>
@@ -353,6 +393,37 @@ export function CheckoutClient() {
         <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-brand-sand-dark py-20 text-center">
           <p className="text-brand-ink/70">Your cart is empty.</p>
           <Button href="/#products">Browse Products</Button>
+        </div>
+      </Container>
+    );
+  }
+
+  const summaryLines = cartItems.map((item) => ({
+    key: item.lineId,
+    name: item.productName,
+    variant: item.variantLabel,
+    quantity: item.quantity,
+    total: item.unitPrice * item.quantity,
+    image: item.image,
+  }));
+
+  if (!isAuthenticated) {
+    return (
+      <Container className="py-10">
+        <SectionHeading eyebrow="Checkout" title="Delivery & Payment" />
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <section className="h-fit rounded-2xl border border-brand-sand-dark bg-white p-5 lg:col-span-2">
+            <h3 className="mb-4 flex items-center gap-2 font-serif text-lg font-semibold text-brand-forest">
+              <MapPin size={18} /> Delivery Details
+            </h3>
+            <GuestCheckoutForm id={GUEST_FORM_ID} onSubmit={handleGuestOrder} />
+          </section>
+          <SummaryCard lines={summaryLines} subtotal={cartSubtotal} total={cartSubtotal} savings={cartMrpTotal - cartSubtotal}>
+            <Button type="submit" form={GUEST_FORM_ID} className="mt-5 w-full" size="lg" disabled={isBusy}>
+              <ShieldCheck size={18} /> {busyLabel[status] ?? `Pay ${formatInr(cartSubtotal)}`}
+            </Button>
+            <Messages notice={notice} error={error} />
+          </SummaryCard>
         </div>
       </Container>
     );
@@ -449,14 +520,7 @@ export function CheckoutClient() {
         </div>
 
         <SummaryCard
-          lines={cartItems.map((item) => ({
-            key: item.lineId,
-            name: item.productName,
-            variant: item.variantLabel,
-            quantity: item.quantity,
-            total: item.unitPrice * item.quantity,
-            image: item.image,
-          }))}
+          lines={summaryLines}
           subtotal={cartSubtotal}
           total={cartSubtotal}
           savings={cartMrpTotal - cartSubtotal}

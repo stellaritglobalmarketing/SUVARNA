@@ -52,10 +52,10 @@ function buildUrl(path: string, searchParams?: Record<string, string | undefined
 async function rawRequest<T>(
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
-  options: { searchParams?: Record<string, string | undefined>; body?: unknown } = {},
+  options: { searchParams?: Record<string, string | undefined>; body?: unknown; headers?: Record<string, string> } = {},
 ): Promise<ApiEnvelope<T>> {
   const hasBody = options.body !== undefined;
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = { Accept: "application/json", ...options.headers };
   if (API_KEY) headers["api-key"] = API_KEY;
   if (hasBody) headers["Content-Type"] = "application/json";
   const token = getToken();
@@ -95,8 +95,8 @@ async function rawRequest<T>(
   return envelope;
 }
 
-export async function apiGet<T>(path: string, searchParams?: Record<string, string | undefined>): Promise<T> {
-  const envelope = await rawRequest<T>("GET", path, { searchParams });
+export async function apiGet<T>(path: string, searchParams?: Record<string, string | undefined>, headers?: Record<string, string>): Promise<T> {
+  const envelope = await rawRequest<T>("GET", path, { searchParams, headers });
   return envelope.data as T;
 }
 
@@ -108,8 +108,8 @@ export async function apiGetPaginated<T>(
   return { data: envelope.data as T, pagination: envelope.pagination };
 }
 
-export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
-  const envelope = await rawRequest<T>("POST", path, { body: body ?? {} });
+export async function apiPost<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
+  const envelope = await rawRequest<T>("POST", path, { body: body ?? {}, headers });
   return envelope.data as T;
 }
 
@@ -132,8 +132,8 @@ export async function apiDelete<T>(path: string): Promise<T> {
  * Downloads a file endpoint (e.g. a PDF invoice) with the API key and session token, then saves it
  * through the browser. A JSON reply instead of the file is the backend's error envelope.
  */
-export async function downloadFile(path: string, filename: string): Promise<void> {
-  const headers: Record<string, string> = {};
+export async function downloadFile(path: string, filename: string, extraHeaders?: Record<string, string>): Promise<void> {
+  const headers: Record<string, string> = { ...extraHeaders };
   if (API_KEY) headers["api-key"] = API_KEY;
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;

@@ -3,11 +3,10 @@ import { createRazorpayOrder, verifyRazorpayPayment, syncRazorpayPayment } from 
 import middleware from "../../../middleware/middleware.js";
 
 const router = express.Router();
-const customerOnly = [middleware.tokenMiddleware, middleware.allowedRoles("user")];
 
-router.post("/razorpay/order", ...customerOnly, createRazorpayOrder);
-router.post("/razorpay/verify", ...customerOnly, verifyRazorpayPayment);
+router.post("/razorpay/order", middleware.customerOrGuest, createRazorpayOrder);
+router.post("/razorpay/verify", middleware.customerOrGuest, verifyRazorpayPayment);
 // Re-checks with Razorpay when the customer comes back to an unpaid order (paid, but the callback was lost).
-router.post("/razorpay/sync", ...customerOnly, syncRazorpayPayment);
+router.post("/razorpay/sync", middleware.customerOrGuest, syncRazorpayPayment);
 
 export default router;

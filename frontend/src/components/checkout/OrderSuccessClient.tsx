@@ -4,7 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, Clock, Download, MessageCircle } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAdoptSession, useAuth } from "@/hooks/useAuth";
+import { useGuestToken, useIsClient, useStoredSessionToken } from "@/hooks/useBrowserStorage";
 import { downloadOrderInvoice, fetchOrderDetail, syncPayment } from "@/lib/api/checkout";
 import { IS_WHATSAPP_CHECKOUT, buildOrderMessage, whatsappOrderUrl } from "@/lib/whatsapp";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
@@ -14,6 +15,7 @@ import { formatInr } from "@/lib/utils/format";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { SetPasswordCard } from "@/components/account/SetPasswordCard";
 
 /**
  * Shown after Razorpay payment is verified — or, in WhatsApp checkout mode, right after the order is placed.
@@ -22,12 +24,18 @@ import { Skeleton } from "@/components/ui/Skeleton";
 export function OrderSuccessClient() {
   const orderNumber = useSearchParams().get("order") ?? "";
   const { isAuthenticated, user } = useAuth();
+  const adoptSession = useAdoptSession();
   const store = useStoreSettings();
+  const isClient = useIsClient();
+  const storedSession = useStoredSessionToken();
+  const guestToken = useGuestToken(orderNumber);
+  const isGuest = isClient && !isAuthenticated && !storedSession;
+  const cannotSeeOrder = isGuest && !guestToken;
 
   const { data: order, isLoading, isError } = useQuery({
     queryKey: queryKeys.orderDetail(orderNumber),
     queryFn: () => fetchOrderDetail(orderNumber),
-    enabled: isAuthenticated && Boolean(orderNumber),
+    enabled: (isAuthenticated || Boolean(guestToken)) && Boolean(orderNumber),
   });
   const invoice = useMutation({ mutationFn: () => downloadOrderInvoice(orderNumber) });
   const queryClient = useQueryClient();
@@ -42,6 +50,7 @@ export function OrderSuccessClient() {
       attempts += 1;
       try {
         const result = await syncPayment(orderNumber);
+        if (result.session) adoptSession(result.session);
         if (result.payment_status === "paid") {
           queryClient.invalidateQueries({ queryKey: queryKeys.orderDetail(orderNumber) });
           queryClient.invalidateQueries({ queryKey: queryKeys.orders.allMine });
@@ -55,7 +64,18 @@ export function OrderSuccessClient() {
     const timer = window.setInterval(check, 5000);
     check();
     return () => window.clearInterval(timer);
-  }, [awaitingRazorpay, orderNumber, queryClient]);
+  }, [awaitingRazorpay, orderNumber, adoptSession, queryClient]);
+
+  // A guest whose payment was recorded by the webhook arrives here already paid, with their login still to collect.
+  const isPaidGuest = isGuest && Boolean(guestToken) && order?.payment_status === "paid";
+  useEffect(() => {
+    if (!isPaidGuest) return;
+    syncPayment(orderNumber)
+      .then((result) => {
+        if (result.session) adoptSession(result.session);
+      })
+      .catch(() => undefined);
+  }, [isPaidGuest, orderNumber, adoptSession]);
 
   // Counted only once the server says it's paid, which can be well after this page opens.
   useEffect(() => {
@@ -67,7 +87,7 @@ export function OrderSuccessClient() {
     });
   }, [order, orderNumber]);
 
-  if (!orderNumber || isError) {
+  if (!orderNumber || isError || cannotSeeOrder) {
     return (
       <Container className="py-20 text-center">
         <p className="text-brand-ink/70">We couldn&apos;t find that order.</p>
@@ -156,6 +176,15 @@ export function OrderSuccessClient() {
         </div>
       </div>
 
+      <SetPasswordCard className="mt-6" />
+
+      {isPaidGuest && (
+        <p className="mt-6 rounded-xl bg-brand-sand p-4 text-sm text-brand-ink/80">
+          Keep your order number safe: you can track this order any time with it and your mobile number.
+          {order.has_account && " It's also saved to the account for this mobile number. Log in to see it under My Orders."}
+        </p>
+      )}
+
       {isPaid && (
         <div className="mt-6 flex flex-col items-center gap-2">
           <Button onClick={() => invoice.mutate()} disabled={invoice.isPending} variant="secondary" size="lg">
@@ -167,9 +196,11 @@ export function OrderSuccessClient() {
 
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <Button href={`/track-order?order=${encodeURIComponent(order.order_number)}`}>Track Order</Button>
-        <Button href="/orders" variant="outline">
-          My Orders
-        </Button>
+        {isAuthenticated && (
+          <Button href="/orders" variant="outline">
+            My Orders
+          </Button>
+        )}
         <Button href="/#products" variant="outline">
           Continue Shopping
         </Button>

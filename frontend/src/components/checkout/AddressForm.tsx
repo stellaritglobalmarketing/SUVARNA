@@ -5,7 +5,7 @@ import type { AddressInput, AddressType } from "@/types/address";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 
-const INPUT_CLASS =
+export const INPUT_CLASS =
   "w-full rounded-lg border border-brand-sand-dark px-3 py-2.5 text-sm outline-none focus:border-brand-forest";
 
 const ADDRESS_TYPES: { value: AddressType; label: string }[] = [
@@ -14,7 +14,7 @@ const ADDRESS_TYPES: { value: AddressType; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
-function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+export function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <label className={cn("flex flex-col gap-1.5 text-sm", className)}>
       <span className="font-medium text-brand-ink">{label}</span>

@@ -1,3 +1,5 @@
+import type { AuthSession } from "@/types/auth";
+import { guestOrderHeaders } from "@/lib/auth/guestOrders";
 import { apiGet, apiPost, downloadFile } from "./http";
 
 /**
@@ -5,6 +7,7 @@ import { apiGet, apiPost, downloadFile } from "./http";
  *   1. placeOrder: turns the server cart into a pending order (holds stock, empties the cart)
  *   2. createPaymentOrder: gets the Razorpay order to open Checkout with (amount comes from the server)
  *   3. verifyPayment: hands Razorpay's success response back so the server can confirm and mark it paid
+ * A guest starts with placeGuestOrder instead of 1. Each later call sends the order's guest token when this browser holds one.
  */
 
 export interface PlacedOrder {
@@ -37,8 +40,31 @@ export interface RazorpaySuccess {
   razorpay_signature: string;
 }
 
+/** What verify and sync report. `session` logs a guest into the account their order just created, once. */
+export interface PaymentStatus {
+  order_number: string;
+  order_status: string;
+  payment_status: string;
+  session?: AuthSession;
+}
+
+export interface GuestOrderInput {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  pincode: string;
+  city: string;
+  state: string;
+  items: { product_variant_id: number; quantity: number }[];
+  /** The total the customer is looking at; the server refuses the order if prices have moved. */
+  expected_subtotal: number;
+}
+
 export interface OrderDetail {
   order_number: string;
+  /** Whether a paid guest order has joined an account yet. */
+  has_account: boolean;
   order_status: string;
   payment_status: string;
   created_at: string;
@@ -62,8 +88,12 @@ export async function placeOrder(addressId: number, notes?: string): Promise<Pla
   return apiPost<PlacedOrder>("/order", { address_id: addressId, notes: notes || undefined });
 }
 
+export async function placeGuestOrder(input: GuestOrderInput): Promise<PlacedOrder & { guest_token: string }> {
+  return apiPost<PlacedOrder & { guest_token: string }>("/order/guest", input);
+}
+
 export async function createPaymentOrder(orderNumber: string): Promise<PaymentOrder> {
-  return apiPost<PaymentOrder>("/payment/razorpay/order", { order_number: orderNumber });
+  return apiPost<PaymentOrder>("/payment/razorpay/order", { order_number: orderNumber }, guestOrderHeaders(orderNumber));
 }
 
 /**
@@ -71,22 +101,17 @@ export async function createPaymentOrder(orderNumber: string): Promise<PaymentOr
  * never ran (e.g. UPI paid in the GPay app on a phone and the checkout tab reloaded).
  */
 export async function syncPayment(orderNumber: string) {
-  return apiPost<{ order_number: string; order_status: string; payment_status: string }>("/payment/razorpay/sync", {
-    order_number: orderNumber,
-  });
+  return apiPost<PaymentStatus>("/payment/razorpay/sync", { order_number: orderNumber }, guestOrderHeaders(orderNumber));
 }
 
 export async function verifyPayment(orderNumber: string, response: RazorpaySuccess) {
-  return apiPost<{ order_number: string; order_status: string; payment_status: string }>("/payment/razorpay/verify", {
-    order_number: orderNumber,
-    ...response,
-  });
+  return apiPost<PaymentStatus>("/payment/razorpay/verify", { order_number: orderNumber, ...response }, guestOrderHeaders(orderNumber));
 }
 
 export async function fetchOrderDetail(orderNumber: string): Promise<OrderDetail> {
-  return apiGet<OrderDetail>(`/order/${encodeURIComponent(orderNumber)}`);
+  return apiGet<OrderDetail>(`/order/${encodeURIComponent(orderNumber)}`, undefined, guestOrderHeaders(orderNumber));
 }
 
 /** Saves the PDF invoice for one of the customer's paid orders. */
 export const downloadOrderInvoice = (orderNumber: string) =>
-  downloadFile(`/order/${encodeURIComponent(orderNumber)}/invoice`, `Suvarna7-Invoice-${orderNumber}.pdf`);
+  downloadFile(`/order/${encodeURIComponent(orderNumber)}/invoice`, `Suvarna7-Invoice-${orderNumber}.pdf`, guestOrderHeaders(orderNumber));

@@ -100,9 +100,42 @@ async function tokenMiddleware(req, res, next) {
     next();
 }
 
+// Order and payment routes open to the browser that placed a guest order. The token itself is checked
+// against the order by orderOwnerClause. A session is still validated when one is sent.
+function customerOrGuest(req, res, next) {
+    if (req.headers['token'] || req.headers['authorization']) {
+        return tokenMiddleware(req, res, () => allowedRoles("user")(req, res, next));
+    }
+    if (req.headers['guest-token']) {
+        return next();
+    }
+    return sendResponse(res, Codes.UNAUTHORIZED, Codes.INVALID_TOKEN, "Token missing", null);
+}
+
+// Per-IP cap for public routes that create orders or look them up. Kept in memory, so it's per process.
+function rateLimit({ max, windowMs }) {
+    const hits = new Map();
+    let windowStart = 0;
+    return (req, res, next) => {
+        const now = Date.now();
+        if (now - windowStart >= windowMs) {
+            windowStart = now;
+            hits.clear();
+        }
+        const count = (hits.get(req.ip) ?? 0) + 1;
+        hits.set(req.ip, count);
+        if (count > max) {
+            return sendResponse(res, 429, Codes.RESPONSE_ERROR, "Too many attempts. Please try again in a little while.", null);
+        }
+        next();
+    };
+}
+
 export default {
     sendResponse,
     checkAPI,
     tokenMiddleware,
     allowedRoles,
+    customerOrGuest,
+    rateLimit,
 };

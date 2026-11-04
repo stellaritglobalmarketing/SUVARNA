@@ -21,6 +21,16 @@ function normalizePhone(value) {
     return digits;
 }
 
+const PASSWORD_RULE = "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character";
+
+function validateSetPassword(body) {
+    const { password } = body || {};
+    if (!password || typeof password !== "string") {
+        return "Password is required";
+    }
+    return PASSWORD_REGEX.test(password) ? null : PASSWORD_RULE;
+}
+
 function validateSignup(body) {
     const { name, email, phone, password } = body || {};
 
@@ -46,7 +56,7 @@ function validateSignup(body) {
         return "Password is required";
     }
     if (!PASSWORD_REGEX.test(password)) {
-        return "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character";
+        return PASSWORD_RULE;
     }
 
     return null;
@@ -65,4 +75,4 @@ function validateLogin(body) {
     return null;
 }
 
-export { validateSignup, validateLogin, normalizePhone };
+export { validateSignup, validateLogin, validateSetPassword, normalizePhone, EMAIL_REGEX, PHONE_REGEX };

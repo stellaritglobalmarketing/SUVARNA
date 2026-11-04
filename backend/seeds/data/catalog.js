@@ -32,7 +32,7 @@ const whatsInside = (...contents) => ({ title: "What's Inside", items: contents.
 const GIFT_TRUST_POINTS = trustPoints("Kesar from our own farm", "Ready to gift");
 
 const GIFT_FAQS = faqs(
-    ["When should I order for Diwali delivery?", "Order by 1 November for delivery before Diwali."],
+    ["How long does delivery take?", "Delivery is free across India. The time depends on your location, so enter your pincode on this page to check delivery to your address."],
     [
         "Can I order in bulk for my office?",
         "Yes. We take bulk orders from 10 boxes with special corporate prices and a free name card. WhatsApp us on +91 78893 17203.",
@@ -371,7 +371,7 @@ export const PRODUCTS = [
         tagline: "A little light of Kashmir, for everyone on your Diwali list.",
         meta_title: "Deepam Diwali Gift Box - Kashmiri Kesar, Walnuts, Almonds & Honey | Suvarna7",
         meta_description:
-            "Diwali gift box with Kashmiri kesar 0.5g, walnuts, almonds and acacia honey in a ready-to-gift box. Free delivery across India. Order by 1 Nov.",
+            "Diwali gift box with Kashmiri kesar 0.5g, walnuts, almonds and acacia honey in a ready-to-gift box. Free delivery across India. Order online from Suvarna7.",
         description:
             "Deepam means a lamp - the light at the heart of Diwali. This box brings four simple treasures of Kashmir together: kesar from our own fields in Pampore, fresh walnuts and almonds from the valley's orchards, and light acacia honey from the Kashmir hills. A thoughtful gift for friends, neighbours and colleagues.",
         origin: "Kashmir",

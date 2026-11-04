@@ -706,3 +706,49 @@ CREATE TABLE IF NOT EXISTS `visitor_events` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('024_visitor_activity.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-11-04 · Guest checkout: orders can exist without an account until they're paid.
+-- Run this BEFORE deploying: the new backend reads these columns on every payment. The old backend
+-- keeps working with them in place. Safe to run twice.
+-- --------------------------------------------------------------------------------------------
+
+ALTER TABLE `orders`
+  MODIFY `user_id` int(10) unsigned DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS `guest_token_hash` char(64) DEFAULT NULL AFTER `user_id`,
+  ADD COLUMN IF NOT EXISTS `guest_login_pending` tinyint(1) NOT NULL DEFAULT 0 AFTER `guest_token_hash`;
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('025_guest_checkout.sql');
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-11-04 · Top banner: removes the expired "Order by 1 Nov". Can run any time, no deploy needed;
+-- it shows within about a minute. Safe to run twice.
+-- --------------------------------------------------------------------------------------------
+
+INSERT INTO `store_settings` (`setting_key`, `setting_value`)
+VALUES ('announcement_text', 'FREE Delivery Across India · Diwali Hampers from ₹999')
+ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('026_announcement_after_diwali_cutoff.sql');
+
+
+-- --------------------------------------------------------------------------------------------
+-- 2026-11-04 · Gift box FAQ and Deepam Box SEO description: removes the expired "Order by 1 Nov".
+-- Can run any time, no deploy needed. Safe to run twice.
+-- --------------------------------------------------------------------------------------------
+
+UPDATE `product_info_sections`
+SET `items` = REPLACE(
+    REPLACE(`items`, 'When should I order for Diwali delivery?', 'How long does delivery take?'),
+    'Order by 1 November for delivery before Diwali.',
+    'Delivery is free across India. The time depends on your location, so enter your pincode on this page to check delivery to your address.'
+)
+WHERE `items` LIKE '%Order by 1 November for delivery before Diwali.%';
+
+UPDATE `products`
+SET `meta_description` = REPLACE(`meta_description`, ' Order by 1 Nov.', ' Order online from Suvarna7.'),
+    `short_description` = REPLACE(`short_description`, ' Order by 1 Nov.', ' Order online from Suvarna7.')
+WHERE `slug` = 'deepam-diwali-gift-box';
+
+INSERT IGNORE INTO `schema_migrations` (`filename`) VALUES ('027_gift_box_text_after_diwali_cutoff.sql');

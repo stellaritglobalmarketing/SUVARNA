@@ -2,6 +2,7 @@ import db from "../../../config/db.js";
 import middleware from "../../../middleware/middleware.js";
 import Codes from "../../../config/status_codes.js";
 import { isValidOrderNumber, isValidTransition, parseOrderListingQuery, validateStatusUpdateBody } from "../validators/admin-order-validation.js";
+import { attachGuestOrderToAccount } from "../services/guest-order.js";
 
 function toNumber(value) {
     return value === null || value === undefined ? value : Number(value);
@@ -247,6 +248,11 @@ const updateOrderStatus = async (req, res) => {
         }
 
         await connection.commit();
+
+        // A guest order marked paid by hand gets its account the same way an online payment does.
+        if (payment_status === "paid") {
+            await attachGuestOrderToAccount(order.id).catch((error) => console.error(`Couldn't attach guest order id ${order.id} to an account: `, error));
+        }
 
         const [updatedRows] = await db.query(
             "SELECT order_status, payment_status, fulfillment_status FROM orders WHERE id = ? LIMIT 1",

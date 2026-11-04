@@ -35,7 +35,7 @@ export function DiwaliHampers({
         <Sparkles className="bottom-auto h-48" />
         <FestiveHeading />
 
-        <div className="mx-auto mt-8 grid max-w-md gap-6 sm:mt-10 md:max-w-6xl md:grid-cols-3">
+        <div className="mx-auto mt-8 grid max-w-md gap-4 sm:mt-10 md:max-w-6xl md:grid-cols-3 md:gap-6">
           {gifts.map(({ hamper, product }) => {
             const variant = product.variants.find((v) => v.stock > 0) ?? product.variants[0];
             const contents = hamper.productSlugs.map((slug) => productNames.get(slug)).filter(Boolean);
@@ -43,30 +43,32 @@ export function DiwaliHampers({
               <Link
                 key={hamper.slug}
                 href={`/products/${product.slug}`}
-                className="group flex flex-col rounded-2xl border border-[#e7c98d] bg-[#fffaf2] p-2.5 shadow-[0_14px_40px_-18px_rgba(150,80,20,.55)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_50px_-18px_rgba(150,80,20,.7)]"
+                className="group flex rounded-2xl border border-[#e7c98d] bg-[#fffaf2] p-2 shadow-[0_14px_40px_-18px_rgba(150,80,20,.55)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_50px_-18px_rgba(150,80,20,.7)] md:flex-col md:p-2.5"
               >
-                <div className="relative overflow-hidden rounded-xl">
+                {/* On phones a short row with the whole photo: its name and price are printed on it, so it can't be cropped. */}
+                <div className="relative w-[38%] shrink-0 self-start overflow-hidden rounded-xl md:w-full">
                   <ProductImagePlaceholder
                     src={giftPhoto(hamper, product)}
                     alt={hamper.name}
                     gradient={product.gradient}
                     iconSize={40}
-                    sizes="(min-width: 768px) 33vw, 100vw"
+                    sizes="(min-width: 768px) 33vw, 40vw"
                     className="aspect-[2/3] w-full transition-transform duration-500 group-hover:scale-[1.03]"
                   />
                   {/* At the bottom: the gift bag photos carry the box name and price across the top. */}
-                  <span className="absolute bottom-3 left-0 flex items-center gap-1.5 bg-gradient-to-r from-[#7a1d1d] to-[#5a1414] py-1 pl-2.5 pr-5 text-[11px] font-semibold uppercase tracking-wide text-[#fbe2a8] shadow-md [clip-path:polygon(0_0,100%_0,90%_50%,100%_100%,0_100%)]">
-                    <Diya className="w-4" /> Diwali Special ✦
+                  <span className="absolute bottom-2 left-0 flex items-center gap-1.5 bg-gradient-to-r from-[#7a1d1d] to-[#5a1414] py-0.5 pl-1.5 pr-3.5 text-[8px] font-semibold md:bottom-3 md:py-1 md:pl-2.5 md:pr-5 md:text-[11px] uppercase tracking-wide text-[#fbe2a8] shadow-md [clip-path:polygon(0_0,100%_0,90%_50%,100%_100%,0_100%)]">
+                    <Diya className="hidden w-4 md:block" /> Diwali Special ✦
                   </span>
                 </div>
-                <div className="flex flex-1 flex-col gap-2.5 px-2.5 pb-2.5 pt-4">
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5 py-1 pl-3 pr-1 md:gap-2.5 md:px-2.5 md:pb-2.5 md:pt-4">
                   <div>
-                    <h3 className="font-serif text-2xl font-semibold text-[#3b1d10]">{hamper.name}</h3>
-                    {hamper.subtitle && <p className="mt-0.5 text-sm font-medium text-[#3b1d10]/85">{hamper.subtitle}</p>}
-                    {product.tagline && <p className="mt-1 text-xs leading-relaxed text-brand-ink/60">{product.tagline}</p>}
+                    <h3 className="font-serif text-lg font-semibold leading-tight text-[#3b1d10] md:text-2xl">{hamper.name}</h3>
+                    {hamper.subtitle && <p className="mt-0.5 text-xs font-medium text-[#3b1d10]/85 md:text-sm">{hamper.subtitle}</p>}
+                    {product.tagline && <p className="mt-1 hidden text-xs leading-relaxed text-brand-ink/60 md:block">{product.tagline}</p>}
                   </div>
+                  {contents.length > 0 && <p className="text-[11px] leading-snug text-brand-ink/70 md:hidden">{contents.join(" · ")}</p>}
                   {contents.length > 0 && (
-                    <ul className="flex flex-wrap gap-1.5">
+                    <ul className="hidden flex-wrap gap-1.5 md:flex">
                       {contents.map((name) => (
                         <li key={name} className="rounded-full bg-[#f5e8d3] px-2.5 py-1 text-[11px] text-brand-ink/75">
                           {name}
@@ -74,15 +76,15 @@ export function DiwaliHampers({
                       ))}
                     </ul>
                   )}
-                  <div className="mt-auto flex items-end justify-between gap-3 pt-2">
+                  <div className="mt-auto flex items-end justify-between gap-2 md:gap-3 md:pt-2">
                     {variant && (
                       <span>
-                        <span className="block text-2xl font-bold text-[#3b1d10] tabular-nums">{formatInr(variant.price)}</span>
-                        <span className="text-xs text-brand-ink/60">Free delivery</span>
+                        <span className="block text-lg font-bold leading-tight text-[#3b1d10] tabular-nums md:text-2xl">{formatInr(variant.price)}</span>
+                        <span className="text-[10px] text-brand-ink/60 md:text-xs">Free delivery</span>
                       </span>
                     )}
-                    <span className="flex items-center gap-1.5 rounded-lg bg-[#5a1414] px-4 py-2.5 text-sm font-semibold text-[#fbe7c0] transition-colors group-hover:bg-[#7a1d1d]">
-                      View Gift Box <ArrowRight size={15} aria-hidden="true" />
+                    <span className="flex shrink-0 items-center gap-1 rounded-lg bg-[#5a1414] px-2.5 py-1.5 text-xs font-semibold text-[#fbe7c0] transition-colors group-hover:bg-[#7a1d1d] md:gap-1.5 md:px-4 md:py-2.5 md:text-sm">
+                      View<span className="hidden md:inline"> Gift Box</span> <ArrowRight size={15} aria-hidden="true" />
                     </span>
                   </div>
                 </div>

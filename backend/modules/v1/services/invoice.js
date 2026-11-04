@@ -84,10 +84,10 @@ async function loadInvoiceData(conn, orderId) {
 }
 
 /** Order id for an order number, or null. */
-async function findOrderId(conn, orderNumber, { userId } = {}) {
+async function findOrderId(conn, orderNumber, { owner } = {}) {
     const [rows] = await conn.query(
-        `SELECT id FROM orders WHERE order_number = ? AND is_delete = 0${userId ? " AND user_id = ?" : ""} LIMIT 1`,
-        userId ? [orderNumber, userId] : [orderNumber]
+        `SELECT id FROM orders WHERE order_number = ? AND is_delete = 0${owner ? ` AND ${owner.sql}` : ""} LIMIT 1`,
+        owner ? [orderNumber, ...owner.params] : [orderNumber]
     );
     return rows[0]?.id ?? null;
 }

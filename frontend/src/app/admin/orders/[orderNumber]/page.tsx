@@ -350,9 +350,15 @@ export default function AdminOrderDetailPage() {
           </Card>
 
           <Card title="Customer">
-            <Link href={`/admin/customers/${order.customer.id}`} className="font-medium text-brand-forest hover:underline">
-              {order.customer.name}
-            </Link>
+            {order.customer.id ? (
+              <Link href={`/admin/customers/${order.customer.id}`} className="font-medium text-brand-forest hover:underline">
+                {order.customer.name}
+              </Link>
+            ) : (
+              <p className="font-medium text-brand-ink">
+                {order.customer.name} <span className="text-xs font-normal text-brand-ink/60">(guest)</span>
+              </p>
+            )}
             <p className="text-sm text-brand-ink/70">{order.customer.phone}</p>
             {order.customer.email && <p className="text-sm text-brand-ink/70">{order.customer.email}</p>}
           </Card>

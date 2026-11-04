@@ -187,13 +187,14 @@ button {
   overflow: hidden;
   background: var(--craft-bg);
   color: var(--craft-c3);
-  padding: 24px 0 8px;
+  padding: 4px 0;
   -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
   mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
 }
 .craft-track { display: flex; width: max-content; animation: craft-marquee 70s linear infinite; }
-.craft-frieze { display: block; flex: none; height: 170px; width: auto; }
-@media (min-width: 640px) { .craft-frieze { height: 230px; } .craft-track { animation-duration: 90s; } }
+/* Phones crop the artwork's empty sky and foot (about 52 and 17 of its 240 units) so the band stays slim. */
+.craft-frieze { display: block; flex: none; height: 112px; width: auto; margin-block: -24px -8px; }
+@media (min-width: 640px) { .craft-band { padding: 24px 0 8px; } .craft-frieze { height: 230px; margin-block: 0; } .craft-track { animation-duration: 90s; } }
 @media (min-width: 1024px) { .craft-frieze { height: 280px; } }
 
 .craft-swing { animation: craft-swing 2.2s ease-in-out infinite; }
