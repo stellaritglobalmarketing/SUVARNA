@@ -174,9 +174,9 @@ button {
 @media (prefers-reduced-motion: reduce) { .hero-slide { transition: none; } }
 
 /* ---- Home promo band (components/home/PromoBanner.tsx) ----
-   A plain beige band. The arch echoes the product labels; its top stays shallow enough not to clip the
+   A plain tan band, in the craft frieze's figure colour (--craft-c3). The arch echoes the product labels; its top stays shallow enough not to clip the
    logo printed on the poster. */
-.promo-band { background: #eee8da; }
+.promo-band { background: #dcc5a4; }
 .promo-arch { border-radius: 50% 50% 10px 10px / 14% 14% 10px 10px; }
 .promo-arch-frame {
   padding: 7px;
