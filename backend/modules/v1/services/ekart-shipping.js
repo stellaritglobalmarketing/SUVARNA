@@ -77,6 +77,11 @@ export function normalizePhone(value) {
     return /^\d{10}$/.test(digits) ? digits : null;
 }
 
+/** The first of `candidates` that's a valid number other than `phone`, or null. */
+export function alternatePhone(phone, candidates) {
+    return candidates.map(normalizePhone).find((candidate) => candidate && candidate !== phone) ?? null;
+}
+
 function round2(value) {
     return Math.round(Number(value) * 100) / 100;
 }
@@ -303,6 +308,13 @@ export async function createShipmentForOrder(orderNumber, pkg, { preferredDispat
     if (!pickup.alias) throw fail("Choose a pickup address in Admin → Settings → Pickup address");
     const intraState = sameState(pickup.state, order.shipping_state);
 
+    // Ekart requires an alternate number and refuses one equal to the delivery phone. Most orders only have
+    // one customer number, so the courier's second contact is then the store's pickup phone.
+    const alternate = alternatePhone(phone, [order.customer_phone, order.shipping_phone, pickup.phone]);
+    if (!alternate) {
+        throw fail("Ekart needs a second phone number, different from the delivery phone. Choose a pickup address with its own phone number in Admin → Settings → Pickup address");
+    }
+
     const payload = {
         seller_name: sellerName,
         seller_address: sellerAddress,
@@ -314,9 +326,10 @@ export async function createShipmentForOrder(orderNumber, pkg, { preferredDispat
         invoice_number: order.order_number,
         invoice_date: new Date(order.created_at).toISOString().slice(0, 10),
         consignee_name: order.shipping_name,
-        consignee_alternate_phone: phone,
+        consignee_alternate_phone: alternate,
         products_desc: productsDesc,
         payment_mode: "Prepaid",
+        service: serviceType(),
         category_of_goods: settings.category_of_goods,
         ...(settings.hsn_code ? { hsn_code: settings.hsn_code } : {}),
         total_amount: total,

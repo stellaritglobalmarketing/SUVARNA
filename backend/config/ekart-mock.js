@@ -52,6 +52,10 @@ const ekartMock = {
         if (process.env.EKART_MOCK_FAIL === "wallet") {
             throw mockError("Insufficient wallet balance. Please recharge your wallet to create shipments.");
         }
+        // Same rule as the real API, so a local booking test catches it.
+        if (String(payload?.consignee_alternate_phone) === String(payload?.drop_location?.phone)) {
+            throw mockError("Phone and Alternate Phone cannot be same");
+        }
         const pin = payload?.drop_location?.pin;
         if (unserviceable(pin)) {
             throw mockError(`Pincode ${pin} is not serviceable`);
