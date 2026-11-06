@@ -5,12 +5,11 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ProductGridSkeleton } from "@/components/product/ProductGrid";
-import { Hero } from "./Hero";
+import { PantryHero } from "./PantryHero";
 import { PromoBanner } from "./PromoBanner";
 import { AllProducts } from "./AllProducts";
 import { CraftStory } from "./CraftStory";
 import { CustomHampers } from "./CustomHampers";
-import { giftPhoto } from "./DiwaliHampers";
 import { TrustBadges } from "./TrustBadges";
 import { TrustSection } from "./TrustSection";
 import { FAQSection } from "./FAQSection";
@@ -36,16 +35,10 @@ export function HomeContent() {
   // Gift boxes (hampers that are products) show in the hamper section, not in the main product grid.
   const giftSlugs = new Set(data.hampers.map((hamper) => hamper.slug));
   const gridProducts = data.products.filter((product) => !giftSlugs.has(product.slug));
-  // Gift box photos for the hero's Diwali slide, in hamper order.
-  const giftPhotos = data.hampers.flatMap((hamper) => {
-    const product = data.products.find((p) => p.slug === hamper.slug);
-    const photo = product && giftPhoto(hamper, product);
-    return photo ? [photo] : [];
-  });
 
   return (
     <>
-      {data.hero && <Hero banner={data.hero} hasHampers={data.products.length > 0} giftPhotos={giftPhotos} />}
+      {data.hero && <PantryHero banner={data.hero} products={data.products} />}
       <TrustBadges />
       <CraftStory />
       <AllProducts products={gridProducts} />
@@ -61,7 +54,7 @@ function HomeSkeleton() {
   return (
     <>
       {/* Same footprint as the Hero / PromoBanner so the page doesn't jump when data lands */}
-      <div className="min-h-[480px] bg-brand-sand lg:min-h-[580px]" />
+      <div className="min-h-[480px] bg-[#f4ead9] lg:min-h-[580px]" />
       <Container className="pt-4 md:hidden">
         <Skeleton className="h-36 w-full rounded-2xl" />
       </Container>
