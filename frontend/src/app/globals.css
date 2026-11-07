@@ -343,55 +343,52 @@ button {
   .diwali-burst, .diwali-embers, .diwali-petals { display: none; }
 }
 
-/* Home page banner: the Kashmiri Pantry shelf (PantryHero.tsx), in the store's espresso, gold and cream. */
+/* Home page banner: the Suvarna 7 shelf (PantryHero.tsx), in the store's espresso, gold and cream. */
 .pantry {
   --pantry-wall: #f4ead9; --pantry-floor: var(--color-forest);
-  --title-size: clamp(80px, min(12vw, 22svh), 210px);
-  --stage-height: calc(100svh - var(--store-header-height, 116px));
-  --jar-height: clamp(170px, min(28vw, calc((var(--stage-height) - 200px) / 1.18)), 440px);
-  position: relative; overflow-x: clip; padding-top: calc(var(--title-size) * 0.5);
+  --title-size: clamp(56px, min(8vw, 15svh), 128px);
+  --row-gap: clamp(10px, 1.6vw, 28px);
+  /* Sized so the whole row of jars fits across the shelf; below the minimum the shelf scrolls sideways instead. */
+  --jar-height: clamp(150px, calc((min(100vw, 1320px) - 64px - (var(--pantry-count) - 1) * var(--row-gap)) / var(--pantry-ratio)), 300px);
+  position: relative; padding-top: clamp(20px, 3vw, 44px);
   background: var(--pantry-wall); color: var(--color-forest); text-align: center;
 }
-@media (max-width: 1023px) {
-  .pantry { --stage-height: calc(100svh - var(--store-header-height, 116px) - var(--mobile-nav-height) - env(safe-area-inset-bottom)); }
-}
-@media (max-width: 639px) {
-  .pantry { --jar-height: clamp(170px, min(60vw, calc((var(--stage-height) - 230px) / 1.18)), 300px); }
-}
-.pantry-head { position: relative; display: inline-block; line-height: 1; }
-.pantry-title { margin: 0; font-size: var(--title-size); line-height: 1; letter-spacing: 0.01em; text-transform: uppercase; color: var(--color-forest); }
-.pantry-script { position: absolute; z-index: 1; left: 3%; top: -0.6em; margin: 0; font-size: calc(var(--title-size) * 0.56); line-height: 1; white-space: nowrap; color: var(--color-gold); transform: rotate(-4deg); transform-origin: left bottom; text-shadow: 0 2px 0 var(--pantry-wall), 0 -2px 0 var(--pantry-wall), 2px 0 0 var(--pantry-wall), -2px 0 0 var(--pantry-wall); }
-.pantry-intro { max-width: 40rem; margin: clamp(10px, 1.4vw, 20px) auto 0; padding-inline: 20px; font-size: clamp(14px, 1.3vw, 19px); line-height: 1.55; color: rgba(61, 43, 28, 0.78); }
+@media (max-width: 639px) { .pantry { --jar-height: 190px; } }
+.pantry-head { display: inline-flex; flex-direction: column; align-items: center; }
+.pantry-title { margin: 0; font-size: var(--title-size); font-weight: 600; line-height: 0.95; letter-spacing: 0.02em; color: var(--color-forest); }
+.pantry-title-seven { margin-left: 0.04em; font-style: italic; font-weight: 500; color: var(--color-gold); }
+.pantry-tagline { display: flex; align-items: center; gap: 14px; margin: clamp(6px, 0.8vw, 12px) 0 0; font-size: clamp(11px, 0.95vw, 14px); font-weight: 600; letter-spacing: 0.32em; text-transform: uppercase; color: var(--color-walnut-dark); }
+.pantry-tagline::before, .pantry-tagline::after { content: ""; width: clamp(28px, 4vw, 56px); height: 1px; background: var(--color-gold); }
 
-/* The track is as tall as the scrolling the shelf takes; the stage inside stays pinned under the header meanwhile. */
-.pantry-track { position: relative; height: calc(var(--stage-height) + (var(--pantry-count) - 1) * 42svh); margin-top: clamp(8px, 1.5vw, 20px); }
-.pantry-stage { position: sticky; top: var(--store-header-height, 116px); height: var(--stage-height); display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
-.pantry-rail { position: relative; flex: none; height: calc(var(--jar-height) * 1.18); overflow-x: clip; touch-action: pan-y; }
-.pantry-rail::before { content: ""; position: absolute; z-index: -1; inset: calc(var(--jar-height) * 0.84) 0 auto; height: 100svh; background: var(--pantry-floor); }
-.pantry-shelf { position: absolute; inset: auto 0 0; height: 22px; background: linear-gradient(#dcb27a 0%, var(--color-walnut) 45%, var(--color-walnut-dark) 100%); box-shadow: 0 10px 18px rgba(20, 12, 6, 0.45); }
-.pantry-jar { position: absolute; left: 50%; bottom: 20px; display: block; padding: 0; border: 0; background: none; cursor: pointer; transform-origin: 50% 100%; will-change: transform; -webkit-tap-highlight-color: transparent; }
+/* One row of jars on the shelf. The floor (espresso) starts behind the lower part of the jars. */
+.pantry-rail { margin-top: clamp(4px, 1vw, 14px); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }
+.pantry-rail::-webkit-scrollbar { display: none; }
+.pantry-row {
+  display: flex; align-items: flex-end; justify-content: center; gap: var(--row-gap);
+  width: max-content; min-width: 100%; padding: 28px 32px 22px;
+  background:
+    linear-gradient(#dcb27a 0%, var(--color-walnut) 45%, var(--color-walnut-dark) 100%) bottom / 100% 22px no-repeat,
+    linear-gradient(transparent calc(28px + var(--jar-height) * 0.84), var(--pantry-floor) 0);
+}
+.pantry-jar { position: relative; flex: none; display: block; padding: 0; border: 0; background: none; cursor: pointer; transition: transform 200ms ease; -webkit-tap-highlight-color: transparent; }
 .pantry-jar:focus-visible { outline: 2px solid var(--color-gold-light); outline-offset: 6px; border-radius: 8px; }
 .pantry-jar-body { position: relative; display: block; width: 100%; height: 100%; transform-origin: 50% 100%; }
 .pantry-jar-body::after { content: ""; position: absolute; z-index: -1; left: 6%; right: 6%; bottom: -5px; height: 12px; border-radius: 50%; background: rgba(20, 12, 6, 0.5); filter: blur(6px); }
 .pantry-jar-body img { object-fit: contain; object-position: bottom; filter: drop-shadow(0 8px 12px rgba(20, 12, 6, 0.3)); user-select: none; }
 
-.pantry-caption { position: relative; flex: none; padding: clamp(14px, 1.8vw, 26px) 20px 12px; color: var(--color-sand); }
-.pantry-caption-text { margin: 0; animation: pantry-caption-in 380ms ease both; }
-.pantry-caption-name { display: block; font-family: var(--font-serif); font-size: clamp(22px, 2.4vw, 36px); line-height: 1.2; }
-.pantry-caption-meta { display: block; margin-top: 6px; font-size: clamp(13px, 1.15vw, 17px); color: rgba(255, 253, 248, 0.72); }
+.pantry-caption { min-height: clamp(110px, 9vw, 130px); padding: clamp(14px, 1.6vw, 22px) 20px clamp(20px, 2.4vw, 32px); background: var(--pantry-floor); color: var(--color-sand); }
+.pantry-caption-text { margin: 0; animation: pantry-caption-in 200ms ease both; }
+.pantry-caption-name { display: block; font-family: var(--font-serif); font-size: clamp(20px, 2.2vw, 32px); line-height: 1.2; }
+.pantry-caption-meta { display: block; margin-top: 6px; font-size: clamp(13px, 1.1vw, 16px); color: rgba(255, 253, 248, 0.72); }
 .pantry-caption-price { font-weight: 600; color: var(--color-gold-light); }
-.pantry-caption-button { margin-top: 12px; padding: 8px 20px; border: 1px solid var(--color-gold-light); border-radius: 999px; background: transparent; color: var(--color-gold-light); font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 150ms ease, color 150ms ease; }
-.pantry-caption-button:hover { background: var(--color-gold-light); color: var(--color-forest); }
-.pantry-dots { display: flex; justify-content: center; margin-top: 6px; }
-.pantry-dot { display: flex; align-items: center; justify-content: center; width: 24px; height: 32px; padding: 0; border: 0; background: none; cursor: pointer; }
-.pantry-dot::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 253, 248, 0.35); transition: width 200ms ease, background-color 200ms ease; }
-.pantry-dot.is-active::after { width: 20px; border-radius: 4px; background: var(--color-gold-light); }
-@keyframes pantry-caption-in { from { opacity: 0; transform: translateY(6px); } }
+.pantry-caption-hint .pantry-caption-name { color: var(--color-gold-light); }
+.pantry-hint-mouse { display: none; }
+@media (hover: hover) { .pantry-hint-mouse { display: inline; } .pantry-hint-touch { display: none; } }
+@keyframes pantry-caption-in { from { opacity: 0; } }
 
-/* Turning: the cutouts are flat photos, so the jar sways side to side instead of spinning all the way round. */
-@keyframes pantry-turn { from { transform: translateY(-10px) perspective(900px) rotateY(-24deg); } to { transform: translateY(-10px) perspective(900px) rotateY(24deg); } }
-@media (hover: hover) { .pantry-jar:hover .pantry-jar-body { animation: pantry-turn 1100ms ease-in-out infinite alternate; } }
-.pantry-jar:focus-visible .pantry-jar-body { animation: pantry-turn 1100ms ease-in-out infinite alternate; }
+/* Only the jar under the mouse moves: it lifts a little. */
+@media (hover: hover) { .pantry-jar:hover { transform: translateY(-8px); } }
+.pantry-jar:focus-visible { transform: translateY(-8px); }
 
 /* Product details over the page. */
 .pantry-dialog { width: min(880px, calc(100vw - 32px)); max-width: none; max-height: calc(100svh - 32px); margin: auto; padding: 0; border: 0; border-radius: 20px; background: var(--background); color: var(--color-ink); box-shadow: 0 30px 80px rgba(20, 12, 6, 0.35); overflow: auto; }
@@ -413,5 +410,5 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .pantry-caption-text, .pantry-dialog[open] { animation: none; }
-  .pantry-jar .pantry-jar-body, .pantry-jar:hover .pantry-jar-body, .pantry-jar:focus-visible .pantry-jar-body { animation: none; transform: translateY(-8px); }
+  .pantry-jar { transition: none; }
 }
