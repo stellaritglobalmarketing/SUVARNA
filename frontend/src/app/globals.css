@@ -357,8 +357,6 @@ button {
 .pantry-head { display: inline-flex; flex-direction: column; align-items: center; }
 .pantry-title { margin: 0; font-size: var(--title-size); font-weight: 600; line-height: 0.95; letter-spacing: 0.02em; color: var(--color-forest); }
 .pantry-title-seven { margin-left: 0.04em; font-style: italic; font-weight: 500; color: var(--color-gold); }
-.pantry-tagline { display: flex; align-items: center; gap: 14px; margin: clamp(6px, 0.8vw, 12px) 0 0; font-size: clamp(11px, 0.95vw, 14px); font-weight: 600; letter-spacing: 0.32em; text-transform: uppercase; color: var(--color-walnut-dark); }
-.pantry-tagline::before, .pantry-tagline::after { content: ""; width: clamp(28px, 4vw, 56px); height: 1px; background: var(--color-gold); }
 
 /* One row of jars on the shelf. The floor (espresso) starts behind the lower part of the jars. */
 .pantry-rail { margin-top: clamp(4px, 1vw, 14px); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }

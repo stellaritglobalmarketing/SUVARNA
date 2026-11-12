@@ -72,7 +72,6 @@ export function PantryHero({ banner, products }: { banner: HomeBanner; products:
       <h1 className="sr-only">{banner.title}</h1>
       <div className="pantry-head" aria-hidden="true">
         <p className={`pantry-title ${wordmarkFont.className}`}>Suvarna<span className="pantry-title-seven">7</span></p>
-        <p className="pantry-tagline">From Kashmir &amp; Gujarat</p>
       </div>
 
       <div className="pantry-rail">
